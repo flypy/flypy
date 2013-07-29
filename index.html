@@ -1,0 +1,766 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Numba-nextgen by markflorisson88</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/markflorisson88/numba-nextgen">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/markflorisson88/numba-nextgen/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/markflorisson88/numba-nextgen/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Numba-nextgen</h1>
+          <p></p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/markflorisson88">markflorisson88</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a name="next-iteration-of-numba---the-core-language-ideas" class="anchor" href="#next-iteration-of-numba---the-core-language-ideas"><span class="octicon octicon-link"></span></a>Next iteration of Numba - The core language ideas</h1>
+
+<p>This document describes the core numba language, which is designed to
+generate efficient code for general, pythonic code. It will allow us to
+implement most of the features that currently reside in the compiler
+directly in a runtime. On top of this small core language we can write
+more advanced features such as subtype polymorphism through method
+tables.</p>
+
+<p>I believe we need the following features:</p>
+
+<blockquote>
+<ul>
+<li>
+<p>Methods on user-defined types with specified representations
+(structs or otherwise)</p>
+
+<blockquote>
+<ul>
+<li>  Careful control over allocation, mutability and ownership</li>
+</ul>
+</blockquote>
+</li>
+<li>
+<p>Polymorphism: Generic functions, traits, overloading</p>
+
+<blockquote>
+<ul>
+<li>  subtyping and inheritance is left to a runtime
+implementation</li>
+<li>  dynamic dispatch for traits is left to a runtime implementation
+:   -   static dispatch only requires some type checking
+        support</li>
+</ul>
+</blockquote>
+</li>
+<li><p>User-defined typing rules</p></li>
+<li><p>Careful control over inlining, unrolling and specialization</p></li>
+<li><p>Array oriented computing: map/reduce/scan/etc</p></li>
+<li><p>Extension of the code generator</p></li>
+</ul>
+<p>Support for multi-stage programming would be nice, but is considered a
+bonus and deferred to external tools like macropy or mython for now. The
+control over optimizations likely provides enough functionality to
+generate good code.</p>
+</blockquote>
+
+<p>This describes a closed environment with an optionally static, inferred,
+language. Static typing will help provide better error messages, and can
+prevent inintended use.</p>
+
+<p>Polymorphism is provided through:</p>
+
+<blockquote>
+<ul>
+<li>  generic (monomorphized) functions (like C++ templates)</li>
+<li>  overloading</li>
+<li>  traits (like interfaces)</li>
+<li>  subtyping ("python classes")</li>
+</ul>
+</blockquote>
+
+<p>This language's goals are ultimate control over performance, and a
+language with a well-defined and easily understood subset for the GPU.</p>
+
+<p>This language is inspired by the following languages: Rust, Terra,
+RPython, Julia, Parakeet, mypy, copperhead. The traits are very similar
+to Rust's traits, and are related to type classes in Haskell and
+interfaces in Go.</p>
+
+<p>However, Go interfaces do not allow type-based specialization, and hence
+need runtime type tagging and method dispatch through vtables. Type
+conversion between interfaces needs to be runtime-checked type (and new
+vtables build at those points, if not cached). Compile-time overloading
+is precluded. In Go, interfaces specify what something <em>can do</em>, as
+opposed to what something <em>can be</em>. This can be a useful in a few
+situations, but it means we cannot constrain what things can be (e.g.
+any numeric type).</p>
+
+<p>In julia we can constrain the types we operate over, which happens
+through subtyping. E.g.:</p>
+
+<div class="highlight"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="kt">Int</span> <span class="o">&lt;:</span> <span class="n">Integer</span>
+<span class="n">true</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="kt">Int</span> <span class="o">&lt;:</span> <span class="n">Real</span>
+<span class="n">true</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="kt">Int</span> <span class="o">&lt;:</span> <span class="n">FloatingPoint</span>
+<span class="n">false</span>
+</pre></div>
+
+<p>So we can define a function which operates only over numbers:</p>
+
+<pre><code>julia&gt; function f(x :: Number)
+         return x * x
+       end
+</code></pre>
+
+<p>Here's a the generated code when <code>x</code> is an <code>Int</code>:</p>
+
+<div class="highlight"><pre><span class="err">julia</span><span class="p">&gt;</span> <span class="err">disassemble</span><span class="p">(</span><span class="err">f</span><span class="p">,</span> <span class="p">(</span><span class="err">Int</span><span class="p">,))</span>
+
+<span class="k">define</span> <span class="nv">%jl_value_t</span><span class="p">*</span> <span class="vg">@f618</span><span class="p">(</span><span class="nv">%jl_value_t</span><span class="p">*,</span> <span class="nv">%jl_value_t</span><span class="p">**,</span> <span class="k">i32</span><span class="p">)</span> <span class="p">{</span>
+<span class="nl">top:</span>
+  <span class="nv-Anonymous">%3</span> <span class="p">=</span> <span class="k">load</span> <span class="nv">%jl_value_t</span><span class="p">**</span> <span class="nv-Anonymous">%1</span><span class="p">,</span> <span class="k">align</span> <span class="m">8</span><span class="p">,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5256</span>
+  <span class="nv-Anonymous">%4</span> <span class="p">=</span> <span class="k">getelementptr</span> <span class="k">inbounds</span> <span class="nv">%jl_value_t</span><span class="p">*</span> <span class="nv-Anonymous">%3</span><span class="p">,</span> <span class="k">i64</span> <span class="m">0</span><span class="p">,</span> <span class="k">i32</span> <span class="m">0</span><span class="p">,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5256</span>
+  <span class="nv-Anonymous">%5</span> <span class="p">=</span> <span class="k">getelementptr</span> <span class="nv">%jl_value_t</span><span class="p">**</span> <span class="nv-Anonymous">%4</span><span class="p">,</span> <span class="k">i64</span> <span class="m">1</span><span class="p">,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5256</span>
+  <span class="nv-Anonymous">%6</span> <span class="p">=</span> <span class="k">bitcast</span> <span class="nv">%jl_value_t</span><span class="p">**</span> <span class="nv-Anonymous">%5</span> <span class="k">to</span> <span class="k">i64</span><span class="p">*,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5256</span>
+  <span class="nv-Anonymous">%7</span> <span class="p">=</span> <span class="k">load</span> <span class="k">i64</span><span class="p">*</span> <span class="nv-Anonymous">%6</span><span class="p">,</span> <span class="k">align</span> <span class="m">8</span><span class="p">,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5256</span>
+  <span class="nv-Anonymous">%8</span> <span class="p">=</span> <span class="k">mul</span> <span class="k">i64</span> <span class="nv-Anonymous">%7</span><span class="p">,</span> <span class="nv-Anonymous">%7</span><span class="p">,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5263</span>
+  <span class="nv-Anonymous">%9</span> <span class="p">=</span> <span class="k">call</span> <span class="nv">%jl_value_t</span><span class="p">*</span> <span class="vg">@jl_box_int64</span><span class="p">(</span><span class="k">i64</span> <span class="nv-Anonymous">%8</span><span class="p">),</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5263</span>
+  <span class="k">ret</span> <span class="nv">%jl_value_t</span><span class="p">*</span> <span class="nv-Anonymous">%9</span><span class="p">,</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5263</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Disassembling with <code>Number</code> generates a much larger chunk of code, which
+uses boxed code and ultimately (runtime) multiple dispatch of the <code>*</code>
+function:</p>
+
+<div class="highlight"><pre><span class="nv-Anonymous">%15</span> <span class="p">=</span> <span class="k">call</span> <span class="nv">%jl_value_t</span><span class="p">*</span> <span class="vg">@jl_apply_generic</span><span class="p">(</span><span class="nv">%jl_value_t</span><span class="p">*</span> <span class="k">inttoptr</span> <span class="p">(</span><span class="k">i64</span> <span class="m">4316726176</span> <span class="k">to</span> <span class="nv">%jl_value_t</span><span class="p">*),</span> <span class="nv">%jl_value_t</span><span class="p">**</span> <span class="nv">%.sub</span><span class="p">,</span> <span class="k">i32</span> <span class="m">2</span><span class="p">),</span> <span class="nv">!dbg</span> <span class="nv-Anonymous">!5191</span>
+</pre></div>
+
+<p>However, since the implementation of a function is specialized for the
+supertype, it doesn't know the concrete subtype. Type inference can help
+prevent these situations and use subtype-specialized code. However, it's
+very easy to make it generate slow code:</p>
+
+<div class="highlight"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="k">function</span><span class="nf"> g</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+     <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">2</span>
+       <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+     <span class="k">else</span>
+       <span class="n">x</span> <span class="o">=</span> <span class="mf">3.0</span>
+     <span class="k">end</span>
+     <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+   <span class="k">end</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">disassemble</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="p">(</span><span class="kt">Bool</span><span class="p">,))</span>
+</pre></div>
+
+<p>This prints a large chunk of LLVM code (using boxed values), since we
+are unifying an Int with a Float. Using both ints, or both floats
+however leads to very efficient code.</p>
+
+<p>What we want in our language is full control over specialization and
+memory allocation, and easily-understood semantics for what works on the
+GPU and what doesn't. The following sections will detail how the above
+features will get us there.</p>
+
+<h1>
+<a name="1-user-defined-types" class="anchor" href="#1-user-defined-types"><span class="octicon octicon-link"></span></a>1. User-defined Types</h1>
+
+<p>We want to support user-defined types with:</p>
+
+<blockquote>
+<ul>
+<li>  control over representation</li>
+<li>  (special) methods</li>
+<li>  control over mutability</li>
+<li>  control over stack- vs gc-allocation</li>
+</ul>
+</blockquote>
+
+<p>User-defined types do not support inheritance, which is left to a
+runtime implementation. This means that the callees of call-sites are
+static, and can be called directly. This further means they can be
+inlined (something we will exploit).</p>
+
+<p>This means that we can even write the most performance-critical parts of
+our runtime in this way. The compiler needs to support the following
+types natively:</p>
+
+<blockquote>
+<ul>
+<li>  int</li>
+<li>  float</li>
+<li>  pointer</li>
+<li>  struct (with optional methods and properties)</li>
+<li>  union</li>
+<li>  array (constant size)</li>
+</ul>
+</blockquote>
+
+<p>Anything else is written in the runtime:</p>
+
+<blockquote>
+<ul>
+<li>  range</li>
+<li>  complex</li>
+<li>  array</li>
+<li>  string/unicode</li>
+<li>  etc</li>
+</ul>
+</blockquote>
+
+<p>This means we can easily experiment with different data representations
+and extend functionality. For instance we can wrap and override the
+native integer multiply to check for overflow, and raise an exception or
+issue a warning, or convert to a BigInt.</p>
+
+<h2>
+<a name="representation" class="anchor" href="#representation"><span class="octicon octicon-link"></span></a>Representation</h2>
+
+<p>Type representation can be specified through a type 'layout':</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span>
+<span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">layout</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">([(</span><span class="s">'data'</span><span class="p">,</span> <span class="s">'Char *'</span><span class="p">)])</span>
+</pre></div>
+
+<h2>
+<a name="mutability-and-allocation" class="anchor" href="#mutability-and-allocation"><span class="octicon octicon-link"></span></a>Mutability and Allocation</h2>
+
+<p>Each individual field can be specified to be immutable, or all can be
+specified immutable through a decorator:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="n">immutable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>If all fields are immutable, the object can be stack allocated. Unless
+manually specified with <code>stack=True</code>, the compiler is free to decide
+where to allocate the object. This decision may differ depending on the
+target (cpu or gpu).</p>
+
+<p>The <code>Array</code> above can be stack-allocated since its fields are immutable
+-even though the contained data may not be.</p>
+
+<p>If data is mutable, it is allocated on the heap. This means that
+allocation of such an object is incompatible with a GPU code generator.
+Hence, data structures like Arrays must be passed in from the host, and
+things like Lists are not supported. However, one can write a List
+implementation with static size that supports appending a bounded number
+of objects.</p>
+
+<p>We disallow explicit stack allocation for mutable types for the
+following reason:</p>
+
+<div class="highlight"><pre><span class="n">x</span> <span class="o">=</span> <span class="n">mutable</span><span class="p">()</span> <span class="c"># stack allocate</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">x</span>         <span class="c"># copy x into y</span>
+<span class="n">y</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">1</span>   <span class="c"># update y.value, which does not affect x.value</span>
+</pre></div>
+
+<p>To make this work one would need to track the lifetimes of the object
+itself and all the variables the object is written into, at which point
+we defer you to the Rust programming language. We leave stack allocation
+of mutable objects purely as a compile-time optimization.</p>
+
+<h2>
+<a name="destructors" class="anchor" href="#destructors"><span class="octicon octicon-link"></span></a>Destructors</h2>
+
+<p>Destructors are supported only for heap-allocated types, irrespective of
+mutability. If a __del__ method is implemented, the object will be
+automatically heap-allocated (unless escape analysis can say otherwise).</p>
+
+<h2>
+<a name="ownership" class="anchor" href="#ownership"><span class="octicon octicon-link"></span></a>Ownership</h2>
+
+<p>Ownership is tied to mutability:</p>
+
+<blockquote>
+<ul>
+<li>  Data is owned when (recursively) immutable</li>
+<li>  Data is shared when it, or some field is mutable (recursively)</li>
+</ul>
+</blockquote>
+
+<p>Owned data may be send over a channel to another thread or task. Shared
+data cannot be send, unless explicitly marked as a safe operation:</p>
+
+<pre><code>channel.send(borrow(x))
+</code></pre>
+
+<p>The user must guarantee that 'x' stays alive while it is consumed. This
+is useful for things like parallel computation on arrays.</p>
+
+<h2>
+<a name="type-parameters" class="anchor" href="#type-parameters"><span class="octicon octicon-link"></span></a>Type Parameters</h2>
+
+<p>User-defined types are parameterizable:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'Array[Type dtype, Int ndim]'</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>Parameters can be types or values of builtin type int. This allows
+specialization for values, such as the dimensionality of an array:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'Array[Type dtype, Int ndim]'</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">layout</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">([(</span><span class="s">'data'</span><span class="p">,</span> <span class="s">'Char *'</span><span class="p">),</span> <span class="p">(</span><span class="s">'strides'</span><span class="p">,</span> <span class="s">'Tuple[Int, ndim]'</span><span class="p">)])</span>
+
+    <span class="nd">@signature</span><span class="p">(</span><span class="s">'Tuple[Int, ndim] -&gt; T'</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="o">...</span>
+</pre></div>
+
+<p>This specifies that we take a <code>Tuple</code> of <code>Int</code>s an size <code>ndim</code> as
+argument, and return an item of type <code>T</code>. The <code>T</code> and <code>ndim</code> are
+resolved as type parameters, which means they specify concrete types in
+the method signature.</p>
+
+<p>The type can now be used as follows:</p>
+
+<div class="highlight"><pre><span class="n">myarray</span> <span class="o">=</span> <span class="n">Array</span><span class="p">[</span><span class="n">Double</span><span class="p">,</span> <span class="mi">2</span><span class="p">]()</span>
+</pre></div>
+
+<p>This will mostly appear in (numba) library code, and not in user-written
+code, which uses higher-level APIs that ultimately construct these
+types. E.g.:</p>
+
+<div class="highlight"><pre><span class="nd">@overload</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">typeof</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Array</span><span class="p">[</span><span class="n">typeof</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span><span class="p">]</span>
+
+<span class="nd">@overload</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">typeof</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">:</span> <span class="n">Double</span><span class="p">,</span> <span class="o">...</span><span class="p">}[</span><span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span>
+</pre></div>
+
+<h1>
+<a name="2-polymorphism" class="anchor" href="#2-polymorphism"><span class="octicon octicon-link"></span></a>2. Polymorphism</h1>
+
+<p>Supported forms of polymorphism are generic functions, overloading,
+traits and subtyping and inheritance.</p>
+
+<h2>
+<a name="generic-functions-autojit" class="anchor" href="#generic-functions-autojit"><span class="octicon octicon-link"></span></a>Generic Functions (@autojit)</h2>
+
+<p>Generic functions are like <code>@autojit</code>, they provide specialized code for
+each unique combination of input types. They may be optionally typed and
+constrained (through traits).</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'(a -&gt; b) -&gt; [a] -&gt; [b]'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>This specifies a map implementation that is specialized for each
+combination of type instances for type variables `a` and `b`. Type
+variables may be further constrained through traits, in a similar way to
+Rust's traits
+(<a href="http://static.rust-lang.org/doc/tutorial.html#traits">http://static.rust-lang.org/doc/tutorial.html#traits)</a>),
+allowing you to operate for instance only on arrays of numbers, or
+arrays of floating point values.</p>
+
+<h2>
+<a name="traits" class="anchor" href="#traits"><span class="octicon octicon-link"></span></a>Traits</h2>
+
+<p>Traits specify an interface that value instances implement. Similarly to
+Rust's traits and Haskell's type classes, they are a form of bounded
+polymorphism, allowing users to constrain type variables ("this function
+operates on floating point values only").</p>
+
+<p>They also specify a generic interface that objects can implement.
+Classes can declare they belong to a certain trait, allowing any
+instance of the class to be used through the trait:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'(a -&gt; b) -&gt; Iterable[a] -&gt; [b]'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>Our map now takes an iterable and returns a list. Written this way, a
+single map implementation now works for <em>any</em> iterable. Any value
+implementing the Iterable trait can now be used:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'Array[Type dtype, Int ndim]'</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Array</span><span class="p">(</span><span class="n">Iterable</span><span class="p">[</span><span class="s">'dtype'</span><span class="p">]):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>We can now use map() over our array. The generated code must now insert
+a `conversion` between <code>Array[dtype, ndim]</code> and trait
+<code>Iterable[dtype]</code>, which concretely means packing up a vtable pointer
+and a boxed Array pointer. This form of polymorphism will likely be
+<em>incompatible with the GPU backend</em>. However, we can still use our
+generic functions by telling the compiler to specialize on input types:</p>
+
+<div class="highlight"><pre><span class="nd">@specialize.argtypes</span><span class="p">(</span><span class="s">'f'</span><span class="p">,</span> <span class="s">'xs'</span><span class="p">)</span>
+<span class="nd">@jit</span><span class="p">(</span><span class="s">'(a -&gt; b) -&gt; Iterable[a] -&gt; [b]'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>Alternatively, we can allow them to simply constrain type variables, and
+not actually specify the type as the trait. The type is supplied instead
+by the calling context:</p>
+
+<div class="highlight"><pre><span class="nd">@signature</span><span class="p">(</span><span class="s">'(it:Iterable[a]) =&gt; (a -&gt; b) -&gt; it -&gt; [b]'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">xs</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>The constraints are specified in similar way to Haskell's type classes.
+The only implementation required in the compiler to support this is the
+type checking feature, otherwise it's entirely the same as generic
+functions above. Multiple constraints can be expressed, e.g.
+<code>(it:Iterable[a], a:Integral)</code>. Alternative syntax could be '(a -&gt; b)
+-&gt; lst : Iterable[a] -&gt; [b]', but this is less clear when 'it' is
+reused elsewhere as a type variable.</p>
+
+<p>Traits can further use inheritance and have default implementations.
+This can be trivially implemented at the Python level, requiring no
+special knowledge in the compiler.</p>
+
+<h2>
+<a name="overloading-and-multiple-dispatch" class="anchor" href="#overloading-and-multiple-dispatch"><span class="octicon octicon-link"></span></a>Overloading and Multiple-dispatch</h2>
+
+<p>These mechanisms provide compile-time selection for our language. It is
+required to support the compiled <code>convert</code> from section 3, and necessary
+for many implementations, e.g.:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'Int -&gt; Int'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">int</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+<span class="nd">@jit</span><span class="p">(</span><span class="s">'String -&gt; Int'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">int</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">parse_int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+
+<p>Overloading is also provided for methods:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span>
+<span class="k">class</span> <span class="nc">SomeNeatClass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="nd">@signature</span><span class="p">(</span><span class="s">'Int -&gt; Int'</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">other</span>
+
+    <span class="nd">@signature</span><span class="p">(</span><span class="s">'String -&gt; Int'</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="n">other</span>
+</pre></div>
+
+<p>We further need a way to "overload" python functions to provide a way to
+provide alternative implementations or to type it. We can easily provide
+implementations for all builtins:</p>
+
+<div class="highlight"><pre><span class="n">pytypedef</span><span class="p">(</span><span class="n">builtins</span><span class="o">.</span><span class="n">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+</pre></div>
+
+<h1>
+<a name="3-user-defined-typing-rules" class="anchor" href="#3-user-defined-typing-rules"><span class="octicon octicon-link"></span></a>3. User-defined Typing Rules</h1>
+
+<p>I think Julia does really well here. Analogously we define three
+functions:</p>
+
+<blockquote>
+<ul>
+<li>  typeof(pyobj) -&gt; Type</li>
+<li>  convert(Type, Value) -&gt; Value</li>
+<li>  unify(Type, Type) -&gt; Type</li>
+</ul>
+</blockquote>
+
+<p>The <code>convert</code> function may make sense as a method on the objects
+instead, which is more pythonic, e.g. <code>__convert__</code>. <code>unify</code> does not
+really make sense as a method since it belongs to neither of the two
+arguments.</p>
+
+<p>Unify takes two types and returns the result type of the given types.
+This result type can be specified by the user. For instance, we may
+determine that <code>unify(Int, Float)</code> is <code>Union(Int, Float)</code>, or that it is
+<code>Float</code>. The union will give the same result as Python would, but it is
+also more expensive in the terms of the operations used on it (and
+potentially storage capacity). Unify is used on types only at control
+flow merge points.</p>
+
+<p>A final missing piece are a form of ad-hoc polymophism, namely
+coercions. This is tricky in the presence of overloading, where multiple
+coercions are possible, but only a single coercion is preferable. E.g.:</p>
+
+<div class="highlight"><pre><span class="nd">@overload</span><span class="p">(</span><span class="s">'Float32 -&gt; Float32 -&gt; Float32'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="nd">@overload</span><span class="p">(</span><span class="s">'Complex64 -&gt; Complex64 -&gt; Complex64'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+
+<p>Which implementation is <code>add(1, 2)</code> supposed to pick, <code>Int</code> freely
+coerces to both <code>Float32</code> and <code>Complex64</code>? Since we don't want built-in
+coercion rules, which are not user-overridable or extensible, we need
+some sort of coercion function. We choose a function
+<code>coercion_distance(src_type, dst_type)</code> which returns the supposed
+distance between two types, or raises a TypeError. Since this is not
+compiled, we decide to not make it a method of the source type.</p>
+
+<div class="highlight"><pre><span class="nd">@overload</span><span class="p">(</span><span class="n">Int</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">coercion_distance</span><span class="p">(</span><span class="n">int_type</span><span class="p">,</span> <span class="n">float_type</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">...</span>
+</pre></div>
+
+<p>These functions are used at compile time to determine which conversions
+to insert, or whether to issue typing errors.</p>
+
+<h1>
+<a name="4-optimization-and-specialization" class="anchor" href="#4-optimization-and-specialization"><span class="octicon octicon-link"></span></a>4. Optimization and Specialization</h1>
+
+<p>We need to allow careful control over optimizations and code
+specialization. This allows us to use the abstractions we need, without
+paying them if we know we can't afford it. We propose the following
+intrinsics exposed to users:</p>
+
+<blockquote>
+<ul>
+<li>  <code>for x in unroll(iterable): ...</code>
+</li>
+<li>  <code>@specialize.arg(0)</code>
+</li>
+</ul>
+</blockquote>
+
+<h2>
+<a name="unrolling" class="anchor" href="#unrolling"><span class="octicon octicon-link"></span></a>Unrolling</h2>
+
+<p>The first compiler intrinsic allows unrolling over constant iterables.
+For instance, the following would be a valid usage:</p>
+
+<div class="highlight"><pre><span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">unroll</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+
+<p>An initial implementation will likely simply recognize special container
+types (Tuple, List, etc). Later we may allow arbitrary (user-written!)
+iterables, where the result of <code>len()</code> must be ultimately constant
+(after inlining and register promotion).</p>
+
+<h2>
+<a name="specialization" class="anchor" href="#specialization"><span class="octicon octicon-link"></span></a>Specialization</h2>
+
+<p>The ability to specialize on various things, similar to specialization
+in rpython (<code>rpython/rlib/objectmodel.py</code>).</p>
+
+<p>These decorators should also be supported as extra arguments to
+<code>@signature</code> etc.</p>
+
+<h1>
+<a name="5-data-parallel-operators" class="anchor" href="#5-data-parallel-operators"><span class="octicon octicon-link"></span></a>5. Data-parallel Operators</h1>
+
+<p>Parakeet and copperhead do this really well. We need map, reduce, zip,
+list comprehensions, etc.</p>
+
+<h1>
+<a name="6-extension-of-the-code-generator" class="anchor" href="#6-extension-of-the-code-generator"><span class="octicon octicon-link"></span></a>6. Extension of the Code Generator</h1>
+
+<p>We can support an <code>@opaque</code> decorator that marks a function or method as
+"opaque", which means it must be resolved by the code generator. A
+decorator <code>@codegen(thefunc)</code> registers a code generator function for
+the function or method being called:</p>
+
+<div class="highlight"><pre><span class="nd">@jit</span><span class="p">(</span><span class="s">'Int[Int size]'</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Int</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="nd">@opague</span><span class="p">(</span><span class="s">'Int -&gt; Int'</span><span class="p">,</span> <span class="n">eval_if_const</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="nd">@codegen</span><span class="p">(</span><span class="n">Int</span><span class="o">.</span><span class="n">__add__</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">emit_add</span><span class="p">(</span><span class="n">codegen</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="c"># 'self' and 'other' are (typed) pykit values</span>
+    <span class="k">return</span> <span class="n">codegen</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+</pre></div>
+
+<p>This can also be useful to retain high-level information, instead of
+expanding it out beforehand. This can enable high-level optimizations,
+e.g. consider the following code:</p>
+
+<div class="highlight"><pre><span class="n">L</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">L</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="n">L</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+</pre></div>
+
+<p>If we expand <code>L = []</code> and <code>L.append(i)</code> into memory allocations and
+resizes before considering the <code>map</code>, we forgo a potential optimization
+where the compiler performs loop fusion and eliminates the intermediate
+list.</p>
+
+<p>So an opague function <em>may</em> have an implementation, but it may be
+resolved at a later stage during the pipeline if it is still needed:</p>
+
+<div class="highlight"><pre><span class="nd">@codegen</span><span class="p">(</span><span class="n">List</span><span class="o">.</span><span class="n">__init__</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">emit_new_list</span><span class="p">(</span><span class="n">codegen</span><span class="p">,</span> <span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">codegen</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">new_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+
+<span class="nd">@llcodegen</span><span class="p">(</span><span class="s">'new_list'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">emit_new_list</span><span class="p">(</span><span class="n">codegen</span><span class="p">,</span> <span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">codegen</span><span class="o">.</span><span class="n">gen_call</span><span class="p">(</span><span class="n">List</span><span class="o">.</span><span class="n">__init__</span><span class="p">)</span>
+</pre></div>
+
+<p>This should be done with low-level code that doesn't need further
+high-level optimizations. Users must also ensure this process terminates
+(there must be no cycles the call graph).</p>
+
+<h1>
+<a name="conclusion" class="anchor" href="#conclusion"><span class="octicon octicon-link"></span></a>Conclusion</h1>
+
+<p>The mechanisms above allow us to easily evaluate how code will be
+compiled, and asses the performance implications. Furthermore, we can
+easily see what is GPU incompatible, i.e. anything that:</p>
+
+<blockquote>
+<ul>
+<li>  uses CFFI (this implies use of Object, which is implemented in
+terms of CFFI)</li>
+<li>  uses traits that don't merely constrain type variables</li>
+<li>  allocates anything mutable</li>
+</ul>
+</blockquote>
+
+<p>Everything else should still work.</p>
+
+<h1>
+<a name="numba-runtime" class="anchor" href="#numba-runtime"><span class="octicon octicon-link"></span></a>Numba Runtime</h1>
+
+<p>Nearly all built-in data types are implemented in the runtime.</p>
+
+<h1>
+<a name="garbage-collector" class="anchor" href="#garbage-collector"><span class="octicon octicon-link"></span></a>Garbage Collector</h1>
+
+<p>To support mutable heap-allocated types, we need a garbage collector. To
+get started quickly we can use Boehm or reference counting. We will want
+to port one of the available copying collectors and use a shadowstack or
+a lazy pointer stack (for bonus points). The GC should then be local to
+each thread, since there is no shared state between threads (only owned
+and borrowed data is allowed).</p>
+
+<p>Garbage collection is abstracted by pykit.</p>
+
+<h1>
+<a name="exceptions" class="anchor" href="#exceptions"><span class="octicon octicon-link"></span></a>Exceptions</h1>
+
+<p>Exceptions are also handled by pykit. We can implement several models,
+depending on the target architecture:</p>
+
+<blockquote>
+<ul>
+<li><p>costful (error return codes)
+:   -   This will be used on the GPU</p></li>
+<li><p>zero-cost
+:   -   This should be used where supported. We will start with
+        costful</p></li>
+<li><p>setjmp/longjmp
+:   -   This will need to happen for every stack frame in case of
+        a shadow stack</p></li>
+</ul>
+<p>Local exception handling will be translated to jumps. This is not
+contrived, since we intend to make heavy use of inlining:</p>
+</blockquote>
+
+<div class="highlight"><pre><span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">__next__</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+
+<p><code>x.__next__()</code> may be inlined (and will be in many instances, like
+range()), and the <code>raise StopIteration</code> will be translated to a jump.
+Control flow simplification can further optimize the extra jump (jump to
+break, break to loop exit).</p>
+
+<h1>
+<a name="threads" class="anchor" href="#threads"><span class="octicon octicon-link"></span></a>Threads</h1>
+
+<p>As mentioned in the core language overview, memory is not shared unless
+borrowed. This process is unsafe and correctness must be ensured by the
+user. Immutable data can be copied over channels between threads. Due to
+a thread-local GC, all threads can run at the same time and allocate
+memory at the same time.</p>
+
+<p>We will remove prange and simply use a parallel map with a closure.</p>
+
+<h1>
+<a name="traits-1" class="anchor" href="#traits-1"><span class="octicon octicon-link"></span></a>Traits</h1>
+
+<p>Traits are mostly a compile-time type-checking detail and some simple
+runtime decorator support. Traits with dynamic dispatch require vtables,
+something we can implement in the runtime as well:</p>
+
+<blockquote>
+<p><a href="https://github.com/zdevito/terra/blob/master/tests/lib/golike.t">https://github.com/zdevito/terra/blob/master/tests/lib/golike.t</a></p>
+</blockquote>
+
+<h1>
+<a name="extension-types" class="anchor" href="#extension-types"><span class="octicon octicon-link"></span></a>Extension Types</h1>
+
+<p>Extension types are currently built on top of CPython objects. This
+should be avoided. We need to decouple numba with anything CPython, for
+the sake of portability as well as pycc.</p>
+
+<p>Extension types can also easily be written in the runtime:</p>
+
+<blockquote>
+<ul>
+<li>  <code>unify()</code> needs to return the supertype or raise a type error</li>
+<li>  <code>convert(obj, Object)</code> needs to do a runtime typecheck</li>
+<li>  <code>coerce_distance</code> needs to return a distance for how far the
+supertype is up the inheritance tree</li>
+</ul>
+</blockquote>
+
+<p>The approach is simple: generate a wrapper method for each method in the
+extension type that does a vtable lookup.</p>
+
+<h1>
+<a name="closures" class="anchor" href="#closures"><span class="octicon octicon-link"></span></a>Closures</h1>
+
+<p>This time we will start with the most common case: closures consumed as
+inner functions. This means we don't need dynamic binding for our cell
+variables, and we can do simple lambda lifting instead of complicated
+closure conversion. This also trivially works on the GPU, allowing one
+to use map, filter etc, with lambdas trivially.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
