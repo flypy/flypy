@@ -18,16 +18,17 @@ Exceptions
 Exceptions are also handled by pykit. We can implement several models,
 depending on the target architecture:
 
-    - costful (error return codes)
+    * costful (error return codes)
         - This will be used on the GPU
-    - zero-cost
+    * zero-cost
         - This should be used where supported. We will start with costful
-    - setjmp/longjmp
-        - This will need to happen for every stack frame in case of a
-          shadow stack
+    * setjmp/longjmp
+        - This will need to happen for every stack frame in case of a shadow stack
 
 Local exception handling will be translated to jumps. This is not contrived,
 since we intend to make heavy use of inlining:
+
+.. code-block:: python
 
     while 1:
         try:

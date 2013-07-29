@@ -9,21 +9,20 @@ as subtype polymorphism through method tables.
 
 I believe we need the following features:
 
-    1) Methods on user-defined types with specified representations
-       (structs or otherwise)
+    * Methods on user-defined types with specified representations (structs or otherwise)
 
         - Careful control over allocation, mutability and ownership
 
-    2) Polymorphism: Generic functions, traits, overloading
+    * Polymorphism: Generic functions, traits, overloading
 
         - subtyping and inheritance is left to a runtime implementation
         - dynamic dispatch for traits is left to a runtime implementation
             - static dispatch only requires some type checking support
 
-    3) User-defined typing rules
-    4) Careful control over inlining, unrolling and specialization
-    5) Array oriented computing: map/reduce/scan/etc
-    6) Extension of the code generator
+    * User-defined typing rules
+    * Careful control over inlining, unrolling and specialization
+    * Array oriented computing: map/reduce/scan/etc
+    * Extension of the code generator
 
 Support for multi-stage programming would be nice, but is considered a bonus
 and deferred to external tools like macropy or mython for now. The
@@ -105,6 +104,8 @@ However, since the implementation of a function is specialized for the
 supertype, it doesn't know the concrete subtype.
 Type inference can help prevent these situations and use subtype-specialized
 code. However, it's very easy to make it generate slow code:
+
+.. code-block:: julia
 
     julia> function g(c)
          if c > 2
@@ -225,7 +226,7 @@ Ownership
 Ownership is tied to mutability:
 
     - Data is owned when (recursively) immutable
-    - Data is shared when some field is mutable (recursively)
+    - Data is shared when it, or some field is mutable (recursively)
 
 Owned data may be send over a channel to another thread or task. Shared data
 cannot be send, unless explicitly marked as a safe operation::
@@ -447,6 +448,8 @@ coercion function. We choose a function ``coercion_distance(src_type, dst_type)`
 which returns the supposed distance between two types, or raises a TypeError.
 Since this is not compiled, we decide to not make it a method of the source
 type.
+
+.. code-block:: python
 
     @overload(Int, Float)
     def coercion_distance(int_type, float_type):
