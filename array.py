@@ -3,7 +3,7 @@ Implement arrays and conversion between objects and arrays.
 
 Required compiler support:
 
-    1) Templated types, supporting types and values. These are all resolved
+    1) Parametric types, supporting types and values. These are all resolved
        at compile time.
     2) Overriding and adding builtin conversion rules (overloading 'convert')
     3) Overriding how objects are typed through 'typeof'
@@ -45,6 +45,7 @@ class Array(object):
 
     @signature('Rep[Array[T, ?]] -> Rep[Tuple[Slice | Int, n]] -> Rep[T]')
     def __getslice__(self, s_indices):
+        # Note: This could be an opague method and emit a compiler operator, which later resolves
         # ndim = ...
         # new_data = ...
         # new_shape = ...
@@ -53,21 +54,16 @@ class Array(object):
                            escape[new_strides], escape[self].keep_alive)]
 
 
-@numbatype('NumpyArray[type T, Int n]') # Typed but not compiled
-class NumpyArray(object):
-    def __init__(self, dtype, ndim):
-        self.dtype = dtype
-        self.ndim = ndim
 
 @overload(np.ndarray)
 def typeof(array):
     # if array.flags['C_CONTIGUOUS']:
     #     return ContigArray[typeof(array.dtype)]
     # else:
-    return NumpyArray[typeof(array.dtype), array.ndim]
+    return Array[typeof(array.dtype), array.ndim]
 
-@multipledispatch(np.ndarray, Array)
-@signature('NumpyArray[T, n] -> Array[T, n]')
+@overload(np.ndarray, Array)
+@signature('Object -> Array[T, n]')
 def convert(ndarray):
     data = convert(ndarray.ctypes.data, 'Pointer[T]')
     shape = convert(ndarray.shape, 'Tuple[Int, n]')

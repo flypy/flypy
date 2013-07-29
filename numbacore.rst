@@ -1,10 +1,11 @@
 Next iteration of Numba - The core language ideas
 =================================================
 
-In order to get a more sustainable compiler development process,
-and a more extensible and usable language, we need a small core langauge
-and a runtime on top of that core language. The rest of this document
-describes the core language.
+This document describes the core numba language, which is designed to generate
+efficient code for general, pythonic code. It will allow us to implement most
+of the features that currently reside in the compiler directly in a runtime.
+On top of this small core language we can write more advanced features such
+as subtype polymorphism through method tables.
 
 I believe we need the following features:
 
@@ -13,36 +14,117 @@ I believe we need the following features:
 
         - Careful control over allocation, mutability and ownership
 
-    2) Multiple-dispatch and overloading
+    2) Polymorphism: Generic functions, traits, overloading
+
+        - subtyping and inheritance is left to a runtime implementation
+        - dynamic dispatch for traits is left to a runtime implementation
+            - static dispatch only requires some type checking support
+
     3) User-defined typing rules
     4) Careful control over inlining, unrolling and specialization
-    5) Extension of the code generator
+    5) Array oriented computing: map/reduce/scan/etc
+    6) Extension of the code generator
 
 Support for multi-stage programming would be nice, but is considered a bonus
 and deferred to external tools like macropy or mython for now. The
 control over optimizations likely provides enough functionality to generate
 good code.
 
-This describes a closed environment with an entirely static (but type-inferred)
-language. Polymorphism is provided through specialization to monomorphic code,
-multiple dispatch (with compile-time selection), or calls through pointers.
-Calls through pointers need to be annotated with exception information,
-making exception information static (in a conservative way).
+This describes a closed environment with an optionally static, inferred,
+language. Static typing will help provide better error messages, and can
+prevent inintended use.
 
-Advantages of statically typed methods:
+Polymorphism is provided through:
 
-    - useful error messages
-    - automatic type checking for built-in data structures (tuple, list,
-      dict, etc)
+    - generic (monomorphized) functions (like C++ templates)
+    - overloading
+    - traits (like interfaces)
+    - subtyping ("python classes")
 
-Our priorities are:
+This language's goals are ultimate control over performance, and a language
+with a well-defined and easily understood subset for the GPU.
 
-    - a maintainable compiler and extensible language
-    - ultimate control over performance
-    - simple and defined semantics for GPU compatibility
-    - array oriented computing
-        - higher-order functions map, reduce, filter, etc
-        - small numpy-provided API
+This language is inspired by the following languages: Rust, Terra, RPython,
+Julia, Parakeet, mypy, copperhead. The traits are very similar to Rust's
+traits, and are related to type classes in Haskell and interfaces in Go.
+
+However, Go interfaces do not allow type-based specialization, and hence
+need runtime type tagging and method dispatch through vtables. Type
+conversion between interfaces needs to be runtime-checked type (and new
+vtables build at those points, if not cached).
+Compile-time overloading is precluded. In Go, interfaces specify what something
+*can do*, as opposed to what something *can be*. This can be a useful in a few
+situations, but it means we cannot constrain what things can be (e.g.
+any numeric type).
+
+In julia we can constrain the types we operate over, which happens through
+subtyping. E.g.:
+
+.. code-block:: julia
+
+    julia> Int <: Integer
+    true
+    julia> Int <: Real
+    true
+    julia> Int <: FloatingPoint
+    false
+
+So we can define a function which operates only over numbers::
+
+    julia> function f(x :: Number)
+             return x * x
+           end
+
+Here's a the generated code when ``x`` is an ``Int``:
+
+.. code-block:: llvm
+
+    julia> disassemble(f, (Int,))
+
+    define %jl_value_t* @f618(%jl_value_t*, %jl_value_t**, i32) {
+    top:
+      %3 = load %jl_value_t** %1, align 8, !dbg !5256
+      %4 = getelementptr inbounds %jl_value_t* %3, i64 0, i32 0, !dbg !5256
+      %5 = getelementptr %jl_value_t** %4, i64 1, !dbg !5256
+      %6 = bitcast %jl_value_t** %5 to i64*, !dbg !5256
+      %7 = load i64* %6, align 8, !dbg !5256
+      %8 = mul i64 %7, %7, !dbg !5263
+      %9 = call %jl_value_t* @jl_box_int64(i64 %8), !dbg !5263
+      ret %jl_value_t* %9, !dbg !5263
+    }
+
+Disassembling with ``Number`` generates a much larger chunk of code, which
+uses boxed code and ultimately (runtime) multiple dispatch of the ``*``
+function:
+
+.. code-block:: llvm
+
+    %15 = call %jl_value_t* @jl_apply_generic(%jl_value_t* inttoptr (i64 4316726176 to %jl_value_t*), %jl_value_t** %.sub, i32 2), !dbg !5191
+
+However, since the implementation of a function is specialized for the
+supertype, it doesn't know the concrete subtype.
+Type inference can help prevent these situations and use subtype-specialized
+code. However, it's very easy to make it generate slow code:
+
+    julia> function g(c)
+         if c > 2
+           x = 2
+         else
+           x = 3.0
+         end
+         return f(x)
+       end
+
+    julia> disassemble(g, (Bool,))
+
+This prints a large chunk of LLVM code (using boxed values), since we are
+unifying an Int with a Float. Using both ints, or both floats however leads
+to very efficient code.
+
+What we want in our language is full control over specialization and memory
+allocation, and easily-understood semantics for what works on the GPU and what
+doesn't. The following sections will detail how the above features will
+get us there.
 
 1. User-defined Types
 =====================
@@ -55,17 +137,19 @@ We want to support user-defined types with:
     - control over stack- vs gc-allocation
 
 User-defined types do not support inheritance, which is left to a runtime
-implementation. This means that the callees are static, and can be
-inlined (something we will exploit). Furthermore, even when not
-inlined the calls are less expensive than virtual calls.
+implementation. This means that the callees of call-sites are static, and
+can be called directly. This further means they can be inlined (something we
+will exploit).
 
-This means that we can write our runtime in this way. The compiler
-needs to support the following types natively:
+This means that we can even write the most performance-critical parts of
+our runtime in this way. The compiler needs to support the following types
+natively:
 
     - int
     - float
     - pointer
     - struct (with optional methods and properties)
+    - union
     - array (constant size)
 
 Anything else is written in the runtime:
@@ -104,7 +188,8 @@ immutable through a decorator:
 
 If all fields are immutable, the object can be stack allocated. Unless
 manually specified with ``stack=True``, the compiler is free to decide where
-to allocate the object.
+to allocate the object. This decision may differ depending on the target
+(cpu or gpu).
 
 The ``Array`` above can be stack-allocated since its fields are immutable -
 even though the contained data may not be.
@@ -121,7 +206,7 @@ reason:
 .. code-block:: python
 
     x = mutable() # stack allocate
-    y = x         # copy of x
+    y = x         # copy x into y
     y.value = 1   # update y.value, which does not affect x.value
 
 To make this work one would need to track the lifetimes of the object itself
@@ -156,16 +241,16 @@ User-defined types are parameterizable:
 
 .. code-block:: python
 
-    @jit('Array[type T, Int ndim]')
+    @jit('Array[Type dtype, Int ndim]')
     class Array(object):
         ...
 
-Parameters can be types or values of builtin types int or float. This enables
-a well-defined form of static typing:
+Parameters can be types or values of builtin type int. This allows
+specialization for values, such as the dimensionality of an array:
 
 .. code-block:: python
 
-    @jit('Array[type T, Int ndim]')
+    @jit('Array[Type dtype, Int ndim]')
     class Array(object):
 
         layout = Struct([('data', 'Char *'), ('strides', 'Tuple[Int, ndim]')])
@@ -190,16 +275,102 @@ which uses higher-level APIs that ultimately construct these types. E.g.:
 
 .. code-block:: python
 
-    @multipledispatch(np.ndarray)
+    @overload(np.ndarray)
     def typeof(array):
         return Array[typeof(array.dtype), array.ndim]
 
-    @multipledispatch(np.dtype)
+    @overload(np.dtype)
     def typeof(array):
         return { np.double: Double, ...}[array.dtype]
 
-2. Multiple-dispatch and Overloading
-====================================
+2. Polymorphism
+===============
+Supported forms of polymorphism are generic functions, overloading, traits
+and subtyping and inheritance.
+
+Generic Functions (@autojit)
+----------------------------
+Generic functions are like ``@autojit``, they provide specialized code for
+each unique combination of input types. They may be optionally typed and
+constrained (through traits).
+
+.. code-block:: python
+
+    @jit('(a -> b) -> [a] -> [b]')
+    def map(f, xs):
+        ...
+
+This specifies a map implementation that is specialized for each combination
+of type instances for type variables `a` and `b`. Type variables may be
+further constrained through traits, in a similar way to Rust's traits
+(http://static.rust-lang.org/doc/tutorial.html#traits), allowing you to
+operate for instance only on arrays of numbers, or arrays of floating point
+values.
+
+Traits
+------
+Traits specify an interface that value instances implement. Similarly
+to Rust's traits and Haskell's type classes, they are a form of bounded
+polymorphism, allowing users to constrain type variables ("this
+function operates on floating point values only").
+
+They also specify a generic interface that objects can implement. Classes
+can declare they belong to a certain trait, allowing any instance of the class
+to be used through the trait:
+
+.. code-block:: python
+
+    @jit('(a -> b) -> Iterable[a] -> [b]')
+    def map(f, xs):
+        ...
+
+Our map now takes an iterable and returns a list. Written this way,
+a single map implementation now works for *any* iterable. Any value
+implementing the Iterable trait can now be used:
+
+.. code-block:: python
+
+    @jit('Array[Type dtype, Int ndim]')
+    class Array(Iterable['dtype']):
+        ...
+
+We can now use map() over our array. The generated code must now insert
+a `conversion` between ``Array[dtype, ndim]`` and trait ``Iterable[dtype]``,
+which concretely means packing up a vtable pointer and a boxed Array pointer.
+This form of polymorphism will likely be *incompatible with the GPU backend*.
+However, we can still use our generic functions by telling the compiler to
+specialize on input types:
+
+.. code-block:: python
+
+    @specialize.argtypes('f', 'xs')
+    @jit('(a -> b) -> Iterable[a] -> [b]')
+    def map(f, xs):
+        ...
+
+Alternatively, we can allow them to simply constrain type variables, and
+not actually specify the type as the trait. The type is supplied instead by
+the calling context:
+
+.. code-block:: python
+
+    @signature('(it:Iterable[a]) => (a -> b) -> it -> [b]')
+    def map(f, xs):
+        ...
+
+The constraints are specified in similar way to Haskell's type classes.
+The only implementation required in the compiler to support this is the type
+checking feature, otherwise it's entirely the same as generic functions above.
+Multiple constraints can be expressed, e.g. ``(it:Iterable[a], a:Integral)``.
+Alternative syntax could be '(a -> b) -> lst : Iterable[a] -> [b]', but this
+is less clear when 'it' is reused elsewhere as a type variable.
+
+Traits can further use inheritance and have default implementations. This can
+be trivially implemented at the Python level, requiring no special knowledge
+in the compiler.
+
+Overloading and Multiple-dispatch
+---------------------------------
 These mechanisms provide compile-time selection for our language.
 It is required to support the compiled ``convert`` from section 3, and
 necessary for many implementations, e.g.:
@@ -238,11 +409,51 @@ implementations for all builtins:
 
 3. User-defined Typing Rules
 ============================
-I think Julia really shines here. Analogously we define three functions:
+I think Julia does really well here. Analogously we define three functions:
 
-    - typeof(Value) -> Type
+    - typeof(pyobj) -> Type
     - convert(Type, Value) -> Value
     - unify(Type, Type) -> Type
+
+The ``convert`` function may make sense as a method on the objects instead,
+which is more pythonic, e.g. ``__convert__``. ``unify`` does not really
+make sense as a method since it belongs to neither of the two arguments.
+
+Unify takes two types and returns the result type of the given types. This
+result type can be specified by the user. For instance, we may determine
+that ``unify(Int, Float)`` is ``Union(Int, Float)``, or that it is ``Float``.
+The union will give the same result as Python would, but it is also more
+expensive in the terms of the operations used on it (and potentially storage
+capacity). Unify is used on types only at control flow merge points.
+
+A final missing piece are a form of ad-hoc polymophism, namely coercions.
+This is tricky in the presence of overloading, where multiple coercions
+are possible, but only a single coercion is preferable. E.g.:
+
+.. code-block:: python
+
+    @overload('Float32 -> Float32 -> Float32')
+    def add(a, b):
+        return a + b
+
+    @overload('Complex64 -> Complex64 -> Complex64')
+    def add(a, b):
+        return a + b
+
+Which implementation is ``add(1, 2)`` supposed to pick, ``Int`` freely coerces
+to both ``Float32`` and ``Complex64``? Since we don't want built-in coercion
+rules, which are not user-overridable or extensible, we need some sort of
+coercion function. We choose a function ``coercion_distance(src_type, dst_type)``
+which returns the supposed distance between two types, or raises a TypeError.
+Since this is not compiled, we decide to not make it a method of the source
+type.
+
+    @overload(Int, Float)
+    def coercion_distance(int_type, float_type):
+        return ...
+
+These functions are used at compile time to determine which conversions to
+insert, or whether to issue typing errors.
 
 4. Optimization and Specialization
 ==================================
@@ -290,10 +501,20 @@ rpython (``rpython/rlib/objectmodel.py``).
     and insert the result in the code stream. The result must have a type
     compatible with the signature.
 
+.. function:: specialize.argtypes(*args)
+
+    Specialize on trait argument types, potentially "untraiting" the
+    specialization.
+
 These decorators should also be supported as extra arguments to ``@signature``
 etc.
 
-5. Extension of the Code Generator
+5. Data-parallel Operators
+==========================
+Parakeet and copperhead do this really well. We need map, reduce, zip,
+list comprehensions, etc.
+
+6. Extension of the Code Generator
 ==================================
 We can support an ``@opaque`` decorator that marks a function or method as
 "opaque", which means it must be resolved by the code generator. A decorator
@@ -302,7 +523,7 @@ method being called:
 
 .. code-block:: python
 
-    @jit
+    @jit('Int[Int size]')
     class Int(object):
         @opague('Int -> Int', eval_if_const=True)
         def __add__(self, other):
@@ -310,6 +531,7 @@ method being called:
 
     @codegen(Int.__add__)
     def emit_add(codegen, self, other):
+        # 'self' and 'other' are (typed) pykit values
         return codegen.builder.add(self, other)
 
 This can also be useful to retain high-level information, instead of expanding
@@ -318,13 +540,13 @@ the following code:
 
 .. code-block:: python
 
-    xs = []
+    L = []
     for i in range(n):
-        xs.append(i)
+        L.append(i)
 
-    xs = map(f, xs)
+    L = map(f, L)
 
-If we expand ``xs = []`` and ``xs.append(i)`` into memory allocations and
+If we expand ``L = []`` and ``L.append(i)`` into memory allocations and
 resizes before considering the ``map``, we forgo a potential optimization
 where the compiler performs loop fusion and eliminates the intermediate list.
 
@@ -344,3 +566,16 @@ a later stage during the pipeline if it is still needed:
 This should be done with low-level code that doesn't need further high-level
 optimizations. Users must also ensure this process terminates (there must
 be no cycles the call graph).
+
+Conclusion
+==========
+The mechanisms above allow us to easily evaluate how code will be compiled,
+and asses the performance implications. Furthermore, we can easily see what
+is GPU incompatible, i.e. anything that:
+
+    - uses CFFI (this implies use of Object, which is implemented in terms
+      of CFFI)
+    - uses traits that don't merely constrain type variables
+    - allocates anything mutable
+
+Everything else should still work.
