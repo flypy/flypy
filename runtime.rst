@@ -11,6 +11,35 @@ a lazy pointer stack (for bonus points). The GC should then be local to
 each thread, since there is no shared state between threads (only owned
 and borrowed data is allowed).
 
+Garbage collection is abstracted by pykit.
+
+Exceptions
+==========
+Exceptions are also handled by pykit. We can implement several models,
+depending on the target architecture:
+
+    - costful (error return codes)
+        - This will be used on the GPU
+    - zero-cost
+        - This should be used where supported. We will start with costful
+    - setjmp/longjmp
+        - This will need to happen for every stack frame in case of a
+          shadow stack
+
+Local exception handling will be translated to jumps. This is not contrived,
+since we intend to make heavy use of inlining:
+
+    while 1:
+        try:
+            i = x.__next__()
+        except StopIteration:
+            break
+
+``x.__next__()`` may be inlined (and will be in many instances, like range()),
+and the ``raise StopIteration`` will be translated to a jump. Control flow
+simplification can further optimize the extra jump (jump to break, break to
+loop exit).
+
 Threads
 =======
 As mentioned in the core language overview, memory is not shared unless
@@ -44,3 +73,11 @@ Extension types can also easily be written in the runtime:
 
 The approach is simple: generate a wrapper method for each method in the
 extension type that does a vtable lookup.
+
+Closures
+========
+This time we will start with the most common case: closures consumed as
+inner functions. This means we don't need dynamic binding for our cell
+variables, and we can do simple lambda lifting instead of complicated
+closure conversion. This also trivially works on the GPU, allowing one
+to use map, filter etc, with lambdas trivially.
