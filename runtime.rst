@@ -82,3 +82,4 @@ inner functions. This means we don't need dynamic binding for our cell
 variables, and we can do simple lambda lifting instead of complicated
 closure conversion. This also trivially works on the GPU, allowing one
 to use map, filter etc, with lambdas trivially.
+
