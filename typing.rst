@@ -16,7 +16,7 @@ We can call ``f`` with a function, which must accept ``x`` and an value of
 type int. Since ``g`` is a monotype in ``f``, the second call to ``g``
 restricts what we accept for ``x``: it must be something that promotes with
 an integer. In other words, the type for ``g`` is ``a -> b`` and not
-``∀a.a -> b``.
+``∀a,b.a -> b``.
 
 Although linear in practise, the algorithm's worst case behaviour is
 exponential ([2]_), since it does not share results for different function
