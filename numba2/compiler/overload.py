@@ -8,18 +8,18 @@ class Dispatcher(object):
     def __init__(self):
         self.overloads = {}
 
-    def add_overload(self, f, signature):
+    def add_overload(self, f, signature, kwds):
         # TODO: assert signature is compatible with current signatures
-        self.overloads[f] = signature
+        self.overloads[f] = (signature, kwds)
 
     def dispatch(self, *args, **kwargs):
-        pass
+        raise NotImplementedError
 
     def __repr__(self):
         f = iter(self.overloads).next()
         return '<%s: %s>' % (f.__name__, list(self.overloads.itervalues()))
 
-def overload(signature, func=None):
+def overload(signature, func=None, **kwds):
     """
     Overload `func` with new signature, or find this function in the local
     scope with the same name.
@@ -32,7 +32,7 @@ def overload(signature, func=None):
     dispatcher = dispatcher or Dispatcher()
 
     def decorator(f):
-        dispatcher.add_overload(f, signature)
+        dispatcher.add_overload(f, signature, kwds)
         return dispatcher
 
     return decorator
