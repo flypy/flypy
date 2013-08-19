@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from .entrypoints import jit, trait
+# from .entrypoints import jit, trait
 
 class MetaType(type):
     """Type of a type"""
@@ -10,7 +10,7 @@ class MetaType(type):
         assert len(args) == len(cls.parameters)
 
 
-@jit('Type[t]')
+# @jit('Type[t]')
 class Type(object):
     """
     Type object trait. Type objects are runtime values parameterized

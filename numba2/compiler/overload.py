@@ -28,16 +28,15 @@ def overload(signature, func=None, **kwds):
         def myfunc(...):
             ...
     """
-    dispatcher = func or sys._getframe(1).f_locals.get(func.__name__)
-    dispatcher = dispatcher or Dispatcher()
-
     def decorator(f):
+        dispatcher = func or sys._getframe(1).f_locals.get(f.__name__)
+        dispatcher = dispatcher or Dispatcher()
         dispatcher.add_overload(f, signature, kwds)
         return dispatcher
 
     return decorator
 
-def overloadable():
+def overloadable(f):
     """
     Make a function overloadable, useful if there's no useful defaults to
     overload on
