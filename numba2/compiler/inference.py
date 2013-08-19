@@ -12,8 +12,8 @@ Note that promotion is handled through overloading, e.g.:
 
     @overload('α -> α -> β')
     def __add__(self, other):
-        # Guard against infinite recursion
-        raise NotImplementedError("__add__")
+        result = ... # Perform addition
+        return result
 
     @overload('α -> β -> γ')
     def __radd__(self, other):
