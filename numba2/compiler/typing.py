@@ -3,7 +3,9 @@ from __future__ import print_function, division, absolute_import
 
 from functools import partial
 from .overload import overload, overloadable
-from pykit.utils import make_temper
+
+
+from pykit.utils import make_temper, pattern
 
 # ______________________________________________________________________
 
@@ -129,6 +131,8 @@ Product  = partial(Type, 'Product')
 Opaque   = partial(Type, 'Opaque')
 Pointer  = partial(Type, 'Pointer')
 Method   = partial(Type, 'Method')
+Exception = partial(Type, 'Exception')
+ExceptionType = partial(Type, 'ExceptionType')
 
 def Sum(args):
     if len(args) == 1:
@@ -153,9 +157,16 @@ def substitute(s_context, ty):
 
 # ______________________________________________________________________
 
-@overloadable
 def typeof(pyval):
     """Python value -> Type"""
+    # TODO: ...
+    if isinstance(pyval, type) and issubclass(pyval, BaseException):
+        return ExceptionType(pyval)
+    elif isinstance(pyval, BaseException):
+        return Exception(type(pyval))
+    else:
+        from pykit import types
+        return types.Opaque
 
 @overload('ν -> Type[τ] -> τ')
 def convert(value, type):
