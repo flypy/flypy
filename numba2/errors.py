@@ -29,7 +29,6 @@ class SpecializeError(CompileError):
     Raised when we fail to specialize on something requested for some reason.
     """
 
-
 @contextmanager
 def error_context(lineno=-1, during=None):
     # Adapted from numbapro/npm/errors.py

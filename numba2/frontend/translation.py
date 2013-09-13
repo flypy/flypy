@@ -15,6 +15,7 @@ import dis
 import operator
 
 from numba2.errors import error_context, CompileError, EmptyStackError
+from numba2.compiler import typeof
 from .bytecode import ByteCode
 
 from pykit.ir import Function, Builder, Op, Const, ops
@@ -339,7 +340,7 @@ class Translate(object):
         if name not in self.globals:
             raise NameError("Could not resolve %r at compile time" % name)
         value = self.globals[name]
-        self.push(Const(value, types.Opaque))
+        self.push(Const(value, typeof(value)))
 
     def op_LOAD_FAST(self, inst):
         name = self.varnames[inst.arg]
@@ -499,6 +500,8 @@ class Translate(object):
         else:
             raise Exception('unreachable')
 
+    # ------- Exceptions ------- #
+
     def op_RAISE_VARARGS(self, inst):
         nargs = inst.arg
         if nargs == 3:
@@ -506,12 +509,18 @@ class Translate(object):
 
         args = list(reversed([self.pop() for _ in range(nargs)]))
         exc_type = args[0]
-        if exc_type.type != types.Exception:
-            raise CompileError(
-                "Expected a statically known exception type, "
-                "got %s" % (exc_type,))
+
+        # The below should be done after type inference
+        # if exc_type.type != types.Exception:
+        #     raise CompileError(
+        #         "Expected a statically known exception type, "
+        #         "got %s" % (exc_type,))
 
         self.insert('exc_throw', make_exc(*args))
+
+
+    def op_SETUP_EXCEPT(self, first_exc_block_label):
+        pass
 
 
 #---------------------------------------------------------------------------

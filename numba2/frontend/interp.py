@@ -7,7 +7,7 @@ Interpreter for untyped bytecode
 from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
 
-def pycall(func, *args):
+def pycall(interp, func, *args):
     return func(*args)
 
 handlers = {

@@ -3,6 +3,10 @@ from __future__ import print_function, division, absolute_import
 
 import sys
 
+#===------------------------------------------------------------------===
+# Overloading -- TODO: create datashape package and use blaze.overloading
+#===------------------------------------------------------------------===
+
 class Dispatcher(object):
     """Dispatcher for overloaded functions"""
     def __init__(self):
