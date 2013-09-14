@@ -64,30 +64,37 @@ class TestBytecodeTranslation(unittest.TestCase):
         else:
             raise Exception("Expected 'UncaughtException'")
 
-    def test_catch(self):
+    def test_catch_noerror(self):
         def f(a, b):
             try:
-                for i in range(a, b):
-                    raise ValueError(a)
+                a + b
             except ValueError:
-                return 12
+                return 1
             except Exception:
-                pass
+                return 2
             else:
-                return -1
+                return 3
 
-        dis.dis(f)
+        # dis.dis(f)
         # print(translate(f))
-        try:
-            run(f, 15, [0, 10])
-        except UncaughtException, e:
-            exc = e.args[0]
-            assert isinstance(exc, ValueError)
-            self.assertEqual(exc.args[0], 15)
-        else:
-            raise Exception("Expected 'UncaughtException'")
+        run(f, 3, [0, 10])
+
+    def test_catch_error(self):
+        def f(a, b):
+            try:
+                raise ValueError(a)
+            except ValueError:
+                return 1
+            except Exception:
+                return 2
+            else:
+                return 3
+
+        # dis.dis(f)
+        # print(translate(f))
+        run(f, 1, [0, 10])
 
 
 if __name__ == '__main__':
-    TestBytecodeTranslation('test_catch').debug()
-    # unittest.main()
+    # TestBytecodeTranslation('test_catch_error').debug()
+    unittest.main()

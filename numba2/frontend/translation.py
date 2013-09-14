@@ -13,12 +13,13 @@ import __builtin__
 import inspect
 import dis
 import operator
+import collections
 
 from numba2.errors import error_context, CompileError, EmptyStackError
 from numba2.compiler import typeof
 from .bytecode import ByteCode
 
-from pykit.ir import Function, Builder, Op, Const, ops
+from pykit.ir import Function, Builder, OpBuilder, Op, Const, ops, defs
 from pykit import types
 
 #===------------------------------------------------------------------===
@@ -54,7 +55,10 @@ COMPARE_OP_FUNC = {
     '<=': operator.le,
     '==': operator.eq,
     '!=': operator.ne,
-    }
+    'in': operator.contains,
+    'is': operator.is_,
+    'exception match': isinstance,
+}
 
 class Translate(object):
     """
@@ -65,12 +69,31 @@ class Translate(object):
         self.func = func
         self.bytecode = ByteCode(func)
 
-        self.blocks = {}      # offset -> Block
-        self.allocas = {}     # varname -> alloca
-        # self.blockstacks = {} # Block -> stack
-        self._stack = []
+        # -------------------------------------------------
+        # Find predecessors
 
-        self.scopes = []
+        self.blocks = {}            # offset -> Block
+        self.block2offset = {}      # Block -> offset
+        self.allocas = {}           # varname -> alloca
+        self.stacks = {}            # Block -> value stack
+        self.exc_handlers = set()   # { Block }
+
+        # -------------------------------------------------
+        # Block stacks
+
+        self.block_stack   = []
+        self.loop_stack    = []
+        self.except_stack  = []
+        self.finally_stack = []
+
+        # -------------------------------------------------
+        # CFG
+
+        self.predecessors = collections.defaultdict(set)
+        self.phis = collections.defaultdict(list)
+
+        # -------------------------------------------------
+        # Variables and scoping
 
         self.varnames = self.bytecode.code.co_varnames
         self.consts = self.bytecode.code.co_consts
@@ -80,6 +103,9 @@ class Translate(object):
         self.globals = dict(vars(__builtin__))
         self.builtins = set(self.globals.values())
         self.globals.update(self.func.func_globals)
+
+        # -------------------------------------------------
+        # Error checks
 
         argspec = inspect.getargspec(self.func)
         assert not argspec.defaults, "does not support defaults"
@@ -100,7 +126,7 @@ class Translate(object):
         for offset in self.bytecode.labels:
             block = self.dst.new_block("Block%d" % offset)
             self.blocks[offset] = block
-            # self.blockstacks[block] = []
+            self.stacks[block] = []
 
         # Setup Variables
         self.builder.position_at_beginning(self.dst.startblock)
@@ -112,50 +138,24 @@ class Translate(object):
             if varname in self.argnames:
                 self.builder.store(self.dst.get_arg(varname), stackvar)
 
-    # def interpret(self):
-    #     # TODO: Why is this not a simple linear pass?
-    #
-    #     pending_run = set([0])
-    #     processed = set()
-    #
-    #     # interpretation loop
-    #     while pending_run:
-    #         offset = min(pending_run)
-    #         pending_run.discard(offset)
-    #         if offset not in processed:    # don't repeat the work
-    #             processed.add(offset)
-    #             self.builder.position_at_end(self.blocks[offset])
-    #
-    #             while offset in self.bytecode:
-    #                 inst = self.bytecode[offset]
-    #                 self.op(inst)
-    #                 offset = inst.next
-    #                 if self.curblock.is_terminated():
-    #                     break
-    #
-    #                 if offset in self.blocks:
-    #                     pending_run.add(offset)
-    #                     if not self.curblock.is_terminated():
-    #                         self.jump(target=self.blocks[offset])
-    #                     break
-
     def interpret(self):
-        prevblock = self.dst.startblock
+        self.curblock = self.dst.startblock
+
         for inst in self.bytecode:
             if inst.offset in self.blocks:
                 # Block switch
-                curblock = self.blocks[inst.offset]
-                if prevblock != curblock:
-                    if not prevblock.is_terminated():
-                        self.jump(curblock)
-                    self.builder.position_at_end(curblock)
-                    prevblock = curblock
+                newblock = self.blocks[inst.offset]
+                if self.curblock != newblock:
+                    self.switchblock(newblock)
             elif self.curblock.is_terminated():
-                # Dead code
-                # TODO: Is this really necessary here?
                 continue
 
             self.op(inst)
+
+        # -------------------------------------------------
+        # Finalize
+
+        self.update_phis()
 
     def op(self, inst):
         with error_context(lineno=inst.lineno):
@@ -167,14 +167,70 @@ class Translate(object):
     def generic_op(self, inst):
         raise NotImplementedError(inst)
 
-    @property
-    def stack(self):
-        return self._stack
-        # return self.blockstacks[self.builder.basic_block]
+    def switchblock(self, newblock):
+        """
+        Switch to a new block and merge incoming values from the stacks.
+        """
+        if not self.curblock.is_terminated():
+            self.jump(newblock)
+
+        self.builder.position_at_end(newblock)
+        self.curblock = newblock
+
+        # -------------------------------------------------
+        # Find predecessors
+
+        if newblock in self.exc_handlers:
+            self.push_insert('exc_fetch')
+            self.push_insert('exc_fetch_value')
+            self.push_insert('exc_fetch_tb')
+
+        # -------------------------------------------------
+        # Find predecessors
+
+        incoming = self.predecessors.get(newblock)
+        if not incoming:
+            return
+
+        # -------------------------------------------------
+        # Merge stack values
+
+        stack = max([self.stacks[block] for block in incoming], key=len)
+        for value in stack:
+            phi = self.push_insert('phi', [], [])
+            self.phis[newblock].append(phi)
+
+    def update_phis(self):
+        print(self.dst)
+        for block in self.dst.blocks:
+            phis = self.phis[block]
+            preds  = self.predecessors[block]
+            stacks = [self.stacks[pred] for pred in preds]
+            stacklen = len(phis)
+
+            # -------------------------------------------------
+            # Sanity check
+
+            assert all(len(stack) == stacklen for stack in stacks)
+
+            if not preds or not stacklen:
+                continue
+
+            # -------------------------------------------------
+            # Update φs with stack values from predecessors
+
+            for pos, phi in enumerate(phis):
+                values = []
+                for pred in preds:
+                    value_stack = self.stacks[pred]
+                    value = value_stack[-1 - pos]
+                    values.append(value)
+
+                phi.set_args([preds, values])
 
     @property
-    def curblock(self):
-        return self.builder.basic_block
+    def stack(self):
+        return self.stacks[self.curblock]
 
     def insert(self, opcode, *args):
         type = types.Void if ops.is_void(opcode) else types.Opaque
@@ -192,16 +248,30 @@ class Translate(object):
         self.stack.append(val)
 
     def peek(self):
+        """
+        Take a peek at the top of stack.
+        """
         if not self.stack:
+            # Assuming the bytecode is valid, our predecessors must have left
+            # some values on the stack.
+            # return self._insert_phi()
             raise EmptyStackError
         else:
             return self.stack[-1]
 
     def pop(self):
         if not self.stack:
+            # return self._insert_phi()
             raise EmptyStackError
         else:
             return self.stack.pop()
+
+    def _insert_phi(self):
+        with self.builder.at_front(self.curblock):
+            phi = self.insert('phi', [], [])
+
+        self.phis[self.curblock].append(phi)
+        return phi
 
     def call(self, func, args=()):
         self.push_insert('pycall', func, *args)
@@ -216,12 +286,34 @@ class Translate(object):
         self.call(op, args=(tos,))
 
     def jump(self, target):
+        self.predecessors[target].add(self.curblock)
         self.insert('jump', target)
 
     def jump_if(self, cond, truebr, falsebr):
+        self.predecessors[truebr].add(self.curblock)
+        self.predecessors[falsebr].add(self.curblock)
         self.insert('cbranch', cond, truebr, falsebr)
 
-    # ------- op_* ------- #
+    # ------- stack ------- #
+
+    def op_POP_BLOCK(self, inst):
+        block = self.block_stack.pop()
+        if isinstance(block, LoopBlock):
+            self.loop_stack.pop()
+        elif isinstance(block, ExceptionBlock):
+            self.except_stack.pop()
+        elif isinstance(block, FinallyBlock):
+            self.finally_stack.pop()
+
+    def op_POP_TOP(self, inst):
+        self.pop()
+
+    def op_DUP_TOP(self, inst):
+        value = self.pop()
+        self.push(value)
+        self.push(value)
+
+    # ------- control flow ------- #
 
     def op_POP_JUMP_IF_TRUE(self, inst):
         falsebr = self.blocks[inst.next]
@@ -265,12 +357,6 @@ class Translate(object):
         val = self.pop()
         self.insert('ret', val)
 
-    def op_SETUP_LOOP(self, inst):
-        self.scopes.append((inst.next, inst.next + inst.arg))
-
-    def op_POP_BLOCK(self, inst):
-        self.scopes.pop()
-
     def op_CALL_FUNCTION(self, inst):
         argc = inst.arg & 0xff
         kwsc = (inst.arg >> 8) & 0xff
@@ -292,9 +378,6 @@ class Translate(object):
     def op_GET_ITER(self, inst):
         self.push_insert('getiter', self.pop())
 
-    def op_POP_TOP(self, inst):
-        self.pop()
-
     def op_FOR_ITER(self, inst):
         """
         Translate a for loop to:
@@ -307,18 +390,19 @@ class Translate(object):
             except StopIteration:
                 pass
         """
-        iterobj = self.pop()
+        iterobj = self.peek()
         delta = inst.arg
         loopexit = self.blocks[inst.next + delta]
 
         self.insert('exc_setup', [loopexit])
         self.push_insert('next', iterobj)
+        self.predecessors[loopexit].add(self.curblock)
 
         with self.builder.at_front(loopexit):
             self.insert('exc_catch', StopIteration)
 
     def op_BREAK_LOOP(self, inst):
-        scope = self.scopes[-1]
+        scope = self.loops[-1]
         self.jump(target=self.blocks[scope[1]])
 
     def op_BUILD_TUPLE(self, inst):
@@ -340,7 +424,7 @@ class Translate(object):
         if name not in self.globals:
             raise NameError("Could not resolve %r at compile time" % name)
         value = self.globals[name]
-        self.push(Const(value, typeof(value)))
+        self.push(Const(value, types.Opaque))
 
     def op_LOAD_FAST(self, inst):
         name = self.varnames[inst.arg]
@@ -348,7 +432,7 @@ class Translate(object):
 
     def op_LOAD_CONST(self, inst):
         const = self.consts[inst.arg]
-        self.push(Const(const))
+        self.push(Const(const, types.Opaque))
 
     def op_STORE_FAST(self, inst):
         value = self.pop()
@@ -369,8 +453,17 @@ class Translate(object):
             self.push_insert('unpack', value, i, itemct)
 
     def op_COMPARE_OP(self, inst):
-        opfunc = COMPARE_OP_FUNC[dis.cmp_op[inst.arg]]
-        self.binary_op(opfunc)
+        opname = dis.cmp_op[inst.arg]
+
+        if opname == 'not in':
+            self.binary_op('in')
+            self.unary_op('not')
+        elif opname == 'is not':
+            self.binary_op('is')
+            self.unary_op('not')
+        else:
+            opfunc = COMPARE_OP_FUNC[opname]
+            self.binary_op(opfunc)
 
     def op_UNARY_POSITIVE(self, inst):
         self.unary_op(operator.pos)
@@ -508,23 +601,57 @@ class Translate(object):
             raise CompileError("Traceback argument to raise not supported")
 
         args = list(reversed([self.pop() for _ in range(nargs)]))
-        exc_type = args[0]
 
-        # The below should be done after type inference
-        # if exc_type.type != types.Exception:
-        #     raise CompileError(
-        #         "Expected a statically known exception type, "
-        #         "got %s" % (exc_type,))
+        if self.except_stack:
+            except_block = self.except_stack[-1]
+            self.predecessors[except_block].add(self.curblock)
 
-        self.insert('exc_throw', make_exc(*args))
+        self.insert('exc_throw', *args)
 
+    # ------- Blocks ------- #
 
-    def op_SETUP_EXCEPT(self, first_exc_block_label):
+    def op_SETUP_LOOP(self, inst):
+        loop_block = self.blocks[inst.next + inst.arg]
+        self.predecessors[loop_block].add(self.curblock)
+
+        block = LoopBlock(loop_block)
+        self.block_stack.append(block)
+        self.loop_stack.append(block)
+
+    def op_SETUP_EXCEPT(self, inst):
+        except_block = self.blocks[inst.next + inst.arg]
+        self.predecessors[except_block].add(self.curblock)
+        self.exc_handlers.add(except_block)
+
+        with self.builder.at_front(self.curblock):
+            self.builder.exc_setup([except_block])
+
+        block = ExceptionBlock(except_block)
+        self.block_stack.append(block)
+        self.except_stack.append(block)
+
+    def op_SETUP_FINALLY(self, inst):
+        finally_block = self.blocks[inst.next + inst.arg]
+        self.predecessors[finally_block].add(self.curblock)
+
+        block = FinallyBlock(finally_block)
+        self.block_stack.append(block)
+        self.finally_stack.append(block)
+
+    def op_END_FINALLY(self, inst):
+        self.pop()
+        self.pop()
+        self.pop()
+        # self.insert('end_finally')
+
+    # ------- Misc ------- #
+
+    def op_STOP_CODE(self, inst):
         pass
 
-
-#---------------------------------------------------------------------------
+#===------------------------------------------------------------------===
 # Internals
+#===------------------------------------------------------------------===
 
 def func_name(func):
     return ".".join([func.__module__, func.__name__])
@@ -533,7 +660,26 @@ def slicearg(v):
     """Construct an argument to a slice instruction"""
     return Const(v, types.Int64)
 
-def make_exc(exc_type, exc_value=None):
-    """Construct an exception IR value from the exception type and value"""
-    # TODO: implement
-    return exc_type
+#===------------------------------------------------------------------===
+# Exceptions
+#===------------------------------------------------------------------===
+
+Exc = collections.namedtuple('Exc', ['arg'])
+Val = collections.namedtuple('Val', ['arg'])
+Tb  = collections.namedtuple('Tb', ['arg'])
+
+#===------------------------------------------------------------------===
+# Blocks
+#===------------------------------------------------------------------===
+
+class LoopBlock(object):
+    def __init__(self, end):
+        self.end = end
+
+class ExceptionBlock(object):
+    def __init__(self, first_except_block):
+        self.first_except_block = first_except_block
+
+class FinallyBlock(object):
+    def __init__(self, finally_block):
+        self.finally_block = finally_block
