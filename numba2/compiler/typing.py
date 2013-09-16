@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial
 from .overload import overload, overloadable
 
-
+from pykit import types
 from pykit.utils import make_temper, pattern
 
 # ______________________________________________________________________
@@ -173,10 +173,17 @@ def convert(value, type):
     """Convert a value of type 'a' to the given type"""
     return value
 
-@overload('Type[α] -> Type[β] -> Type[γ]')
+# @overload('Type[α] -> Type[β] -> Type[γ]')
 def promote(type1, type2):
     """Promote two types to a common type"""
-    return Sum([type1, type2])
+    # return Sum([type1, type2])
+    if type1 == Opaque():
+        return type2
+    elif type2 == Opaque():
+        return type1
+    else:
+        assert type1 == type2
+        return type1
 
 class TypedefRegistry(object):
     def __init__(self):

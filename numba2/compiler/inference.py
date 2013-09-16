@@ -30,7 +30,7 @@ import collections
 from functools import partial
 from itertools import product
 
-from .typing import Type, Function, Opaque, Void, Bool, Pointer, Method
+from .typing import Type, Function, Void, Bool, Pointer, Method, Opaque, promote
 from ..errors import InferError
 
 import pykit.types
@@ -59,6 +59,11 @@ def typemap(ty):
         return Type(type(ty).__name__, *map(typemap, ty))
     return ty
 
+def view(G):
+    import matplotlib.pyplot as plt
+    networkx.draw(G)
+    plt.show()
+
 # ______________________________________________________________________
 
 class InferenceCache(object):
@@ -72,23 +77,37 @@ class InferenceCache(object):
 
 def infer(cache, func, argtypes):
     """Infer types for the given function"""
-    # Check cache
-    signature, context = cache.lookup(func, argtypes)
-    if signature:
-        return signature
+    argtypes = tuple(argtypes)
 
+    # -------------------------------------------------
+    # Check cache
+
+    cached = cache.lookup(func, argtypes)
+    if cached:
+        return cached
+
+    # -------------------------------------------------
     # Build template
-    if func in cache.templates:
+
+    if func not in cache.templates:
         cache.templates[func] = build_graph(func)
 
     G, context, constraints = cache.templates[func]
 
+    # -------------------------------------------------
     # Infer typing context
+
     context = copy_context(context)
+    seed_context(context, func, argtypes)
     infer_graph(cache, G, context, constraints)
 
+    # -------------------------------------------------
     # Cache result
-    signature = Function(context['return'], *argtypes)
+
+    typeset = context['return']
+    restype = reduce(promote, typeset)
+
+    signature = Function(restype, *argtypes)
     cache.typings[func, argtypes] = (signature, context, constraints)
     return signature, context, constraints
 
@@ -104,31 +123,38 @@ def run(func, env):
 # ______________________________________________________________________
 
 def build_graph(func):
+    """
+    Build a constraint network and initial context. This is a generic
+    templates share-able between input types.
+    """
     G = networkx.DiGraph()
     context = {}
 
     context['return'] = set()
-    for arg in func.args:
-        G.add_node(arg)
-
     for op in func.ops:
         G.add_node(op)
         if op.type != Opaque():
             context[op] = make_type(op.type)
-        for arg in op.args:
-            if isinstance(arg, (ir.Const, ir.GlobalValue)):
+        for arg in flatten(op.args):
+            if isinstance(arg, (ir.Const, ir.GlobalValue, ir.FuncArg)):
                 G.add_node(arg)
                 context[arg] = make_type(arg.type)
 
-    constraints = generate_constraints(G)
+    constraints = generate_constraints(func, G)
     return G, context, constraints
+
+def seed_context(context, func, argtypes):
+    """Initialize context with argtypes"""
+    for arg, argtype in zip(func.args, argtypes):
+        context[arg] = argtype
 
 # ______________________________________________________________________
 
 def generate_constraints(func, G):
     gen = ConstraintGenerator(func, G)
     ir.visit(gen, func, errmissing=True)
-    return gen.constraints
+    constraints = gen.constraints
+    return constraints
 
 
 class ConstraintGenerator(object):
@@ -158,7 +184,7 @@ class ConstraintGenerator(object):
             self.G.add_node(node)
             self._allocas[op] = node
 
-        self.G.add_edge(self._allocas[op], op, )
+        self.G.add_edge(self._allocas[op], op)
         self.constraints[op] = 'pointer'
 
     def op_load(self, op):
@@ -216,7 +242,7 @@ class ConstraintGenerator(object):
         ----------------------------------
                     Γ ⊢ α = β
         """
-        if op.type != Opaque():
+        if op.type != pykit.types.Opaque:
             self.G.add_edge(op.type, op)
         else:
             self.G.add_edge(op.args[0], op)
@@ -245,7 +271,7 @@ class ConstraintGenerator(object):
         ----------------
         Γ ⊢ return x : β
         """
-        self.G.add_node(op.args[0] or Void(), self.return_node)
+        self.G.add_edge(op.args[0] or Void(), self.return_node)
 
 # ______________________________________________________________________
 
@@ -272,6 +298,7 @@ def infer_graph(cache, G, context, constraints):
         'call'   : call of a dynamic or static function
     """
     W = collections.deque(G) # worklist
+    # view(G)
     while W:
         node = W.popleft()
         changed = infer_node(cache, G, context, constraints, node)
@@ -282,27 +309,32 @@ def infer_graph(cache, G, context, constraints):
 def infer_node(cache, G, context, constraints, node):
     """Infer types for a single node"""
     changed = False
-    C = constraints[node]
-    typeset = context[node]
-    nb = G.neighbors(node)
+    C = constraints.get(node, 'flow')
+    if isinstance(node, pykit.types.Type):
+        typeset = set([node])
+    else:
+        typeset = context[node]
+
+    incoming = G.predecessors(node)
+    outgoing = G.neighbors(node)
 
     processed = set()
 
     if C == 'pointer':
-        for neighbor in nb:
+        for neighbor in incoming:
             for type in context[neighbor]:
                 result = Pointer(type)
                 changed |= result not in typeset
                 typeset.add(result)
 
     elif C == 'flow':
-        for neighbor in nb:
+        for neighbor in incoming:
             for type in context[neighbor]:
                 changed |= type not in typeset
                 typeset.add(type)
 
     elif C == 'attr':
-        [neighbor] = nb
+        [neighbor] = incoming
         attr = node['attr']
         for type in context[neighbor]:
             if attr not in type.fields:

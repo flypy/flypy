@@ -22,5 +22,6 @@ def simplify(func):
             methname = special[op.opcode]
             value = op.args[0]
             m = newop('getfield', [value, Const(methname)])
-            new = [m, newop('call', [m, op.args])]
-            op.replace(new)
+            call = newop('call', [m, op.args])
+            op.replace_uses(call)
+            op.replace([m, call])

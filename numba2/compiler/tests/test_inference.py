@@ -56,7 +56,7 @@ class TestInfer(unittest.TestCase):
 
     def test_simple(self):
         f = get('simple')
-        context, signature = infer(cache, f, [int32, int32])
+        signature, context, constraints = infer(cache, f, [int32, int32])
         self.assertEqual(signature, Function(int32, int32, int32))
 
     def test_branch(self):
@@ -74,6 +74,8 @@ class TestInfer(unittest.TestCase):
         self.assertEqual(type, bool)
 
 
-TestInfer('test_simple').debug()
-TestInfer('test_branch').debug()
-# TestInfer('test_loop').debug()
+if __name__ == '__main__':
+    # TestInfer('test_simple').debug()
+    # TestInfer('test_branch').debug()
+    # TestInfer('test_loop').debug()
+    unittest.main()

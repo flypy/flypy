@@ -16,18 +16,17 @@ import operator
 import collections
 
 from numba2.errors import error_context, CompileError, EmptyStackError
-from numba2.compiler import typeof
 from .bytecode import ByteCode
 from .postpasses import simplify_exceptions
 
-from pykit.ir import Function, Builder, OpBuilder, Op, Const, ops, defs
+from pykit.ir import Function, Builder, Op, Const, ops
 from pykit import types
 
 #===------------------------------------------------------------------===
 # Entrypoint
 #===------------------------------------------------------------------===
 
-def translate(func, env):
+def translate(func, env=None):
     """
     Entry point.
 
