@@ -31,7 +31,7 @@ from functools import partial
 from itertools import product
 
 from .typing import Type, Function, Opaque, Void, Bool, Pointer, Method
-from .. import InferError
+from ..errors import InferError
 
 import pykit.types
 from pykit import ir
@@ -90,7 +90,16 @@ def infer(cache, func, argtypes):
     # Cache result
     signature = Function(context['return'], *argtypes)
     cache.typings[func, argtypes] = (signature, context, constraints)
-    return signature
+    return signature, context, constraints
+
+def run(func, env):
+    cache = env['numba.typing.cache']
+    argtypes = env['numba.typing.argtypes']
+    signature, context, constraints = infer(cache, func, argtypes)
+
+    env['numba.typing.signature'] = signature
+    env['numba.typing.context'] = context
+    env['numba.typing.constraints'] = constraints
 
 # ______________________________________________________________________
 
@@ -212,6 +221,15 @@ class ConstraintGenerator(object):
         else:
             self.G.add_edge(op.args[0], op)
 
+    def exc_setup(self, op):
+        pass
+
+    def exc_throw(self, op):
+        pass
+
+    def exc_catch(self, op):
+        pass
+
     def op_jump(self, op):
         pass
 
@@ -328,7 +346,7 @@ def infer_call(cache, func, func_type, arg_types):
     if func_type.name == 'Method':
         func = func_type[0]
         self = func_type[1]
-        arg_types = product(self, arg_types)
+        arg_types = [[self_type] + arg_types for self_type in self]
 
     elif not isinstance(func, ir.Function):
         # Higher-order function
@@ -338,7 +356,8 @@ def infer_call(cache, func, func_type, arg_types):
 
     if isinstance(func_type, frozenset):
         # Overloaded function or method
-        func = find_overload(func_type, arg_types)
+        raise NotImplemented("Overloaded functions")
+        # func = find_overload(func_type, arg_types)
 
     signature = infer(cache, func, arg_types)
     return signature.params[0] # Return return type

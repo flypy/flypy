@@ -27,7 +27,7 @@ from pykit import types
 # Entrypoint
 #===------------------------------------------------------------------===
 
-def translate(func):
+def translate(func, env):
     """
     Entry point.
 
