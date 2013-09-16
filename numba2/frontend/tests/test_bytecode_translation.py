@@ -3,12 +3,16 @@ from __future__ import print_function, division, absolute_import
 
 import dis
 import unittest
+
+from pykit.analysis import cfa
 from pykit.ir.interp import UncaughtException
 
 from numba2.frontend import translate, interpret
 
-def run(f, expected, args):
+def run(f, expected, args, ssa=True):
     code = translate(f)
+    if ssa:
+        cfa.run(code)
     result = interpret(code, args=args)
     assert result == expected, "Got %s, expected %s" % (result, expected)
 
@@ -56,7 +60,7 @@ class TestBytecodeTranslation(unittest.TestCase):
         # dis.dis(f)
         # print(translate(f))
         try:
-            run(f, 15, [0, 10])
+            run(f, 15, [0, 10], ssa=False) # TODO: exc_throw
         except UncaughtException, e:
             exc = e.args[0]
             assert isinstance(exc, ValueError)
@@ -92,9 +96,9 @@ class TestBytecodeTranslation(unittest.TestCase):
 
         # dis.dis(f)
         # print(translate(f))
-        run(f, 1, [0, 10])
+        run(f, 1, [0, 10], ssa=False) # TODO: exc_throw
 
 
 if __name__ == '__main__':
-    # TestBytecodeTranslation('test_catch_error').debug()
+    # TestBytecodeTranslation('test_raise').debug()
     unittest.main()

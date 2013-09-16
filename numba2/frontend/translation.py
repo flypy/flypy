@@ -18,6 +18,7 @@ import collections
 from numba2.errors import error_context, CompileError, EmptyStackError
 from numba2.compiler import typeof
 from .bytecode import ByteCode
+from .postpasses import simplify_exceptions
 
 from pykit.ir import Function, Builder, OpBuilder, Op, Const, ops, defs
 from pykit import types
@@ -39,10 +40,20 @@ def translate(func):
     Returns : pykit.ir.Function
         Untyped pykit function. All types are Opaque unless they are constant.
     """
+    # -------------------------------------------------
+    # Translate
+
     t = Translate(func)
     t.initialize()
     t.interpret()
-    return t.dst
+    func = t.dst
+
+    # -------------------------------------------------
+    # Postpasses
+
+    simplify_exceptions(func)
+
+    return func
 
 #===------------------------------------------------------------------===
 # Translation
@@ -131,7 +142,7 @@ class Translate(object):
         # Setup Variables
         self.builder.position_at_beginning(self.dst.startblock)
         for varname in self.varnames:
-            stackvar = self.builder.alloca(types.Opaque, [])
+            stackvar = self.builder.alloca(types.Pointer(types.Opaque), [])
             self.allocas[varname] = stackvar
 
             # Initialize function arguments
@@ -201,7 +212,6 @@ class Translate(object):
             self.phis[newblock].append(phi)
 
     def update_phis(self):
-        print(self.dst)
         for block in self.dst.blocks:
             phis = self.phis[block]
             preds  = self.predecessors[block]
@@ -394,9 +404,18 @@ class Translate(object):
         delta = inst.arg
         loopexit = self.blocks[inst.next + delta]
 
+        # -------------------------------------------------
+        # Try
+
         self.insert('exc_setup', [loopexit])
         self.push_insert('next', iterobj)
-        self.predecessors[loopexit].add(self.curblock)
+
+        # We assume a 1-to-1 block mapping, resolve a block split in a
+        # later pass
+        self.insert('exc_end')
+
+        # -------------------------------------------------
+        # Catch
 
         with self.builder.at_front(loopexit):
             self.insert('exc_catch', StopIteration)
@@ -612,7 +631,6 @@ class Translate(object):
 
     def op_SETUP_LOOP(self, inst):
         loop_block = self.blocks[inst.next + inst.arg]
-        self.predecessors[loop_block].add(self.curblock)
 
         block = LoopBlock(loop_block)
         self.block_stack.append(block)
