@@ -7,9 +7,10 @@ from pykit.ir import verify, interp, findop
 from pykit.analysis import cfa
 
 from numba2.frontend import translate
+from numba2.caching import InferenceCache
 from numba2.compiler.simplify import simplify
 from numba2.compiler.typing import Type, Function
-from numba2.compiler.inference import infer, InferenceCache
+from numba2.compiler.inference import infer
 
 source = """
 #include <pykit_ir.h>

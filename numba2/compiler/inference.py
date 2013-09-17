@@ -72,34 +72,6 @@ def view(G):
 # Inference structures
 #===------------------------------------------------------------------===
 
-class InferenceCache(object):
-    """
-    Type inference cache.
-
-    Attributes
-    ==========
-
-        typings: { (func, argtypes) : (Context, signature) }
-            (func, argtypes) tuple mapping to the fully typed function context
-            and signature
-
-        ctxs: { func : [Context] }
-            Partial typing contexts, containing type templates similar to
-            principal type schemes
-    """
-
-
-    def __init__(self):
-        self.typings = {}
-        self.ctxs = {}
-
-    def lookup(self, func, argtypes):
-        return self.typings.get((func, tuple(argtypes)))
-
-    def lookup_ctx(self, func):
-        return self.ctxs.get(func)
-
-
 class Context(object):
     """
     Type inference context.
