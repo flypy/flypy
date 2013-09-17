@@ -10,8 +10,10 @@ from functools import partial
 
 from .types import Type
 from ..compiler import annotate
+from ..utils import applyable_decorator
 
-def jit(arg, inline='maybe'):
+@applyable_decorator
+def jit(f, *args, **kwds):
     """
     @jit entry point:
 
@@ -27,25 +29,14 @@ def jit(arg, inline='maybe'):
         @jit('Foo[a]')
         class Foo(object): pass
     """
-    def jit_decorator(f):
-        if isinstance(f, (types.ClassType, type)):
-            return jit_class(f, arg)
-        else:
-            assert isinstance(f, types.FunctionType)
-            return jit_func(f, arg)
-
-    if isinstance(arg, Type):
-        return jit_decorator
-    elif isinstance(arg, str):
-        arg = parse_type(arg)
-        return jit_decorator
+    if isinstance(f, (types.ClassType, type)):
+        return jit_class(f, *args, **kwds)
     else:
-        func = arg
-        arg = None
-        return jit_decorator(func)
+        assert isinstance(f, types.FunctionType)
+        return jit_func(f, *args, **kwds)
 
-ijit = partial(jit, inline=True)
 
+@applyable_decorator
 def jit_func(f, signature=None):
     """
     @jit('a -> List[a] -> List[a]')
@@ -55,6 +46,8 @@ def jit_func(f, signature=None):
     annotate(f, type_signature=signature)
     return f
 
+
+@applyable_decorator
 def jit_class(cls, signature=None):
     """
     @jit('Array[dtype, ndim]')
@@ -77,7 +70,13 @@ def jit_class(cls, signature=None):
 
     return Type(cls.__name__, cls.__bases__, vars(cls))
 
-def abstract(arg):
-    assert isinstance(arg, type)
-    annotate(arg, is_trait=True)
-    return jit(arg)
+
+@applyable_decorator
+def abstract(f, *args, **kwds):
+    kwds['abstract'] = True
+    return jit(f, *args, **kwds)
+
+
+# --- shorthands
+
+ijit = partial(jit, inline=True)
