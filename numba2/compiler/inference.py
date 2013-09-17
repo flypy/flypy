@@ -26,6 +26,7 @@ promotion, triggering either an error or a call to a real implementation.
 """
 
 from __future__ import print_function, division, absolute_import
+from pprint import pprint
 import collections
 from functools import partial
 from itertools import product
@@ -39,14 +40,17 @@ from pykit.utils import flatten
 
 import networkx
 
-# ______________________________________________________________________
+#===------------------------------------------------------------------===
 # Utils
+#===------------------------------------------------------------------===
 
 def make_type(type):
-    if isinstance(type, Type):
-        return set([Type])
+    if type == Opaque():
+        return set()
+    elif isinstance(type, Type):
+        return set([type])
     elif isinstance(type, pykit.types.Type):
-        return set([typemap(type)])
+        return typemap(type)
     else:
         assert isinstance(type, set)
         return type
@@ -55,25 +59,83 @@ def copy_context(context):
     return dict((binding, set(type)) for binding, type in context.iteritems())
 
 def typemap(ty):
-    if isinstance(ty, pykit.types.Type):
-        return Type(type(ty).__name__, *map(typemap, ty))
-    return ty
+    if not isinstance(ty, pykit.types.Type):
+        return ty
+    return make_type(Type(type(ty).__name__, *map(typemap, ty)))
 
 def view(G):
     import matplotlib.pyplot as plt
     networkx.draw(G)
     plt.show()
 
-# ______________________________________________________________________
+#===------------------------------------------------------------------===
+# Inference structures
+#===------------------------------------------------------------------===
 
 class InferenceCache(object):
+    """
+    Type inference cache.
+
+    Attributes
+    ==========
+
+        typings: { (func, argtypes) : (Context, signature) }
+            (func, argtypes) tuple mapping to the fully typed function context
+            and signature
+
+        ctxs: { func : [Context] }
+            Partial typing contexts, containing type templates similar to
+            principal type schemes
+    """
+
+
     def __init__(self):
-        self.typings = {} # (func, argtypes) -> { (signature, context, constraints) }
-        self.templates = {}  # func -> { template }
+        self.typings = {}
+        self.ctxs = {}
 
     def lookup(self, func, argtypes):
         return self.typings.get((func, tuple(argtypes)))
 
+    def lookup_ctx(self, func):
+        return self.ctxs.get(func)
+
+
+class Context(object):
+    """
+    Type inference context.
+
+    Attributes
+    ==========
+
+        context: { Operation : set([Type]) }
+            bindings, mapping Operations (variables) to types (sets)
+
+        graph: networkx.DiGraph
+            constraint graph
+
+        constraints: { Node : str }
+            constraints for the nodes in the constraint graph
+
+        metadata: { Node : dict }
+            extra metadata for graph nodes in the constraint graph
+
+    Only 'context' is mutable after construction!
+    """
+
+    def __init__(self, func, context, constraints, graph, metadata):
+        self.func = func
+        self.context = context
+        self.constraints = constraints
+        self.graph = graph
+        self.metadata = metadata
+
+    def copy(self):
+        return Context(self.func, copy_context(self.context),
+                       self.constraints, self.graph, self.metadata)
+
+#===------------------------------------------------------------------===
+# Inference
+#===------------------------------------------------------------------===
 
 def infer(cache, func, argtypes):
     """Infer types for the given function"""
@@ -89,27 +151,28 @@ def infer(cache, func, argtypes):
     # -------------------------------------------------
     # Build template
 
-    if func not in cache.templates:
-        cache.templates[func] = build_graph(func)
+    ctx = cache.lookup_ctx(func)
+    if ctx is None:
+        ctx = build_graph(func)
+        cache.ctxs[func] = ctx
 
-    G, context, constraints = cache.templates[func]
+    ctx = ctx.copy()
 
     # -------------------------------------------------
     # Infer typing context
 
-    context = copy_context(context)
-    seed_context(context, func, argtypes)
-    infer_graph(cache, G, context, constraints)
+    seed_context(ctx, argtypes)
+    infer_graph(cache, ctx)
 
     # -------------------------------------------------
     # Cache result
 
-    typeset = context['return']
+    typeset = ctx.context['return']
     restype = reduce(promote, typeset)
 
     signature = Function(restype, *argtypes)
-    cache.typings[func, argtypes] = (signature, context, constraints)
-    return signature, context, constraints
+    cache.typings[func, argtypes] = signature, ctx
+    return ctx, signature
 
 def run(func, env):
     cache = env['numba.typing.cache']
@@ -133,28 +196,26 @@ def build_graph(func):
     context['return'] = set()
     for op in func.ops:
         G.add_node(op)
-        if op.type != Opaque():
-            context[op] = make_type(op.type)
+        context[op] = make_type(op.type)
         for arg in flatten(op.args):
             if isinstance(arg, (ir.Const, ir.GlobalValue, ir.FuncArg)):
                 G.add_node(arg)
                 context[arg] = make_type(arg.type)
 
-    constraints = generate_constraints(func, G)
-    return G, context, constraints
+    constraints, metadata = generate_constraints(func, G)
+    return Context(func, context, constraints, G, metadata)
 
-def seed_context(context, func, argtypes):
+def seed_context(ctx, argtypes):
     """Initialize context with argtypes"""
-    for arg, argtype in zip(func.args, argtypes):
-        context[arg] = argtype
+    for arg, argtype in zip(ctx.func.args, argtypes):
+        ctx.context[arg] = set([argtype])
 
 # ______________________________________________________________________
 
 def generate_constraints(func, G):
     gen = ConstraintGenerator(func, G)
     ir.visit(gen, func, errmissing=True)
-    constraints = gen.constraints
-    return constraints
+    return gen.constraints, gen.metadata
 
 
 class ConstraintGenerator(object):
@@ -165,7 +226,8 @@ class ConstraintGenerator(object):
     def __init__(self, func, G):
         self.func = func
         self.G = G
-        self.constraints = {} # Op -> constraint
+        self.constraints = {}  # Op -> constraint
+        self.metadata = {}     # Node -> object
         self._allocas = {}     # Op -> node
         self.return_node = 'return'
 
@@ -219,7 +281,10 @@ class ConstraintGenerator(object):
         -----------------
            Γ ⊢ x.a : α
         """
-        self.G.add_edge(op.args[0], op)
+        arg, attr = op.args
+
+        self.G.add_edge(arg, op)
+        self.metadata[op] = { 'attr': attr }
         self.constraints[op] = 'attr'
 
     def op_call(self, op):
@@ -231,6 +296,9 @@ class ConstraintGenerator(object):
         for arg in flatten(op.args):
             self.G.add_edge(arg, op)
         self.constraints[op] = 'call'
+
+        func, args = op.args
+        self.metadata[op] = { 'func': func, 'args': args}
 
     def op_convert(self, op):
         """
@@ -275,7 +343,7 @@ class ConstraintGenerator(object):
 
 # ______________________________________________________________________
 
-def infer_graph(cache, G, context, constraints):
+def infer_graph(cache, ctx):
     """
     infer_graph(G, context, constraints)
 
@@ -297,46 +365,48 @@ def infer_graph(cache, G, context, constraints):
         'attr'   : attribute access
         'call'   : call of a dynamic or static function
     """
-    W = collections.deque(G) # worklist
-    # view(G)
+    W = collections.deque(ctx.graph) # worklist
+    # pprint(ctx.graph.edge)
+    # view(ctx.graph)
+
     while W:
         node = W.popleft()
-        changed = infer_node(cache, G, context, constraints, node)
+        changed = infer_node(cache, ctx, node)
         if changed:
-            for neighbor in G.neighbors(node):
+            for neighbor in ctx.graph.neighbors(node):
                 W.appendleft(neighbor)
 
-def infer_node(cache, G, context, constraints, node):
+def infer_node(cache, ctx, node):
     """Infer types for a single node"""
     changed = False
-    C = constraints.get(node, 'flow')
-    if isinstance(node, pykit.types.Type):
+    C = ctx.constraints.get(node, 'flow')
+    if isinstance(node, Type):
         typeset = set([node])
     else:
-        typeset = context[node]
+        typeset = ctx.context[node]
 
-    incoming = G.predecessors(node)
-    outgoing = G.neighbors(node)
+    incoming = ctx.graph.predecessors(node)
+    outgoing = ctx.graph.neighbors(node)
 
     processed = set()
 
     if C == 'pointer':
         for neighbor in incoming:
-            for type in context[neighbor]:
+            for type in ctx.context[neighbor]:
                 result = Pointer(type)
                 changed |= result not in typeset
                 typeset.add(result)
 
     elif C == 'flow':
         for neighbor in incoming:
-            for type in context[neighbor]:
+            for type in ctx.context[neighbor]:
                 changed |= type not in typeset
                 typeset.add(type)
 
     elif C == 'attr':
         [neighbor] = incoming
-        attr = node['attr']
-        for type in context[neighbor]:
+        attr = ctx.metadata[node]['attr']
+        for type in ctx.context[neighbor]:
             if attr not in type.fields:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
             value, result = type.fields[attr]
@@ -348,9 +418,9 @@ def infer_node(cache, G, context, constraints, node):
 
     else:
         assert C == 'call'
-        func = node['func']
-        func_types = context[func]
-        arg_typess = [context[arg] for arg in node['args']]
+        func = ctx.metadata[node]['func']
+        func_types = ctx.context[func]
+        arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]
 
         # Iterate over cartesian product, processing only unpreviously
         # processed combinations
@@ -378,7 +448,8 @@ def infer_call(cache, func, func_type, arg_types):
     if func_type.name == 'Method':
         func = func_type[0]
         self = func_type[1]
-        arg_types = [[self_type] + arg_types for self_type in self]
+        #[[self_type] + arg_types for self_type in self]
+        # arg_types = (self,) + arg_types
 
     elif not isinstance(func, ir.Function):
         # Higher-order function
@@ -391,5 +462,5 @@ def infer_call(cache, func, func_type, arg_types):
         raise NotImplemented("Overloaded functions")
         # func = find_overload(func_type, arg_types)
 
-    signature = infer(cache, func, arg_types)
+    ctx, signature = infer(cache, func, arg_types)
     return signature.params[0] # Return return type

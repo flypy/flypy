@@ -7,11 +7,12 @@ Simplify untyped IR.
 from __future__ import print_function, division, absolute_import
 
 from .special import special
+from .typing import Opaque
 
 from pykit.ir import Op, Const
 
 def newop(opcode, args):
-    return Op(opcode, None, args)
+    return Op(opcode, Opaque(), args)
 
 def simplify(func):
     """
@@ -21,7 +22,7 @@ def simplify(func):
         if op.opcode in special:
             methname = special[op.opcode]
             value = op.args[0]
-            m = newop('getfield', [value, Const(methname)])
+            m = newop('getfield', [value, methname])
             call = newop('call', [m, op.args])
             op.replace_uses(call)
             op.replace([m, call])

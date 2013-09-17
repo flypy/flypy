@@ -6,6 +6,7 @@ from pykit.parsing import cirparser
 from pykit.ir import verify, interp, findop
 from pykit.analysis import cfa
 
+from numba2.frontend import translate
 from numba2.compiler.simplify import simplify
 from numba2.compiler.typing import Type, Function
 from numba2.compiler.inference import infer, InferenceCache
@@ -41,10 +42,13 @@ mod = cirparser.from_c(source)
 verify(mod)
 cache = InferenceCache()
 
+__gt__ = translate(lambda x, y: x > y)
+
 bool = Type('Bool')
 int32 = Type('Int', 32, False)
 float32 = Type('Float', 32)
-int32.fields['__gt__'] = Function(bool, int32, int32)
+int32.fields['__gt__'] = (__gt__, Function(bool, int32, int32))
+cache.typings[__gt__, (int32, int32)] = (None, Function(bool, int32, int32))
 
 def get(name):
     f = mod.get_function(name)
@@ -56,22 +60,22 @@ class TestInfer(unittest.TestCase):
 
     def test_simple(self):
         f = get('simple')
-        signature, context, constraints = infer(cache, f, [int32, int32])
+        ctx, signature = infer(cache, f, [int32, int32])
         self.assertEqual(signature, Function(int32, int32, int32))
 
     def test_branch(self):
         f = get('branch')
-        context, signature = infer(cache, f, [int32, int32])
+        ctx, signature = infer(cache, f, [int32, int32])
         self.assertEqual(signature, Function(int32, int32, int32))
-        type = context[findop(f, 'call')]
-        self.assertEqual(type, bool)
+        type = ctx.context[findop(f, 'call')]
+        self.assertEqual(type, set([bool]))
 
     def test_loop(self):
         f = get('loop')
-        context, signature = infer(cache, f, [int32, int32])
+        ctx, signature = infer(cache, f, [int32, int32])
         self.assertEqual(signature, Function(int32, int32, int32))
-        type = context[findop(f, 'call')]
-        self.assertEqual(type, bool)
+        type = ctx.context[findop(f, 'call')]
+        self.assertEqual(type, set([bool]))
 
 
 if __name__ == '__main__':
