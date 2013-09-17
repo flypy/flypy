@@ -8,6 +8,15 @@ from __future__ import print_function, division, absolute_import
 
 import types
 import functools
+try:
+    from collections import MutableMapping
+except ImportError as e:
+    # Python 3
+    from UserDict import DictMixin as MutableMapping
+
+#===------------------------------------------------------------------===
+# Decorators
+#===------------------------------------------------------------------===
 
 def applyable_decorator(decorator):
     """
@@ -43,6 +52,9 @@ def applyable_decorator(decorator):
 
     return decorator_wrapper
 
+#===------------------------------------------------------------------===
+# Properties
+#===------------------------------------------------------------------===
 
 class TypedProperty(object):
     '''Defines a class property that does a type check in the setter.'''
@@ -70,3 +82,37 @@ class TypedProperty(object):
 
     def deleter(self, obj):
         delattr(obj, self.propname)
+
+#===------------------------------------------------------------------===
+# Data Structures
+#===------------------------------------------------------------------===
+
+class FrozenDict(MutableMapping):
+    """
+    Immutable dict.
+    """
+
+    def __init__(self, data):
+        self.data = data
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        raise ValueError("This dict is immutable")
+
+    def __delitem__(self, key):
+        raise ValueError("This dict is immutable")
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __len__(self):
+        return len(self.data)
+
+    def keys(self):
+        return list(self.data)
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        return cls(dict.fromkeys(iterable, value))
