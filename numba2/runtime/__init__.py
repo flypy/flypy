@@ -1,1 +1,1 @@
-from .entrypoints import jit, ijit, trait
+from .entrypoints import jit, ijit, abstract

@@ -7,10 +7,10 @@ Promotion trait for special methods (binary operators).
 from __future__ import print_function, division, absolute_import
 
 from ... import promote, typeof, overload, convert
-from .. import trait
+from .. import abstract
 
 
-@trait
+@abstract
 class Promotion(object):
     """Trait implementing promotion for binary operations"""
 

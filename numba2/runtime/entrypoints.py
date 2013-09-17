@@ -77,7 +77,7 @@ def jit_class(cls, signature=None):
 
     return Type(cls.__name__, cls.__bases__, vars(cls))
 
-def trait(arg):
+def abstract(arg):
     assert isinstance(arg, type)
     annotate(arg, is_trait=True)
     return jit(arg)

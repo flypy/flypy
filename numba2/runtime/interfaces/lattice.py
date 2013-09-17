@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
 """
-Core numba traits.
+Core numba interfaces.
 """
 
 from __future__ import print_function, division, absolute_import
-from .. import trait
+from .. import abstract
 
-@trait
+@abstract
 class Top(object):
     """Join"""
 
-@trait
+@abstract
 class Bottom(object):
     """Meet"""

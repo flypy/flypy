@@ -10,7 +10,6 @@ annotations = {
     'specialize_value': tuple,  # ('arg1', 'arg2', ...)
     'type_constraints': tuple,  # (Constraint, ...)
     'type_signature': object,   # Type of the object
-    'type_trait': bool,         # Whether the type is a Trait
 }
 
 def annotate(obj, **kwds):
