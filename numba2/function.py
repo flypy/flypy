@@ -7,8 +7,7 @@ Numba function wrapper.
 from __future__ import print_function, division, absolute_import
 
 from .compiler import typeof
-from .passes import translate, passes
-from .environment import root_env
+from .passes import translate
 
 from blaze.util import flatargs
 
@@ -23,14 +22,34 @@ class Function(object):
         self.py_func = py_func
         self.signature = signature
 
-    def translate(self, args, kwargs, env=root_env):
-        args = flatargs(self.py_func, args, kwargs)
-        argtypes = [typeof(x) for x in args]
-        env = dict(env)
-        llvm_func, env = translate(self.py_func, argtypes, env, passes)
-        return llvm_func, env
+        self.llvm_funcs = {}
+        self.ctypes_funcs = {}
+        self.envs = {}
 
     def __call__(self, *args, **kwargs):
-        lfunc, env = self.translate(args, kwargs)
-        cfunc = env["codegen.llvm.ctypes"]
+        if self.signature is not None:
+            restype = self.signature.params[0]
+            argtypes = self.signature.params[1:]
+            cfunc = self.translate(argtypes, restype)
+        else:
+            args = flatargs(self.py_func, args, kwargs)
+            argtypes = [typeof(x) for x in args]
+            cfunc = self.translate(argtypes)
+
         return cfunc(*args)
+
+    def translate(self, argtypes, restype=None):
+        key = tuple(argtypes) + (restype,)
+        if key in self.ctypes_funcs:
+            return self.ctypes_funcs[key]
+
+        # Translate
+        llvm_func, env = translate(self.py_func, argtypes)
+        cfunc = env["codegen.llvm.ctypes"]
+
+        # Cache
+        self.llvm_funcs[key] = llvm_func
+        self.ctypes_funcs[key] = cfunc
+        self.envs[key] = env
+
+        return llvm_func, env

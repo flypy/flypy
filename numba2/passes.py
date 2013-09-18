@@ -33,11 +33,11 @@ passes = [
 # Translation
 #===------------------------------------------------------------------===
 
-def translate(py_func, argtypes, env=None, passes=passes):
+def translate(py_func, argtypes, restype=None, env=None, passes=passes):
     if env is None:
         env = dict(root_env)
 
-    if 'numba.typing.argtypes' not in env:
-        env['numba.typing.argtypes'] = argtypes
+    env['numba.typing.argtypes'] = argtypes
+    env.setdefault('numba.typing.restype', restype)
 
     run_pipeline(py_func, env, passes)

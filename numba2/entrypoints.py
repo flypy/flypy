@@ -8,9 +8,10 @@ from __future__ import print_function, division, absolute_import
 import types
 from functools import partial
 
-from .types import Type
-from ..compiler import annotate
-from ..utils import applyable_decorator
+from .runtime.types import Type
+from .compiler import annotate
+from .function import Function
+from .utils import applyable_decorator
 
 @applyable_decorator
 def jit(f, *args, **kwds):
@@ -41,10 +42,7 @@ def jit_func(f, signature=None):
     """
     @jit('a -> List[a] -> List[a]')
     """
-    if not signature:
-        raise ValueError("Require signature") # TODO: fabricate generic signature
-    annotate(f, type_signature=signature)
-    return f
+    return Function(f, signature)
 
 
 @applyable_decorator

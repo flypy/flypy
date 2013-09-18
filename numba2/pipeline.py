@@ -7,6 +7,7 @@ Pipeline that determines phase ordering and execution.
 from __future__ import print_function, division, absolute_import
 
 import types
+import pykit.ir
 
 #===------------------------------------------------------------------===
 # Pipeline
@@ -28,12 +29,15 @@ def apply_transform(transform, func, env):
     else:
         result = transform(func, env)
 
-    _check_transform_result(transform, result)
+    result = _check_transform_result(transform, func, env, result)
     return result or (func, env)
 
 
-def _check_transform_result(transform, result):
+def _check_transform_result(transform, func, env, result):
     if result is not None and not isinstance(result, tuple):
+        if isinstance(result, pykit.ir.Function):
+            return result, env
+
         if isinstance(transform, types.ModuleType):
             transform = transform.run
         transform = transform.__module__ + '.' + transform.__name__

@@ -17,6 +17,13 @@ root_env = FrozenDict({
     'numba.opt.cache':      OptimizationsCache(),
     'numba.codegen.cache':  CodegenCache(),
 
+    # Typing
+    'numba.typing.restype': None,       # Input
+    'numba.typing.argtypes': None,      # Input
+    'numba.typing.signature': None,     # Output
+    'numba.typing.context': None,       # Output
+    'numba.typing.constraints': None,   # Output
+
     # Flags
     'numba.verify':         True,
     'numba.optimize':       True,

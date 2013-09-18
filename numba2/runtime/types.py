@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-# from .entrypoints import jit, trait
-
 class MetaType(type):
     """Type of a type"""
 
@@ -13,7 +11,7 @@ class MetaType(type):
 # @jit('Type[t]')
 class Type(object):
     """
-    Type object trait. Type objects are runtime values parameterized
+    Type object interface. Type objects are runtime values parameterized
     by themselves, allowing overloading.
 
     Instances can be indexed from python to obtain concrete types from
