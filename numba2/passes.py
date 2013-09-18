@@ -6,10 +6,11 @@ Numba passes that perform translation, type inference, code generation, etc.
 
 from __future__ import print_function, division, absolute_import
 
-from .frontend import translate
-from .compiler import inference
 from .environment import root_env
 from .pipeline import run_pipeline
+from .frontend import translate
+from .compiler import inference
+from .backend import backend
 
 #===------------------------------------------------------------------===
 # Utils
@@ -25,7 +26,7 @@ def dump(func, env):
 passes = [
     translate,
     inference,
-    dump,
+    backend,
 ]
 
 #===------------------------------------------------------------------===
