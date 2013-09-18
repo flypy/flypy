@@ -31,7 +31,7 @@ import collections
 from functools import partial
 from itertools import product
 
-from .typing import Type, Function, Void, Bool, Pointer, Method, Opaque, promote
+from .typing import Type, Function, Void, Bool, Pointer, Method, Opaque, promote, typeof
 from ..errors import InferError
 
 import pykit.types
@@ -165,20 +165,30 @@ def build_graph(func):
     G = networkx.DiGraph()
     context = {}
 
-    context['return'] = set()
     for op in func.ops:
         G.add_node(op)
-        context[op] = make_type(op.type)
         for arg in flatten(op.args):
             if isinstance(arg, (ir.Const, ir.GlobalValue, ir.FuncArg)):
                 G.add_node(arg)
-                context[arg] = make_type(arg.type)
 
     constraints, metadata = generate_constraints(func, G)
     return Context(func, context, constraints, G, metadata)
 
-def seed_context(ctx, argtypes):
+def initial_context(func, argtypes):
     """Initialize context with argtypes"""
+    context = { 'return': set() }
+    context['return'] = set()
+
+    for op in func.ops:
+        context[op] = set()
+        for arg in flatten(op.args):
+            if isinstance(arg, ir.Const):
+                context[arg] = typeof(arg.const)
+            elif isinstance(arg, ir.GlobalValue):
+                raise NotImplementedError("Globals")
+                # context[arg] = make_type(arg.type)
+
+def seed_context(ctx, argtypes):
     for arg, argtype in zip(ctx.func.args, argtypes):
         ctx.context[arg] = set([argtype])
 

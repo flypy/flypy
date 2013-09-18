@@ -3,10 +3,11 @@ from __future__ import print_function, division, absolute_import
 from os.path import dirname, abspath
 import unittest
 
-from .compiler import (annotate, overload, overloadable, convert, promote,
-                       typeof, typedef)
-from .compiler import T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10
-from .entrypoints import jit, ijit
+from pykit.utils.pattern import match as pyoverload
+
+from .compiler import (annotate, overload, overloadable)
+from .entrypoints import jit, ijit, abstract, implements
+from .typing import convert, promote, typeof, typedef
 from .passes import translate
 from .errors import error, InferError, SpecializeError
 
