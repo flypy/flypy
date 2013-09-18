@@ -18,9 +18,10 @@ class Function(object):
     Result of @jit for functions.
     """
 
-    def __init__(self, py_func, signature):
+    def __init__(self, py_func, signature, abstract=False):
         self.py_func = py_func
         self.signature = signature
+        self.abstract = abstract
 
         self.llvm_funcs = {}
         self.ctypes_funcs = {}

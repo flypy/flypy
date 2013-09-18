@@ -5,7 +5,10 @@ Number interfaces.
 """
 
 from __future__ import print_function, division, absolute_import
-from .. import abstract
+from ... import abstract
+
+__all__ = ['Number', 'Real', 'Complex', 'Rational', 'Irrational',
+           'Integer', 'Floating']
 
 @abstract
 class Number(object):

@@ -6,11 +6,12 @@ Entry points for runtime code.
 
 from __future__ import print_function, division, absolute_import
 import types
+import inspect
 from functools import partial
 
-from .runtime.types import Type
 from .compiler import annotate
 from .function import Function
+from .runtime.interfaces import interface
 from .utils import applyable_decorator
 
 @applyable_decorator
@@ -46,7 +47,7 @@ def jit_func(f, signature=None):
 
 
 @applyable_decorator
-def jit_class(cls, signature=None):
+def jit_class(cls, signature=None, abstract=False):
     """
     @jit('Array[dtype, ndim]')
     """
@@ -73,6 +74,26 @@ def jit_class(cls, signature=None):
 def abstract(f, *args, **kwds):
     kwds['abstract'] = True
     return jit(f, *args, **kwds)
+
+def implements(signature, *interfaces):
+    """
+    Implement the given interfaces:
+
+        @implements(Number)
+        ...
+    """
+    def decorator(cls):
+        assert isinstance(cls, type), cls
+
+        interface.interface_compatibility(interfaces)
+        for i in interfaces:
+            interface.verify_interface(cls, i)
+        for i in interfaces:
+            interface.copy_methods(cls, i)
+
+        return jit(cls, signature)
+
+    return decorator
 
 
 # --- shorthands
