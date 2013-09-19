@@ -47,8 +47,8 @@ __gt__ = translate(lambda x, y: x > y)
 
 int32 = Int[32]
 float32 = Float[32]
-int32.fields['__gt__'] = (__gt__, Function(Bool, int32, int32))
-cache.typings[__gt__, (int32, int32)] = (None, Function(Bool, int32, int32))
+int32.fields['__gt__'] = (__gt__, Function[Bool, int32, int32])
+cache.typings[__gt__, (int32, int32)] = (None, Function[Bool, int32, int32])
 
 def get(name):
     f = mod.get_function(name)
@@ -61,25 +61,25 @@ class TestInfer(unittest.TestCase):
     def test_simple(self):
         f = get('simple')
         ctx, signature = infer(cache, f, [int32, int32])
-        self.assertEqual(signature, Function(int32, int32, int32))
+        self.assertEqual(signature, Function[int32, int32, int32])
 
     def test_branch(self):
         f = get('branch')
         ctx, signature = infer(cache, f, [int32, int32])
-        self.assertEqual(signature, Function(int32, int32, int32))
+        self.assertEqual(signature, Function[int32, int32, int32])
         type = ctx.context[findop(f, 'call')]
-        self.assertEqual(type, set([bool]))
+        self.assertEqual(type, set([Bool]))
 
     def test_loop(self):
         f = get('loop')
         ctx, signature = infer(cache, f, [int32, int32])
-        self.assertEqual(signature, Function(int32, int32, int32))
+        self.assertEqual(signature, Function[int32, int32, int32])
         type = ctx.context[findop(f, 'call')]
-        self.assertEqual(type, set([bool]))
+        self.assertEqual(type, set([Bool]))
 
 
 if __name__ == '__main__':
-    TestInfer('test_simple').debug()
+    # TestInfer('test_simple').debug()
     # TestInfer('test_branch').debug()
     # TestInfer('test_loop').debug()
     unittest.main()

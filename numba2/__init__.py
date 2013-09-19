@@ -7,17 +7,20 @@ from pykit.utils.pattern import match as pyoverload
 
 from .compiler import (annotate, overload, overloadable)
 from .entrypoints import jit, ijit, abstract
-from .runtime.interfaces import implements
 from .typing import convert, promote, typeof, typedef, parse
+from .types import Type
+from .runtime.interfaces.interface import implements
+
 from .passes import translate
 from .errors import error, InferError, SpecializeError
+
 
 __version__ = '0.1'
 
 # ______________________________________________________________________
 # numba.test()
 
-root = dirname(abspath(__file__))
+root = dirname(dirname(abspath(__file__)))
 pattern = "test_*.py"
 
 def test(root=root, pattern=pattern):

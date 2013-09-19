@@ -1,2 +1,2 @@
-from .numbers import *
 from .interface import implements
+from .numbers import *

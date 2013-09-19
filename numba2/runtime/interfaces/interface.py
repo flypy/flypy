@@ -6,7 +6,7 @@ Entry points for runtime code.
 
 from __future__ import print_function, division, absolute_import
 import inspect
-from ...function import Function
+from ...functionwrapper import FunctionWrapper
 from ... import jit
 
 __all__ = ['implements']
@@ -38,7 +38,7 @@ def implements(signature, *interfaces):
 def verify_interface(cls, interface):
     """Verify that all abstract methods are implemented"""
     for attr, method in inspect.getmembers(interface):
-        if isinstance(method, Function):
+        if isinstance(method, FunctionWrapper):
             if method.abstract:
                 # Check for method implementation
                 if not hasattr(cls, attr):
@@ -51,7 +51,7 @@ def interface_compatibility(interfaces):
     attributes = {}
     for interface in interfaces:
         for attr, method in inspect.getmembers(interface):
-            if isinstance(method, Function):
+            if isinstance(method, FunctionWrapper):
                 # TODO: Improve this check
                 if attr in attributes and method != attributes[attr]:
                     raise TypeError(
@@ -63,7 +63,7 @@ def interface_compatibility(interfaces):
 def copy_methods(cls, interface):
     """Copy implemented methods from the interface"""
     for attr, method in inspect.getmembers(interface):
-        if isinstance(method, Function):
+        if isinstance(method, FunctionWrapper):
             if not method.abstract and not hasattr(cls, attr):
                 # Copy method if not present
                 setattr(cls, attr, method)

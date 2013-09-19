@@ -6,8 +6,8 @@ int/long implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from ... import jit, implements, typeof
-from ..interfaces import Number
+from ... import jit, typeof
+from ..interfaces import Number, implements
 
 @implements('Int[nbits]', Number)
 class Int(object):

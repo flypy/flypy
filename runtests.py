@@ -11,7 +11,7 @@ kwds = {}
 if len(sys.argv) > 1:
     kwds["pattern"] = '*' + sys.argv[1] + '*'
 
-if 1:
+if 0:
     root = dirname(abspath(numba2.__file__))
     order = ['frontend', 'compiler', 'runtime']
     dirs = [join(root, pkg, 'tests') for pkg in order]

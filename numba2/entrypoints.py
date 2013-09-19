@@ -8,12 +8,9 @@ from __future__ import print_function, division, absolute_import
 import types
 from functools import partial
 
-from .function import Function
-from .typing import MetaType
+from .functionwrapper import FunctionWrapper
+from .typing import MetaType, parse
 from .utils import applyable_decorator
-
-from blaze import dshape
-from blaze.datashape import free, TypeVar, TypeConstructor
 
 @applyable_decorator
 def jit(f, *args, **kwds):
@@ -46,13 +43,15 @@ def jit_func(f, signature=None, abstract=False, opaque=False):
     """
     @jit('a -> List[a] -> List[a]')
     """
-    return Function(f, signature)
+    return FunctionWrapper(f, signature)
 
 
 def jit_class(cls, signature=None, abstract=False):
     """
     @jit('Array[dtype, ndim]')
     """
+    from .types import free, TypeConstructor
+
     if not abstract and not hasattr(cls, 'layout'):
         raise ValueError("layout of class %s not set" % (cls,))
 
@@ -74,14 +73,19 @@ def jit_class(cls, signature=None, abstract=False):
     return MetaType(cls.__name__, cls.__bases__, dct)
 
 def parse_constructor(signature):
-    t = dshape(signature)
+    from .types import Type, TypeVar
+
+    if isinstance(signature, basestring):
+        t = parse(signature)
+    else:
+        t = signature
 
     if isinstance(t, TypeVar):
         name = t.symbol
         params = ()
-    elif not isinstance(type(t), TypeConstructor):
+    elif not isinstance(t, Type):
         raise TypeError(
-            "Expected a type variable or type constructor as a signature")
+            "Expected a type variable or type constructor as a signature, got %s" % (t,))
     else:
         name = type(t).__name__
         params = t.parameters

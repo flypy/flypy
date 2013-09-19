@@ -12,7 +12,7 @@ from blaze.util import flatargs
 
 # TODO: Reuse numba.numbawrapper.pyx for autojit Python entry points
 
-class Function(object):
+class FunctionWrapper(object):
     """
     Result of @jit for functions.
     """

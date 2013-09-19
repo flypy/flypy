@@ -15,6 +15,7 @@ class TestInterfaces(unittest.TestCase):
         self.assertEqual(str(Int.type), 'Int[X, Y]')
         self.assertEqual(str(Int[32, True]), 'Int[32, True]')
 
+
 if __name__ == '__main__':
     # TestInterfaces('test_interface').debug()
     unittest.main()

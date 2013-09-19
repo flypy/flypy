@@ -7,5 +7,7 @@ __all__ = ['Function', 'Type', 'Bool', 'Int', 'Float']
 # Types
 #===------------------------------------------------------------------===
 
-from blaze.datashape import (Function, Mono as Type, bool_ as Bool)
-from .runtime.obj import Pointer, Int, Float
+from blaze import dshape
+from blaze.datashape import free, TypeVar, TypeConstructor
+from blaze.datashape import (Mono as Type, bool_ as Bool, void as Void)
+from .runtime.obj import Function, Pointer, Int, Float

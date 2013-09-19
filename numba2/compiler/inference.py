@@ -32,7 +32,7 @@ from itertools import product
 
 from ..typing import promote, typeof, parse
 from ..errors import InferError
-from ..types import Type, Function, Pointer
+from ..types import Type, Function, Pointer, Bool, Void
 
 import pykit.types
 from pykit import ir
@@ -128,8 +128,8 @@ def infer(cache, func, argtypes):
     typeset = ctx.context['return']
     restype = reduce(promote, typeset)
 
-    signature = Function(restype, *argtypes)
-    cache.typings[func, argtypes] = signature, ctx
+    signature = Function[(restype,) + argtypes]
+    cache.typings[func, argtypes] = ctx, signature
     return ctx, signature
 
 def run(func, env):
@@ -300,7 +300,7 @@ class ConstraintGenerator(object):
         """
         Γ ⊢ cbranch (x : Bool)
         """
-        self.G.add_edge(Bool(), op.args[0])
+        self.G.add_edge(Bool, op.args[0])
 
     def op_ret(self, op):
         """
@@ -308,7 +308,7 @@ class ConstraintGenerator(object):
         ----------------
         Γ ⊢ return x : β
         """
-        self.G.add_edge(op.args[0] or Void(), self.return_node)
+        self.G.add_edge(op.args[0] or Void, self.return_node)
 
 # ______________________________________________________________________
 
@@ -379,7 +379,7 @@ def infer_node(cache, ctx, node):
             if attr not in type.fields:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
             value, result = type.fields[attr]
-            if result.name == 'Function':
+            if result.__class__ == Function:
                 func, self = value, type
                 result = Method[func, self]
             changed |= result not in typeset
@@ -414,7 +414,7 @@ def infer_call(cache, func, func_type, arg_types):
             This is already typed
         3) Method. We need to insert 'self' in the cartesian product
     """
-    if func_type.name == 'Method':
+    if type(func_type) == Method:
         func = func_type[0]
         self = func_type[1]
         #[[self_type] + arg_types for self_type in self]
@@ -422,7 +422,7 @@ def infer_call(cache, func, func_type, arg_types):
 
     elif not isinstance(func, ir.Function):
         # Higher-order function
-        restype = func_type.params[0]
+        restype = func_type.parameters[0]
         assert restype
         return  restype
 
@@ -432,4 +432,4 @@ def infer_call(cache, func, func_type, arg_types):
         # func = find_overload(func_type, arg_types)
 
     ctx, signature = infer(cache, func, arg_types)
-    return signature.params[0] # Return return type
+    return signature.parameters[0] # Return return type
