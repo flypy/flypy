@@ -11,8 +11,11 @@ from functools import partial
 
 from .compiler import annotate
 from .function import Function
-from .runtime.interfaces import interface
+from .typing import MetaType
 from .utils import applyable_decorator
+
+from blaze import dshape
+from blaze.datashape import free, TypeVar, TypeConstructor
 
 @applyable_decorator
 def jit(f, *args, **kwds):
@@ -31,6 +34,9 @@ def jit(f, *args, **kwds):
         @jit('Foo[a]')
         class Foo(object): pass
     """
+    return _jit(f, *args, **kwds)
+
+def _jit(f, *args, **kwds):
     if isinstance(f, (types.ClassType, type)):
         return jit_class(f, *args, **kwds)
     else:
@@ -38,63 +44,61 @@ def jit(f, *args, **kwds):
         return jit_func(f, *args, **kwds)
 
 
-@applyable_decorator
-def jit_func(f, signature=None):
+def jit_func(f, signature=None, abstract=False):
     """
     @jit('a -> List[a] -> List[a]')
     """
     return Function(f, signature)
 
 
-@applyable_decorator
 def jit_class(cls, signature=None, abstract=False):
     """
     @jit('Array[dtype, ndim]')
     """
-    if not hasattr(cls, 'layout'):
+    if not abstract and not hasattr(cls, 'layout'):
         raise ValueError("layout of class %s not set" % (cls,))
 
-    assert not hasattr(cls, 'parameters')
-    assert not hasattr(cls, 'type')
-
-    # Type.register(cls)
+    dct = dict(vars(cls))
 
     if signature is not None:
-        type = parse_type(signature)
-        cls.parameters = free(type)
-        cls.layout = substitute(cls.layout, )
+        t, name, params = parse_constructor(signature)
+        if name != cls.__name__:
+            raise TypeError(
+                "Got differing names for type constructor and class, "
+                "%s and %s" % (name, cls.__name__))
+        dct['type'] = t
     else:
-        cls.parameters = ()
-        assert not free(cls.layout)
+        constructor = TypeConstructor(cls.__name__, 0, [])
+        dct['type'] = constructor()
+        if not abstract:
+            assert not free(cls.layout)
 
-    return Type(cls.__name__, cls.__bases__, vars(cls))
+    return MetaType(cls.__name__, cls.__bases__, dct)
 
+def parse_constructor(signature):
+    t = dshape(signature)
+
+    if isinstance(t, TypeVar):
+        name = t.symbol
+        params = ()
+    elif not isinstance(type(t), TypeConstructor):
+        raise TypeError(
+            "Expected a type variable or type constructor as a signature")
+    else:
+        name = type(t).__name__
+        params = t.parameters
+
+    for i, param in enumerate(params):
+        if not isinstance(param, TypeVar):
+            raise TypeError(
+                "Parameter %s is not a type variable! Got %s." % (i, param))
+
+    return t, name, params
 
 @applyable_decorator
 def abstract(f, *args, **kwds):
     kwds['abstract'] = True
-    return jit(f, *args, **kwds)
-
-def implements(signature, *interfaces):
-    """
-    Implement the given interfaces:
-
-        @implements(Number)
-        ...
-    """
-    def decorator(cls):
-        assert isinstance(cls, type), cls
-
-        interface.interface_compatibility(interfaces)
-        for i in interfaces:
-            interface.verify_interface(cls, i)
-        for i in interfaces:
-            interface.copy_methods(cls, i)
-
-        return jit(cls, signature)
-
-    return decorator
-
+    return _jit(f, *args, **kwds)
 
 # --- shorthands
 

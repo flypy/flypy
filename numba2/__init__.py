@@ -6,8 +6,9 @@ import unittest
 from pykit.utils.pattern import match as pyoverload
 
 from .compiler import (annotate, overload, overloadable)
-from .entrypoints import jit, ijit, abstract, implements
-from .typing import convert, promote, typeof, typedef
+from .entrypoints import jit, ijit, abstract
+from .runtime.interfaces import implements
+from .typing import convert, promote, typeof, typedef, parse
 from .passes import translate
 from .errors import error, InferError, SpecializeError
 

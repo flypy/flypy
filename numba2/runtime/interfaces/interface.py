@@ -7,6 +7,31 @@ Entry points for runtime code.
 from __future__ import print_function, division, absolute_import
 import inspect
 from ...function import Function
+from ... import jit
+
+__all__ = ['implements']
+
+def implements(signature, *interfaces):
+    """
+    Implement the given interfaces:
+
+        @implements(Number)
+        ...
+    """
+    def decorator(cls):
+        assert isinstance(cls, type), cls
+
+        interface_compatibility(interfaces)
+        for i in interfaces:
+            verify_interface(cls, i)
+        for i in interfaces:
+            copy_methods(cls, i)
+
+        return jit(cls, signature)
+
+    return decorator
+
+
 
 def verify_interface(cls, interface):
     """Verify that all abstract methods are implemented"""

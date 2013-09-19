@@ -45,7 +45,7 @@ def applyable_decorator(decorator):
     @functools.wraps(decorator)
     def decorator_wrapper(*args, **kwargs):
         if (len(args) == 1 and not kwargs and
-                isinstance(args[0], types.FunctionType)):
+                isinstance(args[0], (type, types.FunctionType, types.ClassType))):
             return decorator(args[0])
         else:
             return lambda f: decorator(f, *args, **kwargs)

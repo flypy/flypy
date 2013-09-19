@@ -5,14 +5,18 @@ from functools import partial
 
 from . import pyoverload
 from .compiler.overload import overload
-from .runtime.obj.intobject import Int
 
-from pykit import types
-from pykit.utils import make_temper, pattern
 from blaze.datashape import *
 
 #===------------------------------------------------------------------===
-# Runtime
+# Parsing
+#===------------------------------------------------------------------===
+
+def parse(s):
+    return dshape(s)
+
+#===------------------------------------------------------------------===
+# Stopgaps...
 #===------------------------------------------------------------------===
 
 units = {}
@@ -25,25 +29,21 @@ def declare_unit(type, unit_type):
     """
     units[type] = unit_type
 
+#===------------------------------------------------------------------===
+# Runtime
+#===------------------------------------------------------------------===
 
 class MetaType(type):
     """
     Type of types.
     """
 
-    def __init__(self, name, bases, dct):
-        params = dct['parameters']
-        flags = [{'coercible': False} for i in range(len(params))]
-        self.type = TypeConstructor(name, len(params), flags)
-
     def __getitem__(cls, key):
         if not isinstance(key, tuple):
             key = (key,)
-        return self.type(*key)
+        constructor = type(cls.type)
+        return constructor(*key)
 
-#===------------------------------------------------------------------===
-#
-#===------------------------------------------------------------------===
 
 @pyoverload
 def typeof(pyval):
@@ -78,6 +78,3 @@ class TypedefRegistry(object):
 
 typedef_registry = TypedefRegistry()
 typedef = typedef_registry.typedef
-
-T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10 = [
-        Typevar(typevar_names[i]) for i in range(12)]
