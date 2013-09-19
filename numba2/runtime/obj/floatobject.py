@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-int/long implementation.
+float/double implementation.
 """
 
 from __future__ import print_function, division, absolute_import
@@ -9,10 +9,11 @@ from __future__ import print_function, division, absolute_import
 from ... import jit, implements, typeof
 from ..interfaces import Number
 
-@implements('Int[nbits]', Number)
-class Int(object):
+@implements('Float[nbits]', Number)
+class Float(object):
     pass
 
-@typeof.case(int)
+
+@typeof.case(float)
 def typeof(pyval):
-    return Int[32]
+    return Float[64]
