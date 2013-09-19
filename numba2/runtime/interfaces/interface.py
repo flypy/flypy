@@ -27,11 +27,13 @@ def implements(signature, *interfaces):
         for i in interfaces:
             copy_methods(cls, i)
 
-        return jit(cls, signature)
+        return jit(signature, abstract=True)(cls)
 
     return decorator
 
-
+#===------------------------------------------------------------------===
+# Helpers
+#===------------------------------------------------------------------===
 
 def verify_interface(cls, interface):
     """Verify that all abstract methods are implemented"""

@@ -7,12 +7,12 @@ Simplify untyped IR.
 from __future__ import print_function, division, absolute_import
 
 from .special import special
-from .typing import Opaque
 
+from pykit.types import Opaque
 from pykit.ir import Op, Const
 
 def newop(opcode, args):
-    return Op(opcode, Opaque(), args)
+    return Op(opcode, Opaque, args)
 
 def simplify(func):
     """

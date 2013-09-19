@@ -6,10 +6,8 @@ Entry points for runtime code.
 
 from __future__ import print_function, division, absolute_import
 import types
-import inspect
 from functools import partial
 
-from .compiler import annotate
 from .function import Function
 from .typing import MetaType
 from .utils import applyable_decorator
@@ -44,7 +42,7 @@ def _jit(f, *args, **kwds):
         return jit_func(f, *args, **kwds)
 
 
-def jit_func(f, signature=None, abstract=False):
+def jit_func(f, signature=None, abstract=False, opaque=False):
     """
     @jit('a -> List[a] -> List[a]')
     """

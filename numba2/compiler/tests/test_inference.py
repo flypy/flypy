@@ -9,7 +9,7 @@ from pykit.analysis import cfa
 from numba2.frontend import translate
 from numba2.caching import InferenceCache
 from numba2.compiler.simplify import simplify
-from numba2.compiler.typing import Type, Function
+from numba2.types import Type, Function, Bool, Int, Float
 from numba2.compiler.inference import infer
 
 source = """
@@ -45,11 +45,10 @@ cache = InferenceCache()
 
 __gt__ = translate(lambda x, y: x > y)
 
-bool = Type('Bool')
-int32 = Type('Int', 32, False)
-float32 = Type('Float', 32)
-int32.fields['__gt__'] = (__gt__, Function(bool, int32, int32))
-cache.typings[__gt__, (int32, int32)] = (None, Function(bool, int32, int32))
+int32 = Int[32]
+float32 = Float[32]
+int32.fields['__gt__'] = (__gt__, Function(Bool, int32, int32))
+cache.typings[__gt__, (int32, int32)] = (None, Function(Bool, int32, int32))
 
 def get(name):
     f = mod.get_function(name)
@@ -80,7 +79,7 @@ class TestInfer(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # TestInfer('test_simple').debug()
+    TestInfer('test_simple').debug()
     # TestInfer('test_branch').debug()
     # TestInfer('test_loop').debug()
     unittest.main()

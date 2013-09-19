@@ -6,8 +6,7 @@ Numba function wrapper.
 
 from __future__ import print_function, division, absolute_import
 
-from .compiler import typeof
-from .passes import translate
+from .typing import typeof
 
 from blaze.util import flatargs
 
@@ -40,6 +39,8 @@ class Function(object):
         return cfunc(*args)
 
     def translate(self, argtypes, restype=None):
+        from .passes import translate
+
         key = tuple(argtypes) + (restype,)
         if key in self.ctypes_funcs:
             return self.ctypes_funcs[key]

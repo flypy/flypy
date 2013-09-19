@@ -28,11 +28,11 @@ promotion, triggering either an error or a call to a real implementation.
 from __future__ import print_function, division, absolute_import
 from pprint import pprint
 import collections
-from functools import partial
 from itertools import product
 
-from .typing import Type, Function, Void, Bool, Pointer, Method, Opaque, promote, typeof
+from ..typing import promote, typeof, parse
 from ..errors import InferError
+from ..types import Type, Function, Pointer
 
 import pykit.types
 from pykit import ir
@@ -44,29 +44,15 @@ import networkx
 # Utils
 #===------------------------------------------------------------------===
 
-def make_type(type):
-    if type == Opaque():
-        return set()
-    elif isinstance(type, Type):
-        return set([type])
-    elif isinstance(type, pykit.types.Type):
-        return typemap(type)
-    else:
-        assert isinstance(type, set)
-        return type
-
 def copy_context(context):
     return dict((binding, set(type)) for binding, type in context.iteritems())
-
-def typemap(ty):
-    if not isinstance(ty, pykit.types.Type):
-        return ty
-    return make_type(Type(type(ty).__name__, *map(typemap, ty)))
 
 def view(G):
     import matplotlib.pyplot as plt
     networkx.draw(G)
     plt.show()
+
+Method = parse("Method[func, self]")
 
 #===------------------------------------------------------------------===
 # Inference structures
@@ -163,7 +149,7 @@ def build_graph(func):
     templates share-able between input types.
     """
     G = networkx.DiGraph()
-    context = {}
+    context = initial_context(func)
 
     for op in func.ops:
         G.add_node(op)
@@ -174,7 +160,7 @@ def build_graph(func):
     constraints, metadata = generate_constraints(func, G)
     return Context(func, context, constraints, G, metadata)
 
-def initial_context(func, argtypes):
+def initial_context(func):
     """Initialize context with argtypes"""
     context = { 'return': set() }
     context['return'] = set()
@@ -186,7 +172,8 @@ def initial_context(func, argtypes):
                 context[arg] = typeof(arg.const)
             elif isinstance(arg, ir.GlobalValue):
                 raise NotImplementedError("Globals")
-                # context[arg] = make_type(arg.type)
+
+    return context
 
 def seed_context(ctx, argtypes):
     for arg, argtype in zip(ctx.func.args, argtypes):
@@ -375,7 +362,7 @@ def infer_node(cache, ctx, node):
     if C == 'pointer':
         for neighbor in incoming:
             for type in ctx.context[neighbor]:
-                result = Pointer(type)
+                result = Pointer[type]
                 changed |= result not in typeset
                 typeset.add(result)
 
@@ -394,7 +381,7 @@ def infer_node(cache, ctx, node):
             value, result = type.fields[attr]
             if result.name == 'Function':
                 func, self = value, type
-                result = Method(func, self)
+                result = Method[func, self]
             changed |= result not in typeset
             typeset.add(result)
 

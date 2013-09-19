@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from functools import partial
-
 from . import pyoverload
 from .compiler.overload import overload
 
-from blaze.datashape import *
+from blaze.datashape import TypeVar, TypeConstructor, dshape
 
 #===------------------------------------------------------------------===
 # Parsing
@@ -38,17 +36,22 @@ class MetaType(type):
     Type of types.
     """
 
+    def __init__(self, name, bases, dct):
+        self.fields = {}
+
     def __getitem__(cls, key):
         if not isinstance(key, tuple):
             key = (key,)
         constructor = type(cls.type)
-        return constructor(*key)
+        result = constructor(*key)
+        result.fields = cls.fields
+        return result
 
 
 @pyoverload
 def typeof(pyval):
     """Python value -> Type"""
-    raise NotImplementedError("typeof(%s)" % (pyval,))
+    raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
 
 @overload('ν -> Type[τ] -> τ')
 def convert(value, type):
