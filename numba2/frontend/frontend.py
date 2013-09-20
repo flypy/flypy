@@ -77,7 +77,7 @@ def simplify_exceptions(func, env=None):
 
 def rewrite_calls(func, env):
     """
-    Rewrite 'pycall' instructions to 'call'.
+    Rewrite 'pycall' instructions to other Numba functions to 'call'.
 
     This recurses into the front-end translator, so this supports recursion
     since the function is already in the cache.

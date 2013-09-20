@@ -10,8 +10,14 @@ from pykit.ir import interp
 def pycall(interp, func, *args):
     return func(*args)
 
+def getfield(interp, obj, attr):
+    if hasattr(obj, attr):
+        return getattr(obj, attr)
+    return getattr(type(obj), attr)
+
 handlers = {
-    'pycall': pycall
+    'pycall':   pycall,
+    'getfield': getfield,
 }
 
 def run(func, env=None, exc_model=None, args=()):

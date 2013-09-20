@@ -149,5 +149,5 @@ class TestBytecodeTranslation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestBytecodeTranslation('test_recursion').debug()
-    # unittest.main()
+    # TestBytecodeTranslation('test_recursion').debug()
+    unittest.main()

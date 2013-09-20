@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from .environment import root_env
 from .pipeline import run_pipeline
 from .frontend import translate
-from .compiler import inference
+from .compiler import simplification, inference
 from .backend import backend
 
 #===------------------------------------------------------------------===
@@ -25,6 +25,7 @@ def dump(func, env):
 
 passes = [
     translate,
+    simplification,
     inference,
     backend,
 ]
