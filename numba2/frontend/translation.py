@@ -105,6 +105,7 @@ class Translate(object):
         # -------------------------------------------------
         # Variables and scoping
 
+        self.code = self.bytecode.code
         self.varnames = self.bytecode.code.co_varnames
         self.consts = self.bytecode.code.co_consts
         self.names = self.bytecode.code.co_names
@@ -283,6 +284,8 @@ class Translate(object):
         return phi
 
     def call(self, func, args=()):
+        if not isinstance(func, Const):
+            func = Const(func, types.Opaque)
         self.push_insert('pycall', func, *args)
 
     def binary_op(self, op):
@@ -442,6 +445,12 @@ class Translate(object):
         if name not in self.globals:
             raise NameError("Could not resolve %r at compile time" % name)
         value = self.globals[name]
+        self.push(Const(value, types.Opaque))
+
+    def op_LOAD_DEREF(self, inst):
+        i = inst.arg
+        cell = self.func.__closure__[i]
+        value = cell.cell_contents
         self.push(Const(value, types.Opaque))
 
     def op_LOAD_FAST(self, inst):
@@ -700,3 +709,22 @@ class ExceptionBlock(object):
 class FinallyBlock(object):
     def __init__(self, finally_block):
         self.finally_block = finally_block
+
+#===------------------------------------------------------------------===
+# Globals
+#===------------------------------------------------------------------===
+
+def lookup_global(func, name, env):
+    func_globals = env['numba.state.func_globals']
+
+    if (func is not None and name in func.__code__.co_freevars and
+            func.__closure__):
+        cell_idx = func.__code__.co_freevars.index(name)
+        cell = func.__closure__[cell_idx]
+        value = cell.cell_contents
+    elif name in func_globals:
+        value = func_globals[name]
+    else:
+        raise CompileError("No global named '%s'" % (name,))
+
+    return value
