@@ -37,7 +37,7 @@ class MetaType(type):
     """
 
     def __init__(self, name, bases, dct):
-        self.fields = {}
+        self.fields = dict(_extract_fields(dct))
 
     def __getitem__(cls, key):
         if not isinstance(key, tuple):
@@ -81,3 +81,19 @@ class TypedefRegistry(object):
 
 typedef_registry = TypedefRegistry()
 typedef = typedef_registry.typedef
+
+#===------------------------------------------------------------------===
+# Utils
+#===------------------------------------------------------------------===
+
+def _extract_fields(dct):
+    from .functionwrapper import FunctionWrapper # circular...
+
+    fields = {}
+    for name, value in dct.iteritems():
+        if isinstance(value, FunctionWrapper):
+            fields[name] = (value, value.signature)
+
+    # TODO: layout...
+
+    return fields
