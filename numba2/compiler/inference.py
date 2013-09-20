@@ -33,6 +33,8 @@ from itertools import product
 from ..typing import promote, typeof, parse
 from ..errors import InferError
 from ..types import Type, Function, Pointer, Bool, Void
+from ..functionwrapper import FunctionWrapper
+from . import opaque
 
 import pykit.types
 from pykit import ir
@@ -52,7 +54,7 @@ def view(G):
     networkx.draw(G)
     plt.show()
 
-Method = parse("Method[func, self]")
+Method = type(parse("Method[func, self]"))
 
 #===------------------------------------------------------------------===
 # Inference structures
@@ -95,6 +97,15 @@ class Context(object):
 # Inference
 #===------------------------------------------------------------------===
 
+def run(func, env):
+    cache = env['numba.typing.cache']
+    argtypes = env['numba.typing.argtypes']
+    ctx, signature = infer(cache, func, argtypes)
+
+    env['numba.typing.signature'] = signature
+    env['numba.typing.context'] = ctx.context
+    env['numba.typing.constraints'] = ctx.constraints
+
 def infer(cache, func, argtypes):
     """Infer types for the given function"""
     argtypes = tuple(argtypes)
@@ -105,6 +116,26 @@ def infer(cache, func, argtypes):
     cached = cache.lookup(func, argtypes)
     if cached:
         return cached
+
+    ctx = infer_function(cache, func, argtypes)
+
+    # -------------------------------------------------
+    # Cache result
+
+    typeset = ctx.context['return']
+    restype = reduce(promote, typeset)
+
+    signature = Function[(restype,) + argtypes]
+    cache.typings[func, argtypes] = ctx, signature
+    return ctx, signature
+
+
+def infer_function(cache, func, argtypes):
+    if isinstance(func, FunctionWrapper) and func.opaque:
+        restype = func.signature.parameters[0] # TODO: unify
+        func = opaque.implement(func, argtypes)
+        ctx = Context(func, {'return': restype}, {}, None, {})
+        return ctx
 
     # -------------------------------------------------
     # Build template
@@ -121,25 +152,7 @@ def infer(cache, func, argtypes):
 
     seed_context(ctx, argtypes)
     infer_graph(cache, ctx)
-
-    # -------------------------------------------------
-    # Cache result
-
-    typeset = ctx.context['return']
-    restype = reduce(promote, typeset)
-
-    signature = Function[(restype,) + argtypes]
-    cache.typings[func, argtypes] = ctx, signature
-    return ctx, signature
-
-def run(func, env):
-    cache = env['numba.typing.cache']
-    argtypes = env['numba.typing.argtypes']
-    signature, context, constraints = infer(cache, func, argtypes)
-
-    env['numba.typing.signature'] = signature
-    env['numba.typing.context'] = context
-    env['numba.typing.constraints'] = constraints
+    return ctx
 
 # ______________________________________________________________________
 
@@ -164,9 +177,13 @@ def initial_context(func):
     """Initialize context with argtypes"""
     context = { 'return': set() }
     context['return'] = set()
+    count = 0
 
     for op in func.ops:
         context[op] = set()
+        if op.opcode == 'alloca':
+            context['alloca%d' % count] = set()
+            count += 1
         for arg in flatten(op.args):
             if isinstance(arg, ir.Const):
                 context[arg] = typeof(arg.const)
@@ -197,7 +214,7 @@ class ConstraintGenerator(object):
         self.G = G
         self.constraints = {}  # Op -> constraint
         self.metadata = {}     # Node -> object
-        self._allocas = {}     # Op -> node
+        self.allocas = {}     # Op -> node
         self.return_node = 'return'
 
     def op_alloca(self, op):
@@ -210,12 +227,12 @@ class ConstraintGenerator(object):
         ----------------
         Γ ⊢ alloca a : ⊥
         """
-        if op not in self._allocas:
-            node = 'var%d' % len(self._allocas)
+        if op not in self.allocas:
+            node = 'alloca%d' % len(self.allocas)
             self.G.add_node(node)
-            self._allocas[op] = node
+            self.allocas[op] = node
 
-        self.G.add_edge(self._allocas[op], op)
+        self.G.add_edge(self.allocas[op], op)
         self.constraints[op] = 'pointer'
 
     def op_load(self, op):
@@ -224,7 +241,7 @@ class ConstraintGenerator(object):
         --------------
         Γ ⊢ load x : α
         """
-        self.G.add_edge(self._allocas[op.args[0]], op)
+        self.G.add_edge(self.allocas[op.args[0]], op)
 
     def op_store(self, op):
         """
@@ -233,7 +250,7 @@ class ConstraintGenerator(object):
         Γ ⊢ store x var : Void
         """
         value, var = op.args
-        self.G.add_edge(value, self._allocas[var])
+        self.G.add_edge(value, self.allocas[var])
 
     def op_phi(self, op):
         """
@@ -379,9 +396,9 @@ def infer_node(cache, ctx, node):
             if attr not in type.fields:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
             value, result = type.fields[attr]
-            if result.__class__ == Function:
+            if isinstance(value, FunctionWrapper) or result.__class__ == Function:
                 func, self = value, type
-                result = Method[func, self]
+                result = Method(func, self)
             changed |= result not in typeset
             typeset.add(result)
 
@@ -415,8 +432,8 @@ def infer_call(cache, func, func_type, arg_types):
         3) Method. We need to insert 'self' in the cartesian product
     """
     if type(func_type) == Method:
-        func = func_type[0]
-        self = func_type[1]
+        func = func_type.parameters[0]
+        self = func_type.parameters[1]
         #[[self_type] + arg_types for self_type in self]
         # arg_types = (self,) + arg_types
 

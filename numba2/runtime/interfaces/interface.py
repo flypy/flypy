@@ -64,6 +64,9 @@ def copy_methods(cls, interface):
     """Copy implemented methods from the interface"""
     for attr, method in inspect.getmembers(interface):
         if isinstance(method, FunctionWrapper):
-            if not method.abstract and not hasattr(cls, attr):
+            if not method.abstract and attr not in vars(cls):
                 # Copy method if not present
+                # TODO: Copy?
+                # method = FunctionWrapper(method.py_func, method.signature,
+                #                          method.abstract, method.opaque)
                 setattr(cls, attr, method)

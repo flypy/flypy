@@ -43,7 +43,9 @@ def jit_func(f, signature=None, abstract=False, opaque=False):
     """
     @jit('a -> List[a] -> List[a]')
     """
-    return FunctionWrapper(f, signature)
+    if signature:
+        signature = parse(signature)
+    return FunctionWrapper(f, signature, abstract=abstract, opaque=opaque)
 
 
 def jit_class(cls, signature=None, abstract=False):
@@ -71,6 +73,7 @@ def jit_class(cls, signature=None, abstract=False):
             assert not free(cls.layout)
 
     return MetaType(cls.__name__, cls.__bases__, dct)
+
 
 def parse_constructor(signature):
     from .types import Type, TypeVar

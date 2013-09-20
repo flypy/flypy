@@ -17,7 +17,7 @@ class FunctionWrapper(object):
     Result of @jit for functions.
     """
 
-    def __init__(self, py_func, signature, abstract=False):
+    def __init__(self, py_func, signature, abstract=False, opaque=False):
         self.py_func = py_func
         self.signature = signature
         self.abstract = abstract
@@ -25,6 +25,9 @@ class FunctionWrapper(object):
         self.llvm_funcs = {}
         self.ctypes_funcs = {}
         self.envs = {}
+
+        self.opaque = opaque
+        self.implementor = None
 
     def __call__(self, *args, **kwargs):
         if self.signature is not None:
@@ -55,3 +58,6 @@ class FunctionWrapper(object):
         self.envs[key] = env
 
         return llvm_func, env
+
+    def __str__(self):
+        return "<%s: %s>" % (self.py_func, self.signature)

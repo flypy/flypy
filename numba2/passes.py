@@ -27,6 +27,7 @@ passes = [
     translate,
     simplification,
     inference,
+    dump,
     backend,
 ]
 
@@ -47,4 +48,4 @@ def translate(py_func, argtypes, restype=None, env=None, passes=passes):
     env['numba.state.func_globals'] = py_func.__globals__
     env['numba.state.func_code'] = py_func.__code__
 
-    run_pipeline(py_func, env, passes)
+    return run_pipeline(py_func, env, passes)
