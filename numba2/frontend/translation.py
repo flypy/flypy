@@ -17,42 +17,9 @@ import collections
 
 from numba2.errors import error_context, CompileError, EmptyStackError
 from .bytecode import ByteCode
-from .postpasses import simplify_exceptions
 
 from pykit.ir import Function, Builder, Op, Const, ops
 from pykit import types
-
-#===------------------------------------------------------------------===
-# Entrypoint
-#===------------------------------------------------------------------===
-
-def translate(func, env=None):
-    """
-    Entry point.
-
-    Parameters
-    ----------
-
-    func : Python function
-        Python function to translate
-
-    Returns : pykit.ir.Function
-        Untyped pykit function. All types are Opaque unless they are constant.
-    """
-    # -------------------------------------------------
-    # Translate
-
-    t = Translate(func)
-    t.initialize()
-    t.interpret()
-    func = t.dst
-
-    # -------------------------------------------------
-    # Postpasses
-
-    simplify_exceptions(func)
-
-    return func
 
 #===------------------------------------------------------------------===
 # Translation

@@ -33,11 +33,10 @@ class Cache(object):
     def __init__(self):
         self.cached = {}
 
-    def lookup(self, *key):
-        return self.cached[key]
+    def lookup(self, key):
+        return self.cached.get(key)
 
-    def insert(self, *args):
-        key, value = args[:-1], args[-1]
+    def insert(self, key, value):
         self.cached[key] = value
 
 #===------------------------------------------------------------------===

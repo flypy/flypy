@@ -17,6 +17,11 @@ root_env = FrozenDict({
     'numba.opt.cache':      OptimizationsCache(),
     'numba.codegen.cache':  CodegenCache(),
 
+    # General state
+    'numba.state.py_func':      None,   # This value may be None
+    'numba.state.func_globals': None,
+    'numba.state.func_code':    None,
+
     # Typing
     'numba.typing.restype': None,       # Input
     'numba.typing.argtypes': None,      # Input
@@ -35,3 +40,5 @@ root_env = FrozenDict({
     "codegen.llvm.machine": None,
     "codegen.llvm.ctypes":  None,
 })
+
+fresh_env = lambda: dict(root_env)

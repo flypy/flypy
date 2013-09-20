@@ -37,7 +37,13 @@ def translate(py_func, argtypes, restype=None, env=None, passes=passes):
     if env is None:
         env = dict(root_env)
 
+    # Types
     env['numba.typing.argtypes'] = argtypes
     env.setdefault('numba.typing.restype', restype)
+
+    # State
+    env['numba.state.py_func'] = py_func
+    env['numba.state.func_globals'] = py_func.__globals__
+    env['numba.state.func_code'] = py_func.__code__
 
     run_pipeline(py_func, env, passes)
