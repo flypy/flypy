@@ -30,11 +30,11 @@ from pprint import pprint
 import collections
 from itertools import product
 
-from ..typing import promote, typeof, parse
-from ..errors import InferError
-from ..types import Type, Function, Pointer, Bool, Void
-from ..functionwrapper import FunctionWrapper
-from . import opaque
+from numba2.typing import promote, typeof, parse
+from numba2.errors import InferError
+from numba2.types import Type, Function, Pointer, Bool, Void
+from numba2.functionwrapper import FunctionWrapper
+from .. import opaque
 
 import pykit.types
 from pykit import ir

@@ -6,10 +6,8 @@ Simplify untyped IR.
 
 from __future__ import print_function, division, absolute_import
 
-from .special import lookup_special
-
 from pykit import types
-from pykit.ir import Builder, OpBuilder, Const, Op, ops, defs
+from pykit.ir import Const, Op, ops, defs
 
 #===------------------------------------------------------------------===
 # Special methods
@@ -52,7 +50,7 @@ def lookup_special(func):
 # Simplifier
 #===------------------------------------------------------------------===
 
-def rewrite_ops(func, env):
+def rewrite_ops(func, env=None):
     """
     Rewrite unary/binary operations to special methods:
 

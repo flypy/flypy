@@ -6,7 +6,6 @@
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.functionwrapper import FunctionWrapper
 from numba2.typing import promote, coerce, unify_simple
 
 from pykit import types

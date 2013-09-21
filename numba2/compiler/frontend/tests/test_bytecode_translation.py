@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-import dis
 import unittest
 
 from pykit.analysis import cfa
 from pykit.ir.interp import UncaughtException
 
 from numba2.functionwrapper import FunctionWrapper
-from numba2.frontend import translate, interpret
+from numba2.compiler.frontend import translate, interpret
 from numba2 import environment
 
 function = lambda f: FunctionWrapper(f, None)

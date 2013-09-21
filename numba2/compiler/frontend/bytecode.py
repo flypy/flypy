@@ -7,8 +7,8 @@ Taken from numbapro/npm/bytecode.py by Siu Kwan Lam.
 """
 
 from __future__ import print_function, division, absolute_import
-
-import dis, sys
+import dis
+import sys
 from collections import namedtuple
 
 from .utils import SortedMap
