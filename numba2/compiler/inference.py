@@ -125,16 +125,16 @@ def infer(cache, func, argtypes):
     typeset = ctx.context['return']
     restype = reduce(promote, typeset)
 
-    signature = Function[(restype,) + argtypes]
+    signature = Function[argtypes + (restype,)]
     cache.typings[func, argtypes] = ctx, signature
     return ctx, signature
 
 
 def infer_function(cache, func, argtypes):
     if isinstance(func, FunctionWrapper) and func.opaque:
-        restype = func.signature.parameters[0] # TODO: unify
+        restype = func.signature.restype # TODO: unify
         func = opaque.implement(func, argtypes)
-        ctx = Context(func, {'return': restype}, {}, None, {})
+        ctx = Context(func, {'return': set([restype])}, {}, None, {})
         return ctx
 
     # -------------------------------------------------
@@ -439,7 +439,7 @@ def infer_call(cache, func, func_type, arg_types):
 
     elif not isinstance(func, ir.Function):
         # Higher-order function
-        restype = func_type.parameters[0]
+        restype = func_type.restype
         assert restype
         return  restype
 
@@ -449,4 +449,4 @@ def infer_call(cache, func, func_type, arg_types):
         # func = find_overload(func_type, arg_types)
 
     ctx, signature = infer(cache, func, arg_types)
-    return signature.parameters[0] # Return return type
+    return signature.restype

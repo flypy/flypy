@@ -47,8 +47,8 @@ __gt__ = translate(lambda x, y: x > y)
 
 int32 = Int[32]
 float32 = Float[32]
-int32.fields['__gt__'] = (__gt__, Function[Bool, int32, int32])
-cache.typings[__gt__, (int32, int32)] = (None, Function[Bool, int32, int32])
+int32.fields['__gt__'] = (__gt__, Function[int32, int32, Bool])
+cache.typings[__gt__, (int32, int32)] = (None, Function[int32, int32, Bool])
 
 def get(name):
     f = mod.get_function(name)

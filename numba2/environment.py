@@ -23,7 +23,7 @@ root_env = FrozenDict({
     'numba.state.func_code':    None,
 
     # Typing
-    'numba.typing.restype': None,       # Input
+    'numba.typing.restype': None,       # Input/Output
     'numba.typing.argtypes': None,      # Input
     'numba.typing.signature': None,     # Output
     'numba.typing.context': None,       # Output

@@ -4,7 +4,8 @@ from __future__ import print_function, division, absolute_import
 from . import pyoverload
 from .compiler.overload import overload
 
-from blaze.datashape import TypeVar, TypeConstructor, dshape
+from blaze.datashape import (TypeVar, TypeConstructor, dshape,
+                             coerce, unify, unify_simple)
 
 #===------------------------------------------------------------------===
 # Parsing

@@ -10,6 +10,7 @@ from .environment import root_env
 from .pipeline import run_pipeline
 from .frontend import translate
 from .compiler import simplification, inference
+from .compiler.methodselection import resolve_context, resolve_restype, rewrite_methods
 from .backend import backend
 
 #===------------------------------------------------------------------===
@@ -27,6 +28,10 @@ passes = [
     translate,
     simplification,
     inference,
+    dump,
+    resolve_context,
+    resolve_restype,
+    rewrite_methods,
     dump,
     backend,
 ]
