@@ -11,6 +11,9 @@ from .caching import (FrontendCache, InferenceCache, OptimizationsCache,
                       CodegenCache)
 
 root_env = FrozenDict({
+    # Command line args
+    'numba.cmdopts':        {},
+
     # Caching
     'numba.frontend.cache': FrontendCache(),
     'numba.typing.cache':   InferenceCache(),

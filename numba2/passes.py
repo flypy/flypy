@@ -13,13 +13,7 @@ from .compiler.frontend import translate
 from .compiler import simplification
 from .compiler.typing import inference
 from .compiler.typing.resolution import resolve_context, resolve_restype, rewrite_methods
-
-#===------------------------------------------------------------------===
-# Utils
-#===------------------------------------------------------------------===
-
-def dump(func, env):
-    print(func)
+from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 #===------------------------------------------------------------------===
 # Passes
@@ -27,6 +21,7 @@ def dump(func, env):
 
 frontend = [
     translate,
+    dump_cfg,
 ]
 
 typing = [
@@ -42,8 +37,8 @@ resolution = [
 
 backend = [
     preparation,
-    dump,
     backend,
+    dump_optimized,
 ]
 
 passes = frontend + typing + resolution + backend
@@ -52,9 +47,11 @@ passes = frontend + typing + resolution + backend
 # Translation
 #===------------------------------------------------------------------===
 
-def translate(py_func, argtypes, restype=None, env=None, passes=passes):
+def translate(py_func, argtypes, restype=None, env=None, passes_=None):
     if env is None:
         env = dict(root_env)
+    if passes_ is None:
+        passes_ = passes
 
     # Types
     env['numba.typing.argtypes'] = argtypes
@@ -65,4 +62,4 @@ def translate(py_func, argtypes, restype=None, env=None, passes=passes):
     env['numba.state.func_globals'] = py_func.__globals__
     env['numba.state.func_code'] = py_func.__code__
 
-    return run_pipeline(py_func, env, passes)
+    return run_pipeline(py_func, env, passes_)

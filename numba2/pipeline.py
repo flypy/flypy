@@ -6,6 +6,7 @@ Pipeline that determines phase ordering and execution.
 
 from __future__ import print_function, division, absolute_import
 
+import dis
 import types
 import pykit.ir
 
@@ -43,3 +44,5 @@ def _check_transform_result(transform, func, env, result):
         transform = transform.__module__ + '.' + transform.__name__
         raise ValueError(
             "Expected (func, env) result in %r, got %s" % (transform, result))
+
+    return result
