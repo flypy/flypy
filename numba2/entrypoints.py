@@ -9,7 +9,7 @@ import types
 from functools import partial
 
 from .functionwrapper import FunctionWrapper
-from .typing import MetaType, parse
+from .typing import MetaType, parse, set_type_data
 from .utils import applyable_decorator
 
 @applyable_decorator
@@ -65,6 +65,7 @@ def jit_class(cls, signature=None, abstract=False):
             raise TypeError(
                 "Got differing names for type constructor and class, "
                 "%s and %s" % (name, cls.__name__))
+        constructor = type(t)
         dct['type'] = t
     else:
         constructor = TypeConstructor(cls.__name__, 0, [])
@@ -72,7 +73,9 @@ def jit_class(cls, signature=None, abstract=False):
         if not abstract:
             assert not free(cls.layout)
 
-    return MetaType(cls.__name__, cls.__bases__, dct)
+    result = MetaType(cls.__name__, cls.__bases__, dct)
+    set_type_data(constructor, result)
+    return result
 
 
 def parse_constructor(signature):

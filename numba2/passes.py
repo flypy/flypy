@@ -7,12 +7,12 @@ Numba passes that perform translation, type inference, code generation, etc.
 from __future__ import print_function, division, absolute_import
 
 from .environment import root_env
-from numba2.compiler.backend import backend
+from numba2.compiler.backend import preparation, backend
 from .pipeline import run_pipeline
 from .compiler.frontend import translate
 from .compiler import simplification
 from .compiler.typing import inference
-from .compiler.typing.methodselection import resolve_context, resolve_restype, rewrite_methods
+from .compiler.typing.resolution import resolve_context, resolve_restype, rewrite_methods
 
 #===------------------------------------------------------------------===
 # Utils
@@ -41,6 +41,8 @@ resolution = [
 ]
 
 backend = [
+    preparation,
+    dump,
     backend,
 ]
 
