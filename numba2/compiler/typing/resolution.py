@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-
+Type resolution and method resolution.
 """
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.typing import promote, coerce, unify_simple
+from numba2.typing import promote, unify_simple
 
-from pykit import types
-from pykit.ir import Builder, OpBuilder, Op
+from pykit.ir import OpBuilder
 
-#===------------------------------------------------------------------===
-# Entrypoint
-#===------------------------------------------------------------------===
 
 def resolve_context(func, env):
     """Reduce typesets in context to concrete types"""
