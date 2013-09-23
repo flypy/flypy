@@ -9,5 +9,14 @@ __all__ = ['Function', 'Type', 'Bool', 'Int', 'Float']
 
 from blaze import dshape
 from blaze.datashape import free, TypeVar, TypeConstructor
-from blaze.datashape import (Mono as Type, bool_ as Bool, void as Void)
-from .runtime.obj import Function, Pointer, Int, Float
+from blaze.datashape import Mono as Type
+from .runtime.obj import Function, Pointer, Bool, Int, Float, Void
+
+#===------------------------------------------------------------------===
+# Units
+#===------------------------------------------------------------------===
+
+bool_   = Bool[()]
+void    = Void[()]
+int32   = Int[32, False]
+float64 = Float[64]
