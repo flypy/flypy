@@ -11,7 +11,7 @@ from ..interfaces import Number, implements
 
 @implements('Float[nbits]', Number)
 class Float(object):
-    pass
+    layout = [('x', 'Float[nbits]')]
 
 
 @typeof.case(float)

@@ -6,13 +6,13 @@ int/long implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from ... import jit, typeof
+from numba2 import jit, typeof
 from ..interfaces import Number, implements
 
-@implements('Int[nbits]', Number)
+@implements('Int[nbits, unsigned]', Number)
 class Int(object):
-    pass
+    layout = [('x', 'Int[nbits, unsigned]')]
 
 @typeof.case(int)
 def typeof(pyval):
-    return Int[32]
+    return Int[32, False]
