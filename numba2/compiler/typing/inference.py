@@ -32,7 +32,7 @@ from itertools import product
 
 from numba2.typing import promote, typeof, parse
 from numba2.errors import InferError
-from numba2.types import Type, Function, Pointer, Bool, Void
+from numba2.types import Type, Function, Pointer, bool_, void
 from numba2.functionwrapper import FunctionWrapper
 from .. import opaque
 
@@ -247,7 +247,7 @@ class ConstraintGenerator(object):
         """
         Γ ⊢ var : α *      Γ ⊢ x : α
         -----------------------------
-        Γ ⊢ store x var : Void
+        Γ ⊢ store x var : void
         """
         value, var = op.args
         self.G.add_edge(value, self.allocas[var])
@@ -315,9 +315,9 @@ class ConstraintGenerator(object):
 
     def op_cbranch(self, op):
         """
-        Γ ⊢ cbranch (x : Bool)
+        Γ ⊢ cbranch (x : bool)
         """
-        self.G.add_edge(Bool, op.args[0])
+        self.G.add_edge(bool_, op.args[0])
 
     def op_ret(self, op):
         """
@@ -325,7 +325,7 @@ class ConstraintGenerator(object):
         ----------------
         Γ ⊢ return x : β
         """
-        self.G.add_edge(op.args[0] or Void, self.return_node)
+        self.G.add_edge(op.args[0] or void, self.return_node)
 
 # ______________________________________________________________________
 
@@ -395,10 +395,9 @@ def infer_node(cache, ctx, node):
         for type in ctx.context[neighbor]:
             if attr not in type.fields:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
-            value, result = type.fields[attr]
-            if isinstance(value, FunctionWrapper) or result.__class__ == Function:
-                func, self = value, type
-                result = Method(func, self)
+            value = type.fields[attr]
+            func, self = value, type
+            result = Method(func, self)
             changed |= result not in typeset
             typeset.add(result)
 

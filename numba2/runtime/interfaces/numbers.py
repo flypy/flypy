@@ -5,17 +5,41 @@ Number interfaces.
 """
 
 from __future__ import print_function, division, absolute_import
-from functools import partial
+from functools import wraps
 from ... import abstract, jit
 
 __all__ = ['Number', 'Real', 'Complex', 'Rational', 'Irrational',
            'Integer', 'Floating']
 
-ojit = partial(jit, opaque=True)
+def ojit(signature):
+    """
+    Simple helper that unboxes arguments and boxes results of opaque methods.
+    These methods have external implementations assigned!
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(self, *args):
+            args = [self.unwrap()] + [x.unwrap() for x in args]
+            return self.wrap(f(*args))
+        return jit(signature, opaque=True)(wrapper)
+    return decorator
+
 
 @abstract
 class Number(object):
     """Interface for all numbers"""
+
+    layout = [('x', 'Number')]
+    immutable = ('x',)
+
+    def __init__(self, x):
+        self.x = x
+
+    def wrap(self, x):
+        return Number(x)
+
+    def unwrap(self):
+        return self.x
 
     #===------------------------------------------------------------------===
     # Arith

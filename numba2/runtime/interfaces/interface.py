@@ -27,7 +27,7 @@ def implements(signature, *interfaces):
         for i in interfaces:
             copy_methods(cls, i)
 
-        return jit(signature, abstract=True)(cls)
+        return jit(signature)(cls)
 
     return decorator
 
