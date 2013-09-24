@@ -75,6 +75,5 @@ def ll_annotate(func, env):
     func.type = ptypes.Function(ll_type(env['numba.typing.restype']),
                                 [arg.type for arg in func.args])
 
-    print(func)
 
 run = ll_annotate

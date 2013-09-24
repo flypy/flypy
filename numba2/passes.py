@@ -15,7 +15,9 @@ from .compiler.typing import inference
 from .compiler.typing.resolution import resolve_context, resolve_restype, rewrite_methods
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
+from pykit.analysis import cfa
 from pykit.transform import dce
+from pykit.codegen.llvm import verify, optimize
 
 #===------------------------------------------------------------------===
 # Passes
@@ -28,6 +30,7 @@ frontend = [
 
 typing = [
     simplification,
+    cfa,
     inference,
 ]
 
@@ -41,6 +44,9 @@ backend = [
     dce,
     preparation,
     backend,
+    verify,
+    dump_llvm,
+    optimize,
     dump_optimized,
 ]
 

@@ -33,11 +33,11 @@ class FunctionWrapper(object):
         if self.signature is not None:
             restype = self.signature.params[0]
             argtypes = self.signature.params[1:]
-            cfunc = self.translate(argtypes, restype)
+            cfunc, lfunc, env = self.translate(argtypes, restype)
         else:
             args = flatargs(self.py_func, args, kwargs)
             argtypes = [typeof(x) for x in args]
-            cfunc = self.translate(argtypes)
+            cfunc, lfunc, env = self.translate(argtypes)
 
         return cfunc(*args)
 
@@ -57,7 +57,7 @@ class FunctionWrapper(object):
         self.ctypes_funcs[key] = cfunc
         self.envs[key] = env
 
-        return llvm_func, env
+        return cfunc, llvm_func, env
 
     def __str__(self):
         return "<%s: %s>" % (self.py_func, self.signature)
