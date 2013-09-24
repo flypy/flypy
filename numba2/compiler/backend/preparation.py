@@ -26,22 +26,31 @@ _typemap = {
     _type_constructor(types.Bool)       : ptypes.Boolean,
     _type_constructor(types.Int)        : ptypes.Integral,
     _type_constructor(types.Float)      : ptypes.Real,
+    _type_constructor(types.Pointer)    : ptypes.Pointer,
 }
 
-def ll_type(x):
+def ll_type(x, seen=None):
     """
     Get the low-level representation type for a high-level (user-defined) type.
     """
-    x = typing.resolve_type(x)
+    if seen is None:
+        seen = set()
+    if x in seen:
+        raise NotImplementedError("Recursive types")
 
-    if type(x) in _typemap:
+    seen.add(x)
+
+    x = typing.resolve_type(x)
+    if not isinstance(x, types.Type):
+        return x
+    elif type(x) in _typemap:
         ctor = _typemap[type(x)]
-        lltype = ctor(*x.parameters)
+        lltype = ctor(*map(ll_type, x.parameters))
     else:
         t = typing.get_type_data(type(x))
         fields = t.layout
-        names, types = zip(*fields)
-        lltype = ptypes.Struct(names, [ll_type(t) for t in types])
+        names, field_types = zip(*fields.items())
+        lltype = ptypes.Struct(names, [ll_type(t, seen) for t in field_types])
 
     return lltype
 
@@ -61,9 +70,11 @@ def ll_annotate(func, env):
                 op.type = ltype
 
     context = env['numba.typing.context']
-    print(func)
     vmap(resolve_type, func)
+
+    func.type = ptypes.Function(ll_type(env['numba.typing.restype']),
+                                [arg.type for arg in func.args])
+
     print(func)
-    print('...')
 
 run = ll_annotate
