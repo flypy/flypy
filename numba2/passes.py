@@ -15,6 +15,8 @@ from .compiler.typing import inference
 from .compiler.typing.resolution import resolve_context, resolve_restype, rewrite_methods
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
+from pykit.transform import dce
+
 #===------------------------------------------------------------------===
 # Passes
 #===------------------------------------------------------------------===
@@ -36,6 +38,7 @@ resolution = [
 ]
 
 backend = [
+    dce,
     preparation,
     backend,
     dump_optimized,
