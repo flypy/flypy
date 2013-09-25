@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 import warnings
 from functools import partial
 
-from numba.config import config
+from numba2.config import config
 
 try:
     import pygments
