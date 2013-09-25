@@ -42,14 +42,14 @@ class FunctionWrapper(object):
         return cfunc(*args)
 
     def translate(self, argtypes, restype=None):
-        from .passes import translate
+        from . import phase
 
         key = tuple(argtypes) + (restype,)
         if key in self.ctypes_funcs:
             return self.ctypes_funcs[key]
 
         # Translate
-        llvm_func, env = translate(self.py_func, argtypes)
+        llvm_func, env = phase.codegen(self.py_func, argtypes)
         cfunc = env["codegen.llvm.ctypes"]
 
         # Cache

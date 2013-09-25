@@ -43,7 +43,7 @@ def translate(func, env=None):
     simplify_exceptions(func, env)
     rewrite_calls(func, env)
 
-    return func
+    return func, env
 
 #===------------------------------------------------------------------===
 # Exceptions
