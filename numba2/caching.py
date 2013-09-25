@@ -40,17 +40,6 @@ class Cache(object):
         self.cached[key] = value
 
 #===------------------------------------------------------------------===
-# Bytecode translation
-#===------------------------------------------------------------------===
-
-class FrontendCache(Cache):
-    """
-    Cache for bytecode translation
-
-        py_func -> untyped pykit.ir.Function function
-    """
-
-#===------------------------------------------------------------------===
 # Type inference
 #===------------------------------------------------------------------===
 
@@ -79,17 +68,3 @@ class InferenceCache(object):
 
     def lookup_ctx(self, func):
         return self.ctxs.get(func)
-
-#===------------------------------------------------------------------===
-# Optimizations
-#===------------------------------------------------------------------===
-
-class OptimizationsCache(Cache):
-    """Cache for high-level optimization passes"""
-
-#===------------------------------------------------------------------===
-# Codegen
-#===------------------------------------------------------------------===
-
-class CodegenCache(Cache):
-    """Cache for LLVM functions obtained from typed optimized functions"""

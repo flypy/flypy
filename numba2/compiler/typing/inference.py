@@ -98,7 +98,7 @@ class Context(object):
 #===------------------------------------------------------------------===
 
 def run(func, env):
-    cache = env['numba.typing.cache']
+    cache = env['numba.inference.cache']
     argtypes = env['numba.typing.argtypes']
     ctx, signature = infer(cache, func, argtypes)
 

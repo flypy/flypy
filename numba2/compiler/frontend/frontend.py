@@ -29,21 +29,12 @@ def translate(func, env=None):
     Returns : pykit.ir.Function
         Untyped pykit function. All types are Opaque unless they are constant.
     """
-    if env:
-        cache = env['numba.frontend.cache']
-        if cache.lookup(func):
-            return cache.lookup(func)
-
     # -------------------------------------------------
     # Translate
 
     t = Translate(func)
     t.initialize()
     t.interpret()
-
-    if env:
-        cache.insert(func, t.dst)
-
     func = t.dst
 
     # -------------------------------------------------

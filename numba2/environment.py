@@ -7,23 +7,24 @@ Numba compilation environment.
 from __future__ import print_function, division, absolute_import
 
 from .utils import FrozenDict
-from .caching import (FrontendCache, InferenceCache, OptimizationsCache,
-                      CodegenCache)
+from .caching import Cache, InferenceCache
 
 root_env = FrozenDict({
     # Command line args
     'numba.cmdopts':        {},
 
     # Caching
-    'numba.frontend.cache': FrontendCache(),
-    'numba.typing.cache':   InferenceCache(),
-    'numba.opt.cache':      OptimizationsCache(),
-    'numba.codegen.cache':  CodegenCache(),
+    'numba.frontend.cache':     Cache(),
+    'numba.typing.cache':       Cache(),
+    'numba.inference.cache':    InferenceCache(),
+    'numba.opt.cache':          Cache(),
+    'numba.codegen.cache':      Cache(),
 
     # General state
     'numba.state.py_func':      None,   # This value may be None
     'numba.state.func_globals': None,
     'numba.state.func_code':    None,
+    'numba.state.callgraph':    None,
 
     # Typing
     'numba.typing.restype': None,       # Input/Output
@@ -44,4 +45,26 @@ root_env = FrozenDict({
     "codegen.llvm.ctypes":  None,
 })
 
-fresh_env = lambda: dict(root_env)
+#===------------------------------------------------------------------===
+# New envs
+#===------------------------------------------------------------------===
+
+def fresh_env(py_func, argtypes, restype=None, env=None):
+    """
+    Allocate a new environment, optionally from a given environment.
+    """
+    if env is None:
+        env = root_env
+
+    env = dict(env)
+
+    # Types
+    env['numba.typing.argtypes'] = argtypes
+    env.setdefault('numba.typing.restype', restype)
+
+    # State
+    env['numba.state.py_func'] = py_func
+    env['numba.state.func_globals'] = py_func.__globals__
+    env['numba.state.func_code'] = py_func.__code__
+
+    return env

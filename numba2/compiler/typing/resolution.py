@@ -54,3 +54,5 @@ def rewrite_methods(func, env):
                 ctx, signature = cache.lookup(func, argtypes)
                 newop = b.call(op.type, [ctx.func, op.args[1]], op.result)
                 op.replace(newop)
+
+    env['numba.state.callgraph'] = None
