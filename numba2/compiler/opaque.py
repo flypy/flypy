@@ -12,7 +12,7 @@ def implement_opaque(func, impl):
     assert func.implementor is None
     func.implementor = impl
 
-def implement(func, argtypes):
+def implement(func, py_func, argtypes):
     assert isinstance(func, FunctionWrapper)
     assert func.implementor is not None, func
-    return func.implementor(argtypes)
+    return func.implementor(py_func, argtypes)

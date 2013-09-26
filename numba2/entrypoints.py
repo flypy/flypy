@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 import types
 from functools import partial
 
-from .functionwrapper import FunctionWrapper
+from .functionwrapper import wrap
 from .typing import MetaType, parse, set_type_data
 from .utils import applyable_decorator
 
@@ -43,9 +43,7 @@ def jit_func(f, signature=None, abstract=False, opaque=False):
     """
     @jit('a -> List[a] -> List[a]')
     """
-    if signature:
-        signature = parse(signature)
-    return FunctionWrapper(f, signature, abstract=abstract, opaque=opaque)
+    return wrap(f, signature, abstract=abstract, opaque=opaque)
 
 
 def jit_class(cls, signature=None, abstract=False):

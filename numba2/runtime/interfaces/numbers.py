@@ -170,7 +170,7 @@ import textwrap
 from numba2.compiler import opaque
 from pykit import from_c
 
-def impl_add(argtypes):
+def impl_add(py_func, argtypes):
     mod = from_c(textwrap.dedent("""
     #include <pykit_ir.h>
     Int32 add(Int32 a, Int32 b) {
@@ -179,7 +179,7 @@ def impl_add(argtypes):
     """))
     return mod.get_function('add')
 
-def impl_lt(argtypes):
+def impl_lt(py_func, argtypes):
     mod = from_c(textwrap.dedent("""
     #include <pykit_ir.h>
     Bool lt(Int32 a, Int32 b) {

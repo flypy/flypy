@@ -50,7 +50,7 @@ def typing_phase(func, env, passes):
 
 @cached('numba.opt.cache', optimize)
 def optimization_phase(func, env, passes):
-    return run_pipeline(func, env, passes)
+    return apply_and_resolve(partial(run_pipeline, passes=passes), func, env)
 
 @cached('numba.codegen.cache', backend)
 def codegen_phase(func, env, passes):
@@ -71,6 +71,6 @@ dep_resolving = lambda phase: partial(apply_and_resolve, phase)
 # Combined phases
 
 translation = translation_phase
-typing = dep_resolving(starcompose(typing_phase, translation_phase))
-opt = dep_resolving(starcompose(optimization_phase, typing))
+typing = starcompose(typing_phase, translation_phase)
+opt = starcompose(optimization_phase, typing)
 codegen = starcompose(codegen_phase, opt)

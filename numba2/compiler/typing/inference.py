@@ -33,6 +33,7 @@ from itertools import product
 from numba2.typing import promote, typeof, parse
 from numba2.errors import InferError
 from numba2.types import Type, Function, Pointer, bool_, void
+from numba2.compiler.overloading import best_match
 from numba2.functionwrapper import FunctionWrapper
 from .. import opaque
 
@@ -132,8 +133,9 @@ def infer(cache, func, argtypes):
 
 def infer_function(cache, func, argtypes):
     if isinstance(func, FunctionWrapper) and func.opaque:
-        restype = func.signature.restype # TODO: unify
-        func = opaque.implement(func, argtypes)
+        py_func, signature = best_match(func, argtypes)
+        restype = signature.restype
+        func = opaque.implement(func, py_func, argtypes)
         ctx = Context(func, {'return': set([restype])}, {}, None, {})
         return ctx
 

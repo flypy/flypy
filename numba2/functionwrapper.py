@@ -5,10 +5,11 @@ Numba function wrapper.
 """
 
 from __future__ import print_function, division, absolute_import
+import types
 
-from .typing import typeof
-
-from blaze.util import flatargs
+from numba2 import typing
+from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
+                                         best_match, flatargs)
 
 # TODO: Reuse numba.numbawrapper.pyx for autojit Python entry points
 
@@ -17,9 +18,10 @@ class FunctionWrapper(object):
     Result of @jit for functions.
     """
 
-    def __init__(self, py_func, signature, abstract=False, opaque=False):
+    def __init__(self, dispatcher, py_func, abstract=False, opaque=False):
+        self.dispatcher = dispatcher
         self.py_func = py_func
-        self.signature = signature
+        # self.signature = signature
         self.abstract = abstract
 
         self.llvm_funcs = {}
@@ -30,26 +32,22 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
-        if self.signature is not None:
-            restype = self.signature.params[0]
-            argtypes = self.signature.params[1:]
-            cfunc, lfunc, env = self.translate(argtypes, restype)
-        else:
-            args = flatargs(self.py_func, args, kwargs)
-            argtypes = [typeof(x) for x in args]
-            cfunc, lfunc, env = self.translate(argtypes)
-
+        args = flatargs(self.dispatcher.f, args, kwargs)
+        argtypes = [typing.typeof(x) for x in args]
+        func, signature = best_match(self, argtypes)
+        cfunc, lfunc, env = self.translate(signature.argtypes, signature.restype)
         return cfunc(*args)
 
     def translate(self, argtypes, restype=None):
-        from . import phase
+        from . import phase, environment
 
         key = tuple(argtypes) + (restype,)
         if key in self.ctypes_funcs:
             return self.ctypes_funcs[key]
 
         # Translate
-        llvm_func, env = phase.codegen(self.py_func, argtypes)
+        env = environment.fresh_env(self.py_func, argtypes, restype)
+        llvm_func, env = phase.codegen(self.py_func, env)
         cfunc = env["codegen.llvm.ctypes"]
 
         # Cache
@@ -60,4 +58,42 @@ class FunctionWrapper(object):
         return cfunc, llvm_func, env
 
     def __str__(self):
-        return "<%s: %s>" % (self.py_func, self.signature)
+        return "<numba function (%s)>" % str(self.dispatcher)
+
+
+def apply_kernel(kernel, *args, **kwargs):
+    """
+    Apply blaze kernel `kernel` to the given arguments.
+
+    Returns: a Deferred node representation the delayed computation
+    """
+    # -------------------------------------------------
+    # Find match to overloaded function
+
+    overload, args = kernel.dispatcher.lookup_dispatcher(args, kwargs)
+
+    # -------------------------------------------------
+    # Construct graph
+
+
+def wrap(py_func, signature, **kwds):
+    """
+    Wrap a function in a FunctionWrapper. Take care of overloading.
+    """
+    func = lookup_previous(py_func)
+
+    if isinstance(func, FunctionWrapper):
+        func = func.dispatcher
+    elif isinstance(func, types.FunctionType):
+        raise TypeError(
+            "Function %s in current scope is not overloadable" % (func,))
+    else:
+        func = Dispatcher()
+
+    dispatcher = overload(signature, func=func)(py_func)
+
+    if isinstance(py_func, types.FunctionType):
+        return FunctionWrapper(dispatcher, py_func, **kwds)
+    else:
+        assert isinstance(py_func, FunctionWrapper), py_func
+        return py_func

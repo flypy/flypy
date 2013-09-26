@@ -5,7 +5,6 @@ import sys
 from functools import partial
 
 from . import pyoverload
-from .compiler.overload import overload
 from pykit.utils import cached
 
 from blaze import datashape as ds
@@ -42,17 +41,18 @@ def getfields(fields, scope, type):
 
         Map `Int[X] -> Float[X]` to e.g. `Int[32] -> Float[32]`
     """
-    if not type.concrete:
-        f = resolve_types
-    else:
-        f = partial(substitute_types, type.bound)
-
-    types = dict([(k, v.signature) for k, v in fields.items()])
-    f(types, scope)
-    for k, v in fields.iteritems():
-        fields[k].signature = types[k]
-
     return fields
+    #if not type.concrete:
+    #    f = resolve_types
+    #else:
+    #    f = partial(substitute_types, type.bound)
+    #
+    #types = dict([(k, v.signature) for k, v in fields.items()])
+    #f(types, scope)
+    #for k, v in fields.iteritems():
+    #    fields[k].signature = types[k]
+    #
+    #return fields
 
 
 def getlayout(layout, scope, type):
@@ -61,10 +61,10 @@ def getlayout(layout, scope, type):
 
         Map `Int[X]` to e.g. `Int[32]`
     """
-    if not type.concrete:
-        resolve_types(layout, scope)
-    else:
-        substitute_types(type.bound, layout, scope)
+    #if not type.concrete:
+    #    resolve_types(layout, scope)
+    #else:
+    #    substitute_types(type.bound, layout, scope)
 
     return layout
 
@@ -93,8 +93,8 @@ class MetaType(type):
         self.fields = fields = dict(_extract_fields(type, dct))
 
         # Verify signatures
-        for func in self.fields.itervalues():
-            verify_method_signature(type, func.signature)
+        #for func in self.fields.itervalues():
+        #    verify_method_signature(type, func.signature)
 
         # Construct layout
         for attr, t in layout.iteritems():
@@ -160,6 +160,9 @@ def verify_method_signature(type, signature):
             raise TypeError("Type variable %s is not bound by the type or "
                             "argument types" % (t,))
 
+#===------------------------------------------------------------------===
+# Unification and type resolution
+#===------------------------------------------------------------------===
 
 def resolve_in_scope(t, scope):
     """
@@ -186,16 +189,6 @@ def resolve_in_scope(t, scope):
 
     return ds.tmap(resolve, t)
 
-def resolve_types(items, scope):
-    """Resolve the `items` mapping names to types in the given scope"""
-    for name, value in items.iteritems():
-        items[name] = resolve_in_scope(value, scope)
-
-def substitute_types(bound, items, scope):
-    """Substitute bound parameters for free variables"""
-    for name, value in items.iteritems():
-        items[name] = substitute(bound, value)
-
 def substitute(solution, t):
     """
     Substitute bound parameters for the corresponding free variables
@@ -204,7 +197,20 @@ def substitute(solution, t):
         if isinstance(t, TypeVar):
             return solution.get(t.symbol, t)
         return t
+
     return ds.tmap(f, t)
+
+
+def resolve(type, scope, bound):
+    """
+    Resolve a parsed numba type in its scope.
+    Do this before applying unification.
+    """
+    type = resolve_in_scope(type, scope)
+    type = substitute(bound, type)
+    return type
+
+
 
 #===------------------------------------------------------------------===
 # User-defined typing
@@ -215,7 +221,7 @@ def typeof(pyval):
     """Python value -> Type"""
     raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
 
-@overload('ν -> Type[τ] -> τ')
+#@overload('ν -> Type[τ] -> τ')
 def convert(value, type):
     """Convert a value of type 'a' to the given type"""
     return value

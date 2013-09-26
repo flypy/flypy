@@ -51,7 +51,7 @@ def rewrite_methods(func, env):
             if type(signature) == Method:
                 func, self = signature.parameters
                 argtypes = [context[arg] for arg in op.args[1]]
-                ctx, signature = cache.lookup(func, argtypes)
+                ctx, signature = cache.lookup((func, tuple(argtypes)))
                 newop = b.call(op.type, [ctx.func, op.args[1]], op.result)
                 op.replace(newop)
 
