@@ -159,35 +159,3 @@ class Integer(Real):
 @abstract
 class Floating(Real):
     """Floating point numbers"""
-
-
-#===------------------------------------------------------------------===
-# Implementations...
-#===------------------------------------------------------------------===
-
-import textwrap
-
-from numba2.compiler import opaque
-from pykit import from_c
-
-def impl_add(py_func, argtypes):
-    mod = from_c(textwrap.dedent("""
-    #include <pykit_ir.h>
-    Int32 add(Int32 a, Int32 b) {
-        return a + b;
-    }
-    """))
-    return mod.get_function('add')
-
-def impl_lt(py_func, argtypes):
-    mod = from_c(textwrap.dedent("""
-    #include <pykit_ir.h>
-    Bool lt(Int32 a, Int32 b) {
-        return a < b;
-    }
-    """))
-    return mod.get_function('lt')
-
-
-opaque.implement_opaque(Number.__add__, impl_add)
-opaque.implement_opaque(Number.__lt__, impl_lt)

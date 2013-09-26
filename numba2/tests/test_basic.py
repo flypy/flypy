@@ -16,6 +16,27 @@ class TestTranslation(unittest.TestCase):
         self.assertEqual(f(5, 10), True)
         self.assertEqual(f(10, 5), False)
 
+    def test_while(self):
+        @jit
+        def f(a, b):
+            while a < b:
+                a = a + a
+            return a
+
+        self.assertEqual(f(8, 10), 16)
+
+    def test_call(self):
+        @jit
+        def g(a):
+            return a + 2
+
+        @jit
+        def f(a):
+            return g(a * 3)
+
+        self.assertEqual(f(5), 27)
+
+
 if __name__ == '__main__':
-    TestTranslation('test_compare').debug()
-    # unittest.main()
+    #TestTranslation('test_call').debug()
+    unittest.main()

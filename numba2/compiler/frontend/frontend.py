@@ -78,6 +78,6 @@ def rewrite_calls(func, env):
         if op.opcode == 'pycall':
             func, args = op.args[0].const, op.args[1:]
             if isinstance(func, FunctionWrapper):
-                translated = translate(func.py_func, env)
+                translated, env = translate(func.py_func, env)
                 newop = b.call(types.Opaque, [translated, args], op.result)
                 op.replace(newop)
