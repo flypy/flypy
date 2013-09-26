@@ -31,6 +31,7 @@ import collections
 from itertools import product
 
 from numba2.typing import promote, typeof, parse
+from numba2.environment import fresh_env
 from numba2.errors import InferError
 from numba2.types import Type, Function, Pointer, bool_, void
 from numba2.compiler.overloading import best_match
@@ -135,7 +136,8 @@ def infer_function(cache, func, argtypes):
     if isinstance(func, FunctionWrapper) and func.opaque:
         py_func, signature = best_match(func, argtypes)
         restype = signature.restype
-        func = opaque.implement(func, py_func, argtypes)
+        env = fresh_env(py_func, argtypes, restype)
+        func = opaque.implement(func, py_func, argtypes, env)
         ctx = Context(func, {'return': set([restype])}, {}, None, {})
         return ctx
 

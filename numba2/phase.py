@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial, wraps
 
 from .pipeline import run_pipeline
-from .passes import frontend, typing, lower, optimize, backend
+from .passes import frontend, typing, lower, optimizations, backend
 
 from pykit.analysis import callgraph
 
@@ -17,17 +17,18 @@ from pykit.analysis import callgraph
 # Phases
 #===------------------------------------------------------------------===
 
-def cached(cache_name, passes):
+def cached(cache_name, passes, key=lambda func, env: func):
     """Helper to perform caching for a phase"""
     def decorator(f):
         @wraps(f)
         def wrapper(func, env, passes=passes):
             cache = env[cache_name]
-            if cache.lookup(func):
-                return cache.lookup(func)
+            cache_key = key(func, env)
+            if cache.lookup(cache_key):
+                return cache.lookup(cache_key)
 
             new_func, new_env = f(func, env, passes)
-            cache.insert(func, (new_func, new_env))
+            cache.insert(cache_key, (new_func, new_env))
             return new_func, new_env
 
         return wrapper
@@ -40,17 +41,21 @@ def starcompose(f, g):
 # ______________________________________________________________________
 # Individual phases
 
+def _cache_key(func, env):
+    return (func, env["numba.typing.argtypes"])
+
 @cached('numba.frontend.cache', frontend)
 def translation_phase(func, env, passes):
     return run_pipeline(func, env, passes)
 
-@cached('numba.typing.cache', typing + lower)
+@cached('numba.typing.cache', typing + lower, key=_cache_key)
 def typing_phase(func, env, passes):
     return run_pipeline(func, env, passes)
 
-@cached('numba.opt.cache', optimize)
+@cached('numba.opt.cache', optimizations)
 def optimization_phase(func, env, passes):
-    return apply_and_resolve(partial(run_pipeline, passes=passes), func, env)
+    apply_and_resolve(partial(run_pipeline, passes=passes), func, env)
+    return func, env
 
 @cached('numba.codegen.cache', backend)
 def codegen_phase(func, env, passes):

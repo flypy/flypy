@@ -50,5 +50,6 @@ if __name__ == "__main__":
         'fancy': args.fancy,
         'filename': args.filename,
     }
-    passes.passes = prettyprint.augment_pipeline(passes.passes)
+    for ps in passes.all_passes:
+        ps[:] = prettyprint.augment_pipeline(ps)
     run(args.filename, cmdopts)

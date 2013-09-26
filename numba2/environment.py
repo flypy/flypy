@@ -7,7 +7,7 @@ Numba compilation environment.
 from __future__ import print_function, division, absolute_import
 
 from .utils import FrozenDict
-from .caching import Cache, InferenceCache
+from .caching import Cache, InferenceCache, TypingCache
 
 root_env = FrozenDict({
     # Command line args
@@ -15,7 +15,7 @@ root_env = FrozenDict({
 
     # Caching
     'numba.frontend.cache':     Cache(),
-    'numba.typing.cache':       Cache(),
+    'numba.typing.cache':       TypingCache(),
     'numba.inference.cache':    InferenceCache(),
     'numba.opt.cache':          Cache(),
     'numba.codegen.cache':      Cache(),

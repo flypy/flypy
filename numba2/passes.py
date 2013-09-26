@@ -38,7 +38,7 @@ lower = [
     rewrite_methods,
 ]
 
-optimize = [
+optimizations = [
     dce,
 ]
 
@@ -52,3 +52,5 @@ backend = [
 ]
 
 passes = frontend + typing + lower + backend
+
+all_passes = [frontend, typing, lower, optimize, backend, passes]

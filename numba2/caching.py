@@ -39,6 +39,16 @@ class Cache(object):
     def insert(self, key, value):
         self.cached[key] = value
 
+class TypingCache(Cache):
+
+    def lookup(self, key):
+        func, argtypes = key
+        return Cache.lookup(self, key)
+
+    def insert(self, key, value):
+        func, argtypes = key
+        Cache.insert(self, key, value)
+
 #===------------------------------------------------------------------===
 # Type inference
 #===------------------------------------------------------------------===
