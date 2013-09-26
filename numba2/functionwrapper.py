@@ -34,20 +34,19 @@ class FunctionWrapper(object):
     def __call__(self, *args, **kwargs):
         args = flatargs(self.dispatcher.f, args, kwargs)
         argtypes = [typing.typeof(x) for x in args]
-        func, signature = best_match(self, argtypes)
-        cfunc, lfunc, env = self.translate(signature.argtypes, signature.restype)
+        cfunc, lfunc, env = self.translate(argtypes)
         return cfunc(*args)
 
-    def translate(self, argtypes, restype=None):
+    def translate(self, argtypes):
         from . import phase, environment
 
-        key = tuple(argtypes) + (restype,)
+        key = tuple(argtypes)
         if key in self.ctypes_funcs:
             return self.ctypes_funcs[key]
 
         # Translate
-        env = environment.fresh_env(self.py_func, argtypes, restype)
-        llvm_func, env = phase.codegen(self.py_func, env)
+        env = environment.fresh_env(self, argtypes)
+        llvm_func, env = phase.codegen(self, env)
         cfunc = env["codegen.llvm.ctypes"]
 
         # Cache

@@ -62,7 +62,8 @@ def augment_pipeline(passes):
     return [partial(verbose, p) for p in passes]
 
 def verbose(p, func, env):
-    print(_passname(p).center(60).center(90, "-"))
+    title = "%s [ %s ]" % (_passname(p), _funcname(func))
+    print(title.center(60).center(90, "-"))
     if isinstance(func, types.FunctionType):
         dis.dis(func)
         func, env = pipeline.apply_transform(p, func, env)
@@ -86,6 +87,12 @@ def _passname(transform):
         return transform.__name__
     else:
         return ".".join([transform.__module__, transform.__name__])
+
+def _funcname(func):
+    if isinstance(func, types.FunctionType):
+        return func.__name__
+    else:
+        return func.name
 
 def _formatfunc(func):
     if isinstance(func, types.FunctionType):

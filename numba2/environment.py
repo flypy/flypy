@@ -25,6 +25,7 @@ root_env = FrozenDict({
     'numba.state.func_globals': None,
     'numba.state.func_code':    None,
     'numba.state.callgraph':    None,
+    'numba.state.opaque':       False,  # Whether the function is opaque
 
     # Typing
     'numba.typing.restype': None,       # Input/Output
@@ -49,7 +50,7 @@ root_env = FrozenDict({
 # New envs
 #===------------------------------------------------------------------===
 
-def fresh_env(py_func, argtypes, restype=None, env=None):
+def fresh_env(func, argtypes, env=None):
     """
     Allocate a new environment, optionally from a given environment.
     """
@@ -57,12 +58,13 @@ def fresh_env(py_func, argtypes, restype=None, env=None):
         env = root_env
 
     env = dict(env)
+    py_func = func.py_func
 
     # Types
     env['numba.typing.argtypes'] = argtypes
-    env.setdefault('numba.typing.restype', restype)
 
     # State
+    env["numba.state.function_wrapper"] = func
     env['numba.state.py_func'] = py_func
     env['numba.state.func_globals'] = py_func.__globals__
     env['numba.state.func_code'] = py_func.__code__

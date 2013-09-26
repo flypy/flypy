@@ -102,13 +102,15 @@ class Context(object):
 def run(func, env):
     cache = env['numba.inference.cache']
     argtypes = env['numba.typing.argtypes']
-    ctx, signature = infer(cache, func, argtypes)
+    ctx, signature = infer(cache, func, env, argtypes)
 
     env['numba.typing.signature'] = signature
     env['numba.typing.context'] = ctx.context
     env['numba.typing.constraints'] = ctx.constraints
 
-def infer(cache, func, argtypes):
+    return ctx.func, env
+
+def infer(cache, func, env, argtypes):
     """Infer types for the given function"""
     argtypes = tuple(argtypes)
 
@@ -119,7 +121,13 @@ def infer(cache, func, argtypes):
     if cached:
         return cached
 
-    ctx = infer_function(cache, func, argtypes)
+    # -------------------------------------------------
+    # Infer
+
+    if env["numba.state.opaque"]:
+        ctx = infer_opaque(func, env, argtypes)
+    else:
+        ctx = infer_function(cache, func, argtypes)
 
     # -------------------------------------------------
     # Cache result
@@ -131,16 +139,15 @@ def infer(cache, func, argtypes):
     cache.typings[func, argtypes] = ctx, signature
     return ctx, signature
 
+def infer_opaque(func, env, argtypes):
+    func = env["numba.state.function_wrapper"]
+    py_func = env["numba.state.py_func"]
+    restype = env["numba.typing.restype"]
+    func = opaque.implement(func, py_func, argtypes, env)
+    ctx = Context(func, {'return': set([restype])}, {}, None, {})
+    return ctx
 
 def infer_function(cache, func, argtypes):
-    if isinstance(func, FunctionWrapper) and func.opaque:
-        py_func, signature = best_match(func, argtypes)
-        restype = signature.restype
-        env = fresh_env(py_func, argtypes, restype)
-        func = opaque.implement(func, py_func, argtypes, env)
-        ctx = Context(func, {'return': set([restype])}, {}, None, {})
-        return ctx
-
     # -------------------------------------------------
     # Build template
 
@@ -189,8 +196,11 @@ def initial_context(func):
             context['alloca%d' % count] = set()
             count += 1
         for arg in flatten(op.args):
-            if isinstance(arg, ir.Const):
-                context[arg] = typeof(arg.const)
+            if (isinstance(arg, ir.Const) and
+                    isinstance(arg.const, FunctionWrapper)):
+                context[arg] = set([None])
+            elif isinstance(arg, ir.Const):
+                context[arg] = set([typeof(arg.const)])
             elif isinstance(arg, ir.GlobalValue):
                 raise NotImplementedError("Globals")
 
@@ -434,22 +444,45 @@ def infer_call(cache, func, func_type, arg_types):
             This is already typed
         3) Method. We need to insert 'self' in the cartesian product
     """
-    if type(func_type) == Method:
-        func = func_type.parameters[0]
-        self = func_type.parameters[1]
-        #[[self_type] + arg_types for self_type in self]
-        # arg_types = (self,) + arg_types
+    is_method = type(func_type) == Method
+    is_const = isinstance(func, ir.Const)
+    is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
+    if is_method or is_numba_func:
+        # -------------------------------------------------
+        # Method call or numba function call
+
+        from numba2 import phase
+
+        if is_method:
+            func = func_type.parameters[0]
+        else:
+            func = func.const
+
+        # Translate # to untyped IR and infer types
+        # TODO: Support recursion !
+
+        env = fresh_env(func, arg_types)
+        func, env = phase.typing(func, env)
+        return env["numba.typing.restype"]
+
+    #elif isinstance(func, ir.Const) and isinstance(func.const, FunctionWrapper):
+    #    # -------------------------------------------------
+    #    # Call to other numba function
+    #
+    #    f, sig = best_match(func.const, arg_types)
+    #
+    #    # We know the overloaded Python function and the signature, translate
+    #    # to untyped IR and infer types
+    #    # TODO: Support recursion !
+    #
+    #    env = fresh_env(f, sig.argtypes, sig.restype)
+    #    func, env = phase.typing(f, env)
+    #    return env["numba.typing.restype"]
 
     elif not isinstance(func, ir.Function):
+        # -------------------------------------------------
         # Higher-order function
+
         restype = func_type.restype
         assert restype
         return  restype
-
-    if isinstance(func_type, frozenset):
-        # Overloaded function or method
-        raise NotImplemented("Overloaded functions")
-        # func = find_overload(func_type, arg_types)
-
-    ctx, signature = infer(cache, func, arg_types)
-    return signature.restype

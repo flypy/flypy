@@ -57,8 +57,8 @@ def rewrite_ops(func, env=None):
         pycall(operator.add, a, b) -> call(getfield(a, __add__), [a, b])
     """
     for op in func.ops:
-        if op.opcode == 'pycall':
-            f, args = op.args[0], op.args[1:]
+        if op.opcode == 'call':
+            f, args = op.args
             if not isinstance(f, Const):
                 continue
             else:

@@ -16,7 +16,7 @@ from pykit.ir import Builder, OpBuilder
 # Entrypoint
 #===------------------------------------------------------------------===
 
-def translate(func, env=None):
+def translate(py_func, env=None):
     """
     Entry point.
 
@@ -32,16 +32,10 @@ def translate(func, env=None):
     # -------------------------------------------------
     # Translate
 
-    t = Translate(func)
+    t = Translate(py_func)
     t.initialize()
     t.interpret()
     func = t.dst
-
-    # -------------------------------------------------
-    # Postpasses
-
-    simplify_exceptions(func, env)
-    rewrite_calls(func, env)
 
     return func, env
 
@@ -61,23 +55,3 @@ def simplify_exceptions(func, env=None):
             b.position_after(op)
             b.splitblock(terminate=True)
             op.delete()
-
-#===------------------------------------------------------------------===
-# Calls
-#===------------------------------------------------------------------===
-
-def rewrite_calls(func, env):
-    """
-    Rewrite 'pycall' instructions to other Numba functions to 'call'.
-
-    This recurses into the front-end translator, so this supports recursion
-    since the function is already in the cache.
-    """
-    b = OpBuilder()
-    for op in func.ops:
-        if op.opcode == 'pycall':
-            func, args = op.args[0].const, op.args[1:]
-            if isinstance(func, FunctionWrapper):
-                translated, env = translate(func.py_func, env)
-                newop = b.call(types.Opaque, [translated, args], op.result)
-                op.replace(newop)

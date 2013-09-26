@@ -253,7 +253,7 @@ class Translate(object):
     def call(self, func, args=()):
         if not isinstance(func, Const):
             func = Const(func, types.Opaque)
-        self.push_insert('pycall', func, *args)
+        self.push_insert('call', func, list(args))
 
     def binary_op(self, op):
         rhs = self.pop()

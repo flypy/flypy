@@ -10,6 +10,7 @@ from functools import partial, wraps
 
 from .pipeline import run_pipeline
 from .passes import frontend, typing, lower, optimizations, backend
+from .compiler.overloading import best_match
 
 from pykit.analysis import callgraph
 
@@ -42,10 +43,24 @@ def starcompose(f, g):
 # Individual phases
 
 def _cache_key(func, env):
-    return (func, env["numba.typing.argtypes"])
+    return (func, tuple(env["numba.typing.argtypes"]))
+
+def setup_phase(func, env):
+    # Find implementation
+    py_func, signature = best_match(func, env["numba.typing.argtypes"])
+
+    # Update environment
+    env["numba.state.function_wrapper"] = func
+    env['numba.state.opaque'] = func.opaque
+    env["numba.typing.restype"] = signature.restype
+    env["numba.typing.argtypes"] = signature.argtypes
+
+    return py_func, env
 
 @cached('numba.frontend.cache', frontend)
 def translation_phase(func, env, passes):
+    if env["numba.state.opaque"]:
+        return func, env
     return run_pipeline(func, env, passes)
 
 @cached('numba.typing.cache', typing + lower, key=_cache_key)
@@ -75,7 +90,8 @@ dep_resolving = lambda phase: partial(apply_and_resolve, phase)
 # ______________________________________________________________________
 # Combined phases
 
-translation = translation_phase
-typing = starcompose(typing_phase, translation_phase)
+setup = setup_phase
+translation = starcompose(translation_phase, setup)
+typing = starcompose(typing_phase, translation)
 opt = starcompose(optimization_phase, typing)
 codegen = starcompose(codegen_phase, opt)
