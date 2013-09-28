@@ -8,6 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from pykit import types
 from pykit.ir import Const, Op, ops, defs
+from pykit.utils import invert
 
 #===------------------------------------------------------------------===
 # Special methods
@@ -39,12 +40,18 @@ special = {
     ops.eq            : '__eq__',
     ops.noteq         : '__ne__',
     ops.contains      : '__contains__',
-    }
+}
+special2op = invert(special)
 
 def lookup_special(func):
     """Look up a special method name for an operator.* function"""
-    operator = defs.func2operator[func]
+    operator = defs.operator2opcode[func]
     return special[operator]
+
+def lookup_operator(name):
+    """Given a special __*__ name, return the operator.* function"""
+    opcode = special2op[name]
+    return defs.opcode2operator[opcode]
 
 #===------------------------------------------------------------------===
 # Simplifier

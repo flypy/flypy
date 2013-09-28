@@ -6,17 +6,20 @@ Interpreter for untyped bytecode
 
 from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
-
-def pycall(interp, func, *args):
-    return func(*args)
+from numba2.compiler.simplification import lookup_operator
 
 def getfield(interp, obj, attr):
+    if attr.startswith('__') and attr.startswith('__'):
+        try:
+            return lookup_operator(attr)
+        except KeyError:
+            pass
+
     if hasattr(obj, attr):
         return getattr(obj, attr)
     return getattr(type(obj), attr)
 
 handlers = {
-    'pycall':   pycall,
     'getfield': getfield,
 }
 

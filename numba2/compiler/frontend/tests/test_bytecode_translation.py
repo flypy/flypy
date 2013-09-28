@@ -3,24 +3,21 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from pykit.analysis import cfa
 from pykit.ir.interp import UncaughtException
 
-from numba2.functionwrapper import FunctionWrapper
 from numba2.compiler.frontend import translate, interpret
-from numba2 import environment
-
-function = lambda f: FunctionWrapper(f, None)
+from numba2 import environment, phase, typeof, jit
 
 #===------------------------------------------------------------------===
 # Helpers
 #===------------------------------------------------------------------===
 
-def run(f, expected, args, ssa=True):
-    env = environment.fresh_env()
-    code = translate(f, env)
-    if ssa:
-        cfa.run(code)
+def run(f, expected, args):
+    f = jit(f)
+    argtypes = [typeof(arg) for arg in args]
+    env = environment.fresh_env(f, argtypes)
+    code, env = phase.translation(f, env)
+
     result = interpret(code, args=args)
     assert result == expected, "Got %s, expected %s" % (result, expected)
 
@@ -49,24 +46,21 @@ class TestBytecodeTranslation(unittest.TestCase):
     #===------------------------------------------------------------------===
 
     def test_call(self):
-        @function
         def f(a, b):
             return g(a + b)
 
-        @function
         def g(x):
             return x * x
 
-        run(f.py_func, 100, [4, 6])
+        run(f, 100, [4, 6])
 
     def test_recursion(self):
-        @function
         def fact(n):
             if n > 1:
                 return n * fact(n - 1)
             return 1
 
-        run(fact.py_func, 120, [5])
+        run(fact, 120, [5])
 
     #===------------------------------------------------------------------===
     # Control Flow
@@ -108,7 +102,7 @@ class TestBytecodeTranslation(unittest.TestCase):
         # dis.dis(f)
         # print(translate(f))
         try:
-            run(f, 15, [0, 10], ssa=False) # TODO: exc_throw
+            run(f, 15, [0, 10]) # TODO: exc_throw
         except UncaughtException, e:
             exc = e.args[0]
             assert isinstance(exc, ValueError)
@@ -144,9 +138,9 @@ class TestBytecodeTranslation(unittest.TestCase):
 
         # dis.dis(f)
         # print(translate(f))
-        run(f, 1, [0, 10], ssa=False) # TODO: exc_throw
+        run(f, 1, [0, 10]) # TODO: exc_throw
 
 
 if __name__ == '__main__':
-    # TestBytecodeTranslation('test_recursion').debug()
+    #TestBytecodeTranslation('test_recursion').debug()
     unittest.main()

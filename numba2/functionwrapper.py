@@ -56,6 +56,10 @@ class FunctionWrapper(object):
 
         return cfunc
 
+    @property
+    def signatures(self):
+        return [signature for func, signature, _ in self.dispatcher.overloads]
+
     def __str__(self):
         return "<numba function (%s)>" % str(self.dispatcher)
 
