@@ -33,6 +33,7 @@ root_env = FrozenDict({
     'numba.typing.signature': None,     # Output
     'numba.typing.context': None,       # Output
     'numba.typing.constraints': None,   # Output
+    'numba.typing.envs': {},            # Output, all environments of typed functions
 
     # Flags
     'numba.verify':         True,

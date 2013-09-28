@@ -69,11 +69,12 @@ def ll_annotate(func, env):
                 ltype = ll_type(type)
                 op.type = ltype
 
-    context = env['numba.typing.context']
-    vmap(resolve_type, func)
+    if not env['numba.state.opaque']:
+        context = env['numba.typing.context']
+        vmap(resolve_type, func)
 
-    func.type = ptypes.Function(ll_type(env['numba.typing.restype']),
-                                [arg.type for arg in func.args])
+        func.type = ptypes.Function(ll_type(env['numba.typing.restype']),
+                                    [arg.type for arg in func.args])
 
 
 run = ll_annotate

@@ -34,7 +34,7 @@ class TestTranslation(unittest.TestCase):
         def f(a):
             return g(a * 3)
 
-        self.assertEqual(f(5), 27)
+        self.assertEqual(f(5), 17)
 
 
 if __name__ == '__main__':

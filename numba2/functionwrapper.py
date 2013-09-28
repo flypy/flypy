@@ -34,7 +34,7 @@ class FunctionWrapper(object):
     def __call__(self, *args, **kwargs):
         args = flatargs(self.dispatcher.f, args, kwargs)
         argtypes = [typing.typeof(x) for x in args]
-        cfunc, lfunc, env = self.translate(argtypes)
+        cfunc = self.translate(argtypes)
         return cfunc(*args)
 
     def translate(self, argtypes):
@@ -54,7 +54,7 @@ class FunctionWrapper(object):
         self.ctypes_funcs[key] = cfunc
         self.envs[key] = env
 
-        return cfunc, llvm_func, env
+        return cfunc
 
     def __str__(self):
         return "<numba function (%s)>" % str(self.dispatcher)

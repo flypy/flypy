@@ -11,7 +11,7 @@ from .compiler.frontend import translate, simplify_exceptions
 from .compiler import simplification
 from .compiler.typing import inference
 from .compiler.typing.resolution import (resolve_context, resolve_restype,
-                                         rewrite_calls, rewrite_methods)
+                                         rewrite_calls)
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
@@ -34,10 +34,6 @@ typing = [
     inference,
     resolve_context,
     resolve_restype,
-]
-
-lower = [
-    rewrite_methods,
     rewrite_calls,
 ]
 
@@ -45,8 +41,11 @@ optimizations = [
     dce,
 ]
 
-backend = [
+lowering = [
     preparation,
+]
+
+backend = [
     backend,
     verify,
     dump_llvm,
@@ -54,6 +53,6 @@ backend = [
     dump_optimized,
 ]
 
-passes = frontend + typing + lower + backend
+passes = frontend + typing + optimizations + lowering + backend
 
-all_passes = [frontend, typing, lower, optimizations, backend, passes]
+all_passes = [frontend, typing, optimizations, lowering, backend, passes]

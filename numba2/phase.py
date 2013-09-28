@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial, wraps
 
 from .pipeline import run_pipeline
-from .passes import frontend, typing, lower, optimizations, backend
+from .passes import frontend, typing, optimizations, lowering, backend
 from .compiler.overloading import best_match
 
 from pykit.analysis import callgraph
@@ -47,11 +47,12 @@ def _cache_key(func, env):
 
 def setup_phase(func, env):
     # Find implementation
-    py_func, signature = best_match(func, env["numba.typing.argtypes"])
+    argtypes = env["numba.typing.argtypes"]
+    py_func, signature = best_match(func, list(argtypes))
 
     # Update environment
     env["numba.state.function_wrapper"] = func
-    env['numba.state.opaque'] = func.opaque
+    env["numba.state.opaque"] = func.opaque
     env["numba.typing.restype"] = signature.restype
     env["numba.typing.argtypes"] = signature.argtypes
 
@@ -63,17 +64,24 @@ def translation_phase(func, env, passes):
         return func, env
     return run_pipeline(func, env, passes)
 
-@cached('numba.typing.cache', typing + lower, key=_cache_key)
+@cached('numba.typing.cache', typing, key=_cache_key)
 def typing_phase(func, env, passes):
-    return run_pipeline(func, env, passes)
+    typed, env = run_pipeline(func, env, passes)
+    envs = env["numba.typing.envs"]
+    envs[typed] = env
+    return typed, env
 
 @cached('numba.opt.cache', optimizations)
 def optimization_phase(func, env, passes):
     apply_and_resolve(partial(run_pipeline, passes=passes), func, env)
     return func, env
 
+def lowering_phase(func, env, passes=lowering):
+    return run_pipeline(func, env, passes)
+
 @cached('numba.codegen.cache', backend)
 def codegen_phase(func, env, passes):
+    apply_and_resolve(lowering_phase, func, env)
     return run_pipeline(func, env, passes)
 
 # ______________________________________________________________________
@@ -82,10 +90,9 @@ def codegen_phase(func, env, passes):
 def apply_and_resolve(phase, func, env):
     """Apply a phase to a function and its dependences"""
     graph = env['numba.state.callgraph'] or callgraph.callgraph(func)
+    envs = env["numba.typing.envs"]
     for f in graph.node:
-        phase(f, None)
-
-dep_resolving = lambda phase: partial(apply_and_resolve, phase)
+        phase(f, envs[f])
 
 # ______________________________________________________________________
 # Combined phases

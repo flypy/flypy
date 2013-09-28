@@ -31,11 +31,10 @@ import collections
 from itertools import product
 
 from numba2.typing import promote, typeof, parse
-from numba2.environment import fresh_env
 from numba2.errors import InferError
 from numba2.types import Type, Function, Pointer, bool_, void
-from numba2.compiler.overloading import best_match
 from numba2.functionwrapper import FunctionWrapper
+from .resolution import infer_call
 from .. import opaque
 
 import pykit.types
@@ -428,61 +427,9 @@ def infer_node(cache, ctx, node):
                 key = (node, func_type, tuple(arg_types))
                 if key not in processed:
                     processed.add(key)
-                    result = infer_call(cache, func, func_type, arg_types)
+                    _, result = infer_call(func, func_type, arg_types)
                     changed |= result not in typeset
                     typeset.add(result)
 
     return changed
 
-
-def infer_call(cache, func, func_type, arg_types):
-    """
-    Infer a single call. We have three cases:
-
-        1) Static receiver function
-        2) Higher-order function
-            This is already typed
-        3) Method. We need to insert 'self' in the cartesian product
-    """
-    is_method = type(func_type) == Method
-    is_const = isinstance(func, ir.Const)
-    is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
-    if is_method or is_numba_func:
-        # -------------------------------------------------
-        # Method call or numba function call
-
-        from numba2 import phase
-
-        if is_method:
-            func = func_type.parameters[0]
-        else:
-            func = func.const
-
-        # Translate # to untyped IR and infer types
-        # TODO: Support recursion !
-
-        env = fresh_env(func, arg_types)
-        func, env = phase.typing(func, env)
-        return env["numba.typing.restype"]
-
-    #elif isinstance(func, ir.Const) and isinstance(func.const, FunctionWrapper):
-    #    # -------------------------------------------------
-    #    # Call to other numba function
-    #
-    #    f, sig = best_match(func.const, arg_types)
-    #
-    #    # We know the overloaded Python function and the signature, translate
-    #    # to untyped IR and infer types
-    #    # TODO: Support recursion !
-    #
-    #    env = fresh_env(f, sig.argtypes, sig.restype)
-    #    func, env = phase.typing(f, env)
-    #    return env["numba.typing.restype"]
-
-    elif not isinstance(func, ir.Function):
-        # -------------------------------------------------
-        # Higher-order function
-
-        restype = func_type.restype
-        assert restype
-        return  restype
