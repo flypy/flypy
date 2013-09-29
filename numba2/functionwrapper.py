@@ -7,9 +7,9 @@ Numba function wrapper.
 from __future__ import print_function, division, absolute_import
 import types
 
-from numba2 import typing
+from numba2.rules import typeof
 from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
-                                         best_match, flatargs)
+                                         flatargs)
 
 # TODO: Reuse numba.numbawrapper.pyx for autojit Python entry points
 
@@ -33,7 +33,7 @@ class FunctionWrapper(object):
 
     def __call__(self, *args, **kwargs):
         args = flatargs(self.dispatcher.f, args, kwargs)
-        argtypes = [typing.typeof(x) for x in args]
+        argtypes = [typeof(x) for x in args]
         cfunc = self.translate(argtypes)
         return cfunc(*args)
 
@@ -62,21 +62,6 @@ class FunctionWrapper(object):
 
     def __str__(self):
         return "<numba function (%s)>" % str(self.dispatcher)
-
-
-def apply_kernel(kernel, *args, **kwargs):
-    """
-    Apply blaze kernel `kernel` to the given arguments.
-
-    Returns: a Deferred node representation the delayed computation
-    """
-    # -------------------------------------------------
-    # Find match to overloaded function
-
-    overload, args = kernel.dispatcher.lookup_dispatcher(args, kwargs)
-
-    # -------------------------------------------------
-    # Construct graph
 
 
 def wrap(py_func, signature, **kwds):

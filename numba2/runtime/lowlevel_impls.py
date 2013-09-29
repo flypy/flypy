@@ -17,7 +17,7 @@ def add_impl(cls, name, implementation, restype=None):
 
     def impl(py_func, argtypes):
         # TODO: do this better
-        from numba2.compiler.backend.preparation import ll_type
+        from numba2.compiler.backend.lltyping import ll_type
 
         ll_argtypes = [ll_type(x) for x in argtypes]
         argnames = string.ascii_letters[:len(argtypes)]

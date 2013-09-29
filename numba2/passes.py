@@ -6,12 +6,12 @@ Numba passes that perform translation, type inference, code generation, etc.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.compiler.backend import preparation, backend
+from numba2.compiler.backend import lltyping, llvm
 from .compiler.frontend import translate, simplify_exceptions
-from .compiler import simplification
+from .compiler import simplification, optimizations as opts, lowering
 from .compiler.typing import inference
 from .compiler.typing.resolution import (resolve_context, resolve_restype,
-                                         rewrite_calls)
+                                         rewrite_calls, rewrite_constructors)
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
@@ -26,7 +26,7 @@ frontend = [
     translate,
     simplify_exceptions,
     dump_cfg,
-    simplification,
+    simplification.rewrite_ops,
     cfa,
 ]
 
@@ -35,24 +35,33 @@ typing = [
     resolve_context,
     resolve_restype,
     rewrite_calls,
+    rewrite_constructors,
 ]
 
 optimizations = [
     dce,
+    opts.optimize,
 ]
 
-lowering = [
-    preparation,
+backend_init = [
+    lltyping,
+    lowering.lower_fields,
+    llvm.codegen_init,
 ]
 
-backend = [
-    backend,
+backend_run = [
+    llvm.codegen_run,
+    llvm.codegen_link,
+]
+
+backend_finalize = [
     verify,
     dump_llvm,
     optimize,
     dump_optimized,
+    llvm.get_ctypes,
 ]
 
-passes = frontend + typing + optimizations + lowering + backend
+passes = frontend + typing + optimizations + backend_init + backend_run
 
-all_passes = [frontend, typing, optimizations, lowering, backend, passes]
+all_passes = [frontend, typing, optimizations, backend_init, backend_run, passes]

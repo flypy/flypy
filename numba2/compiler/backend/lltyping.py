@@ -50,7 +50,8 @@ def ll_type(x, seen=None):
         t = typing.get_type_data(type(x))
         fields = t.layout
         names, field_types = zip(*fields.items())
-        lltype = ptypes.Struct(names, [ll_type(t, seen) for t in field_types])
+        lltype = ptypes.Pointer(ptypes.Struct(
+            names, [ll_type(t, seen) for t in field_types]))
 
     return lltype
 
@@ -58,7 +59,7 @@ def ll_type(x, seen=None):
 # Passes
 #===------------------------------------------------------------------===
 
-def ll_annotate(func, env):
+def lltyping(func, env):
     """Annotate the function with the low-level representation types"""
     def resolve_type(op):
         if not isinstance(op, GlobalValue):
@@ -77,4 +78,4 @@ def ll_annotate(func, env):
                                     [arg.type for arg in func.args])
 
 
-run = ll_annotate
+run = lltyping

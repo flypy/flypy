@@ -9,7 +9,10 @@ from __future__ import print_function, division, absolute_import
 from .utils import FrozenDict
 from .caching import Cache, InferenceCache, TypingCache
 
-root_env = FrozenDict({
+from pykit import environment as pykit_env
+from pykit.codegen import llvm as llvm_codegen
+
+_env = {
     # Command line args
     'numba.cmdopts':        {},
 
@@ -45,7 +48,12 @@ root_env = FrozenDict({
     "codegen.llvm.module":  None,
     "codegen.llvm.machine": None,
     "codegen.llvm.ctypes":  None,
-})
+}
+
+_env.update(pykit_env.fresh_env())
+llvm_codegen.install(_env)
+
+root_env = FrozenDict(_env)
 
 #===------------------------------------------------------------------===
 # New envs
