@@ -7,8 +7,9 @@ from pykit.utils.pattern import match as pyoverload
 
 from .entrypoints import jit, ijit, abstract
 from .compiler import (annotate, overload, overloadable)
-from .typing import convert, promote, typeof, typedef, parse
-from .types import Type
+from .typing import typedef, parse, unify_simple as unify
+from .rules import typeof, convert, promote, is_numba_type
+from .types import Type, int32
 from .runtime.interfaces.interface import implements
 
 from .passes import translate
