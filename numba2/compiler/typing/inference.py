@@ -30,7 +30,7 @@ from pprint import pprint
 import collections
 from itertools import product
 
-from numba2.typing import promote, typeof, parse
+from numba2 import promote, typeof, parse
 from numba2.errors import InferError
 from numba2.types import Type, Function, Pointer, bool_, void
 from numba2.functionwrapper import FunctionWrapper
@@ -185,7 +185,7 @@ def build_graph(func):
 
 def initial_context(func):
     """Initialize context with argtypes"""
-    context = { 'return': set() }
+    context = { 'return': set(), void: void, bool_: bool_}
     context['return'] = set()
     count = 0
 
@@ -313,6 +313,9 @@ class ConstraintGenerator(object):
             self.G.add_edge(op.type, op)
         else:
             self.G.add_edge(op.args[0], op)
+
+    def op_setfield(self, op):
+        pass # Handle this in the type checker
 
     def exc_setup(self, op):
         pass

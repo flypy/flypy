@@ -334,6 +334,8 @@ class Translate(object):
 
     def op_RETURN_VALUE(self, inst):
         val = self.pop()
+        if isinstance(val, Const) and val.const is None:
+            val = None # Generate a bare 'ret' instruction
         self.insert('ret', val)
 
     def op_CALL_FUNCTION(self, inst):
@@ -355,7 +357,7 @@ class Translate(object):
         self.call(func, args)
 
     def op_GET_ITER(self, inst):
-        self.push_insert('getiter', self.pop())
+        self.call(iter, [self.pop()])
 
     def op_FOR_ITER(self, inst):
         """
@@ -377,7 +379,7 @@ class Translate(object):
         # Try
 
         self.insert('exc_setup', [loopexit])
-        self.push_insert('next', iterobj)
+        self.call(next, [iterobj])
 
         # We assume a 1-to-1 block mapping, resolve a block split in a
         # later pass
@@ -405,7 +407,7 @@ class Translate(object):
     def op_LOAD_ATTR(self, inst):
         attr = self.names[inst.arg]
         obj = self.pop()
-        self.insert('getfield', obj, attr)
+        self.push_insert('getfield', obj, attr)
 
     def op_LOAD_GLOBAL(self, inst):
         name = self.names[inst.arg]
@@ -432,6 +434,12 @@ class Translate(object):
         value = self.pop()
         name = self.varnames[inst.arg]
         self.insert('store', value, self.allocas[name])
+
+    def op_STORE_ATTR(self, inst):
+        attr = self.names[inst.arg]
+        obj = self.pop()
+        value = self.pop()
+        self.insert('setfield', obj, attr, value)
 
     def op_STORE_SUBSCR(self, inst):
         tos0 = self.pop()

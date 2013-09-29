@@ -96,7 +96,7 @@ BYTECODES = [
     ('ROT_TWO', 0),
     ('SETUP_LOOP', 2),
     ('STORE_FAST', 2),
-#    ('STORE_ATTR', 2), # not supported
+    ('STORE_ATTR', 2),
     ('STORE_SUBSCR', 0),
     ('UNPACK_SEQUENCE', 2),
     ('SLICE+0', 0),
