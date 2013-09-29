@@ -6,8 +6,8 @@ Entry points for runtime code.
 
 from __future__ import print_function, division, absolute_import
 import inspect
-from ...functionwrapper import FunctionWrapper
-from ... import jit
+from numba2.functionwrapper import FunctionWrapper
+from numba2 import jit
 
 __all__ = ['implements']
 

@@ -1,10 +1,26 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
+
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
+
 from .. import jit, ijit, typedef, overload
 
 # ____________________________________________________________
 
-@ijit('Int -> Int -> Int -> Int')
+@ijit('Iterable[a] -> Iterator[a]')
+def iter(x):
+    return x.__iter__()
+
+@ijit('Iterator[a] -> a')
+def next(x):
+    return x.__next__()
+
+# ____________________________________________________________
+
+@ijit #('Int -> Int -> Int -> Int')
 def len_range(start, stop, step):
     if step < 0:
         start, stop, step = stop, start, -step
@@ -13,7 +29,7 @@ def len_range(start, stop, step):
     return (stop - start - 1) // step + 1
 
 @jit('Int -> Int -> Int -> Iterable[Int]')
-def range_(start, stop=None, step=1):
+def range(start, stop=None, step=1):
     if stop is None:
         stop = start
         start = 0
@@ -26,4 +42,6 @@ def range_(start, stop=None, step=1):
 
 # ____________________________________________________________
 
-typedef(range, range_)
+typedef(builtins.iter, iter)
+typedef(builtins.next, next)
+typedef(builtins.range, range)
