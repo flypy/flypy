@@ -6,7 +6,7 @@ Interpreter for untyped bytecode
 
 from __future__ import print_function, division, absolute_import
 from pykit.ir import interp
-from numba2.compiler.simplification import lookup_operator
+from numba2.compiler.special import lookup_operator
 
 def getfield(interp, obj, attr):
     if attr.startswith('__') and attr.startswith('__'):
