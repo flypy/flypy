@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 import re
-import sys
-from functools import partial
-
-from . import pyoverload
-from pykit.utils import cached
 
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
@@ -34,40 +29,6 @@ def resolve_type(t):
 #===------------------------------------------------------------------===
 # Runtime
 #===------------------------------------------------------------------===
-
-def getfields(fields, scope, type):
-    """
-    Compute the fields for a type:
-
-        Map `Int[X] -> Float[X]` to e.g. `Int[32] -> Float[32]`
-    """
-    return fields
-    #if not type.concrete:
-    #    f = resolve_types
-    #else:
-    #    f = partial(substitute_types, type.bound)
-    #
-    #types = dict([(k, v.signature) for k, v in fields.items()])
-    #f(types, scope)
-    #for k, v in fields.iteritems():
-    #    fields[k].signature = types[k]
-    #
-    #return fields
-
-
-def getlayout(layout, scope, type):
-    """
-    Compute the layout for a type when the parameters are filled out:
-
-        Map `Int[X]` to e.g. `Int[32]`
-    """
-    #if not type.concrete:
-    #    resolve_types(layout, scope)
-    #else:
-    #    substitute_types(type.bound, layout, scope)
-
-    return layout
-
 
 class MetaType(type):
     """
@@ -103,20 +64,15 @@ class MetaType(type):
 
         # Patch concrete type with fields, layout
         type_constructor = type.__class__
-        scope = sys.modules[self.__module__].__dict__
         type_constructor.impl   = self
         type.concrete = False
 
-        type_constructor.fields = property(partial(getfields, fields, scope))
-        type_constructor.layout = property(partial(getlayout, layout, scope))
+        type_constructor.fields = fields
+        type_constructor.layout = layout
 
     def __getitem__(self, key):
         if not isinstance(key, tuple):
             key = (key,)
-
-        # Force evaluation
-        self.type.fields
-        self.type.layout
 
         # Construct concrete type
         constructor = type(self.type)
@@ -209,32 +165,6 @@ def resolve(type, scope, bound):
     type = resolve_in_scope(type, scope)
     type = substitute(bound, type)
     return type
-
-#===------------------------------------------------------------------===
-# User-defined typing
-#===------------------------------------------------------------------===
-
-@pyoverload
-def typeof(pyval):
-    """Python value -> Type"""
-    raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
-
-#@overload('ν -> Type[τ] -> τ')
-def convert(value, type):
-    """Convert a value of type 'a' to the given type"""
-    return value
-
-# @overload('Type[α] -> Type[β] -> Type[γ]')
-def promote(type1, type2):
-    """Promote two types to a common type"""
-    # return Sum([type1, type2])
-    if type1 == Opaque():
-        return type2
-    elif type2 == Opaque():
-        return type1
-    else:
-        assert type1 == type2
-        return type1
 
 #===------------------------------------------------------------------===
 # Registry

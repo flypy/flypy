@@ -9,7 +9,7 @@ import types
 from functools import partial
 
 from .functionwrapper import wrap
-from .typing import MetaType, parse, set_type_data
+from .typing import MetaType, set_type_data
 from .utils import applyable_decorator
 
 @applyable_decorator
@@ -31,6 +31,7 @@ def jit(f, *args, **kwds):
     """
     return _jit(f, *args, **kwds)
 
+
 def _jit(f, *args, **kwds):
     if isinstance(f, (types.ClassType, type)):
         return jit_class(f, *args, **kwds)
@@ -50,56 +51,19 @@ def jit_class(cls, signature=None, abstract=False):
     """
     @jit('Array[dtype, ndim]')
     """
-    from .types import free, TypeConstructor
+    from .runtime.classes import allocate_type_constructor, patch_class
 
     if not abstract and not hasattr(cls, 'layout'):
         raise ValueError("layout of class %s not set" % (cls,))
 
-    dct = dict(vars(cls))
+    constructor, type = allocate_type_constructor(cls, signature)
+    cls.type = type
+    patch_class(cls)
 
-    if signature is not None:
-        t, name, params = parse_constructor(signature)
-        if name != cls.__name__:
-            raise TypeError(
-                "Got differing names for type constructor and class, "
-                "%s and %s" % (name, cls.__name__))
-        constructor = type(t)
-        dct['type'] = t
-    else:
-        constructor = TypeConstructor(cls.__name__, 0, [])
-        dct['type'] = constructor()
-        if not abstract:
-            assert not free(cls.layout)
-
-    result = MetaType(cls.__name__, cls.__bases__, dct)
+    result = MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
     set_type_data(constructor, result)
     return result
 
-
-def parse_constructor(signature):
-    from .types import Type, TypeVar
-
-    if isinstance(signature, basestring):
-        t = parse(signature)
-    else:
-        t = signature
-
-    if isinstance(t, TypeVar):
-        name = t.symbol
-        params = ()
-    elif not isinstance(t, Type):
-        raise TypeError(
-            "Expected a type variable or type constructor as a signature, got %s" % (t,))
-    else:
-        name = type(t).__name__
-        params = t.parameters
-
-    for i, param in enumerate(params):
-        if not isinstance(param, TypeVar):
-            raise TypeError(
-                "Parameter %s is not a type variable! Got %s." % (i, param))
-
-    return t, name, params
 
 @applyable_decorator
 def abstract(f, *args, **kwds):
