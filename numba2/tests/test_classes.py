@@ -22,9 +22,17 @@ class C(object):
     def __add__(self, other):
         return self.x * other.x
 
+    @jit
+    def method(self, other):
+        return self.x * other.x
+
 @jit
-def f(x):
+def call_special(x):
     return C(x) + C(2)
+
+@jit
+def call_method(x):
+    return C(x).method(C(2))
 
 #===------------------------------------------------------------------===
 # Tests
@@ -32,9 +40,11 @@ def f(x):
 
 class TestClasses(unittest.TestCase):
 
-    def test_class_instantiation(self):
-        self.assertEqual(f(5), 10)
+    def test_special_method(self):
+        self.assertEqual(call_special(5), 10)
 
+    def test_methods(self):
+        self.assertEqual(call_method(5), 10)
 
 if __name__ == '__main__':
     unittest.main()

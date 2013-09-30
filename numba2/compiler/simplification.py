@@ -35,6 +35,7 @@ def rewrite_ops(func, env=None):
                 continue
 
             self = args[0]
+            args = args[1:]
             m = newop('getfield', [self, methname])
             call = newop('call', [m, args])
             op.replace_uses(call)

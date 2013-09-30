@@ -20,6 +20,9 @@ from pykit.ir import OpBuilder, Builder, Const, Function
 
 # TODO: Move this function to a third module
 
+def is_method(t):
+    return type(t).__name__ == 'Method' # hargh
+
 def infer_call(func, func_type, arg_types):
     """
     Infer a single call. We have three cases:
@@ -31,17 +34,17 @@ def infer_call(func, func_type, arg_types):
     """
     from numba2 import phase
 
-    is_method = type(func_type).__name__ == 'Method'
     is_const = isinstance(func, Const)
     is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
     is_class = isinstance(func_type, type(Type.type))
 
-    if is_method or is_numba_func:
+    if is_method(func_type) or is_numba_func:
         # -------------------------------------------------
         # Method call or numba function call
 
-        if is_method:
+        if is_method(func_type):
             func = func_type.parameters[0]
+            arg_types = [func_type.parameters[1]] + list(arg_types)
         else:
             func = func.const
 
@@ -113,23 +116,33 @@ def rewrite_calls(func, env):
 
     b = OpBuilder()
     for op in func.ops:
-        if op.opcode == 'call':
+        if op.opcode == 'call' and op.args[0].opcode == 'getfield':
+
             # Retrieve typed function
             f, args = op.args
-            argtypes = [context[a] for a in args]
             signature = context[f]
-            typed_func, restype = infer_call(f, signature, argtypes)
 
-            # Rewrite call
-            newop = b.call(op.type, [typed_func, op.args[1]], op.result)
-            op.replace(newop)
+            if is_method(signature):
+                # Retrieve typed function from the given arg types
+                argtypes = [context[a] for a in args]
+                typed_func, restype = infer_call(f, signature, argtypes)
+
+                # Insert self in args list
+                getfield = op.args[0]
+                self = getfield.args[0]
+                args = [self] + args
+
+                # Rewrite call
+                newop = b.call(op.type, [typed_func, args], op.result)
+                op.replace(newop)
 
     env['numba.state.callgraph'] = None
 
 
 def rewrite_constructors(func, env):
     """
-    Rewrite constructor application to calls to cls.__init__:
+    Rewrite constructor application to object allocation followed by
+    cls.__init__:
 
         call(C, x, y) -> call(C.__init__, x, y)
     """

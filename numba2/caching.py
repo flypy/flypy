@@ -39,6 +39,9 @@ class Cache(object):
     def insert(self, key, value):
         self.cached[key] = value
 
+    __contains__ = lookup
+    __getitem__ = lookup
+
 class TypingCache(Cache):
 
     def lookup(self, key):
