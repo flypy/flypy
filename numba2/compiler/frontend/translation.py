@@ -18,7 +18,7 @@ import collections
 from numba2.errors import error_context, CompileError, EmptyStackError
 from .bytecode import ByteCode
 
-from pykit.ir import Function, Builder, Op, Const, ops
+from pykit.ir import Function, Builder, Op, Const, Value, ops
 from pykit import types
 
 #===------------------------------------------------------------------===
@@ -251,7 +251,7 @@ class Translate(object):
         return phi
 
     def call(self, func, args=()):
-        if not isinstance(func, Const):
+        if not isinstance(func, Value):
             func = Const(func, types.Opaque)
         self.push_insert('call', func, list(args))
 

@@ -409,11 +409,15 @@ def infer_node(cache, ctx, node):
         [neighbor] = incoming
         attr = ctx.metadata[node]['attr']
         for type in ctx.context[neighbor]:
-            if attr not in type.fields:
+            if attr in type.fields:
+                value = type.fields[attr]
+                func, self = value, type
+                result = Method(func, self)
+            elif attr in type.layout:
+                result = type.layout[attr]
+            else:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
-            value = type.fields[attr]
-            func, self = value, type
-            result = Method(func, self)
+
             changed |= result not in typeset
             typeset.add(result)
 
