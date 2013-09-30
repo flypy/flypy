@@ -10,25 +10,25 @@ from .. import jit, ijit, typedef, overload
 
 # ____________________________________________________________
 
-@ijit('Iterable[a] -> Iterator[a]')
+@jit('Iterable[a] -> Iterator[a]')
 def iter(x):
     return x.__iter__()
 
-@ijit('Iterator[a] -> a')
+@jit('Iterator[a] -> a')
 def next(x):
     return x.__next__()
 
 # ____________________________________________________________
 
-@ijit #('Int -> Int -> Int -> Int')
+@jit
 def len_range(start, stop, step):
     if step < 0:
         start, stop, step = stop, start, -step
-    if start <= stop:
+    if stop <= start:
         return 0
     return (stop - start - 1) // step + 1
 
-@jit('Int -> Int -> Int -> Iterable[Int]')
+@jit #('Int -> Int -> Int -> Iterable[Int]')
 def range(start, stop=None, step=1):
     if stop is None:
         stop = start
