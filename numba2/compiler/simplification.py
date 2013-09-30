@@ -5,6 +5,7 @@ Simplify untyped IR.
 """
 
 from __future__ import print_function, division, absolute_import
+import operator
 
 from numba2.compiler.special import lookup_special
 
@@ -14,6 +15,11 @@ from pykit.ir import Const, Op
 #===------------------------------------------------------------------===
 # Simplifiers
 #===------------------------------------------------------------------===
+
+special_runtime = {
+    operator.floordiv: '__floordiv__',
+    operator.truediv:  '__truediv__',
+}
 
 def rewrite_ops(func, env=None):
     """
@@ -32,7 +38,10 @@ def rewrite_ops(func, env=None):
             try:
                 methname = lookup_special(f)
             except KeyError:
-                continue
+                if f in special_runtime:
+                    methname = special_runtime[f]
+                else:
+                    continue
 
             self = args[0]
             args = args[1:]

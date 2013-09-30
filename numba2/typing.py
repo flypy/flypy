@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 import re
+import sys
 
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
@@ -29,6 +30,15 @@ def resolve_type(t):
 #===------------------------------------------------------------------===
 # Runtime
 #===------------------------------------------------------------------===
+
+@property
+def bound(self):
+    freevars = free(self.impl.type)
+    # assert len(freevars) == len(key)
+
+    # TODO: Parameterization by type terms
+    return dict((t.symbol, v) for t, v in zip(freevars, self.parameters))
+
 
 class MetaType(type):
     """
@@ -65,10 +75,12 @@ class MetaType(type):
         # Patch concrete type with fields, layout
         type_constructor = type.__class__
         type_constructor.impl   = self
-        type.concrete = False
-
         type_constructor.fields = fields
         type_constructor.layout = layout
+        type_constructor.bound = bound
+
+        modname = dct['__module__']
+        type_constructor.scope = vars(sys.modules[modname])
 
     def __getitem__(self, key):
         if not isinstance(key, tuple):
@@ -77,15 +89,6 @@ class MetaType(type):
         # Construct concrete type
         constructor = type(self.type)
         result = constructor(*key)
-        result.concrete = True
-
-        # Update bound variables
-        freevars = free(self.type)
-        # assert len(freevars) == len(key)
-
-        # TODO: Parameterization by type terms
-        bound = dict((t.symbol, v) for t, v in zip(freevars, key))
-        result.bound = bound
 
         return result
 

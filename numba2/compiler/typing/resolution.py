@@ -110,31 +110,32 @@ def resolve_restype(func, env):
 
 def rewrite_calls(func, env):
     """
-    Resolve methods calls via static function calls.
+    Resolve methods and function calls (which may be overloaded!) via static
+    function calls.
     """
     context = env['numba.typing.context']
 
     b = OpBuilder()
     for op in func.ops:
-        if op.opcode == 'call' and op.args[0].opcode == 'getfield':
+        if op.opcode == 'call':
 
             # Retrieve typed function
             f, args = op.args
             signature = context[f]
 
-            if is_method(signature):
-                # Retrieve typed function from the given arg types
-                argtypes = [context[a] for a in args]
-                typed_func, restype = infer_call(f, signature, argtypes)
+            # Retrieve typed function from the given arg types
+            argtypes = [context[a] for a in args]
+            typed_func, restype = infer_call(f, signature, argtypes)
 
+            if is_method(signature):
                 # Insert self in args list
                 getfield = op.args[0]
                 self = getfield.args[0]
                 args = [self] + args
 
-                # Rewrite call
-                newop = b.call(op.type, [typed_func, args], op.result)
-                op.replace(newop)
+            # Rewrite call
+            newop = b.call(op.type, [typed_func, args], op.result)
+            op.replace(newop)
 
     env['numba.state.callgraph'] = None
 

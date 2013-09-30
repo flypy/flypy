@@ -65,9 +65,11 @@ class Number(object):
     def __truediv__(self, other):
         return self / other
 
-    @ojit('a -> a -> a')
+    @jit('a -> a -> a')
     def __floordiv__(self, other):
-        return self // other
+        # TODO: implement
+        #return self // other
+        return self.__div__(other)
 
     @ojit('a -> a -> a')
     def __mod__(self, other):
@@ -134,6 +136,14 @@ class Number(object):
     @ojit('a -> a -> a')
     def __rshift__(self, other):
         return self >> other
+
+    #===------------------------------------------------------------------===
+    # Unary
+    #===------------------------------------------------------------------===
+
+    @jit('a -> a')
+    def __neg__(self):
+        return 0 - self
 
 
 @abstract

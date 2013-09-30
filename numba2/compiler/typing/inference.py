@@ -33,6 +33,7 @@ from itertools import product
 from numba2 import promote, typeof, parse
 from numba2.errors import InferError
 from numba2.types import Type, Function, Pointer, bool_, void
+from numba2.typing import resolve
 from numba2.functionwrapper import FunctionWrapper
 from .resolution import infer_call
 from .. import opaque
@@ -415,6 +416,7 @@ def infer_node(cache, ctx, node):
                 result = Method(func, self)
             elif attr in type.layout:
                 result = type.layout[attr]
+                result = resolve(result, type.scope, type.bound)
             else:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
 

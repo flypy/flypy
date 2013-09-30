@@ -33,11 +33,11 @@ special = {
 
     # Compare
     ops.lt            : '__lt__',
-    ops.lte           : '__le__',
+    ops.le            : '__le__',
     ops.gt            : '__gt__',
-    ops.gte           : '__ge__',
+    ops.ge            : '__ge__',
     ops.eq            : '__eq__',
-    ops.noteq         : '__ne__',
+    ops.ne            : '__ne__',
     ops.contains      : '__contains__',
 }
 special2op = invert(special)
