@@ -37,8 +37,8 @@ def dumppass(option):
 
 # ______________________________________________________________________
 
-@dumppass("dump")
-def dump(func, env, fancy):
+#@dumppass("dump")
+def dump(func, env):
     print(func)
 
 @dumppass("dump-cfg")

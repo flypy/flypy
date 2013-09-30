@@ -3,7 +3,6 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from pykit.ir.interp import UncaughtException
 from numba2 import jit, int32
 
 #===------------------------------------------------------------------===
@@ -47,4 +46,5 @@ class TestClasses(unittest.TestCase):
         self.assertEqual(call_method(5), 10)
 
 if __name__ == '__main__':
+    #TestClasses('test_special_method').debug()
     unittest.main()

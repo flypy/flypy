@@ -5,13 +5,15 @@ Interpreter for untyped bytecode
 """
 
 from __future__ import print_function, division, absolute_import
-from pykit.ir import interp
+from functools import partial
+
 from numba2.compiler.special import lookup_operator
+from pykit.ir import interp
 
 def getfield(interp, obj, attr):
     if attr.startswith('__') and attr.startswith('__'):
         try:
-            return lookup_operator(attr)
+            return partial(lookup_operator(attr), obj)
         except KeyError:
             pass
 

@@ -10,7 +10,7 @@ class TestInterfaces(unittest.TestCase):
     def test_interface(self):
         @abstract('Int[X, Y]')
         class Int(object):
-            pass
+            layout = []
 
         self.assertEqual(str(Int.type), 'Int[X, Y]')
         self.assertEqual(str(Int[32, True]), 'Int[32, True]')

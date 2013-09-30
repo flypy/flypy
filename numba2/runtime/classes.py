@@ -78,7 +78,7 @@ def fabricate_init(nargs):
     source = textwrap.dedent("""
     def __init__(self, %s):
         %s
-    """ % (", ".join(args), "\n    ".join(stmts)))
+    """) % (", ".join(args), "\n    ".join(stmts))
 
     result = {}
     exec source in result, result
