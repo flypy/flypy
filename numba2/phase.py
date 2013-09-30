@@ -75,14 +75,26 @@ def typing_phase(func, env, passes=typing):
     return typed, env
 
 @cached('numba.opt.cache')
-def optimization_phase(func, env, passes=optimizations):
-    apply_and_resolve(partial(run_pipeline, passes=passes), func, env)
+def optimization_phase(func, env, passes=optimizations, dependences=None):
+    envs = env["numba.typing.envs"]
+
+    if dependences is None:
+        dependences = callgraph.callgraph(func).node
+
+    func, env = run_pipeline(func, env, passes)
+    for f in dependences:
+        optimization_phase(f, envs[f], passes, [])
     return func, env
 
-@cached('numba.codegen.cache')
 def codegen_phase(func, env):
-    dependences = callgraph.callgraph(func).node
+    cache = env['numba.codegen.cache']
     envs = env["numba.typing.envs"]
+
+    if func in cache:
+        return cache[func]
+
+    dependences = callgraph.callgraph(func).node
+    dependences = [d for d in dependences if d not in cache]
 
     for f in dependences:
         run_pipeline(f, envs[f], backend_init)
@@ -90,7 +102,9 @@ def codegen_phase(func, env):
         run_pipeline(f, envs[f], backend_run)
     for f in dependences:
         e = envs[f]
-        run_pipeline(e["numba.state.llvm_func"], envs[f], backend_finalize)
+        lfunc = e["numba.state.llvm_func"]
+        run_pipeline(lfunc, envs[f], backend_finalize)
+        cache.insert(f, (lfunc, e))
 
     return env["numba.state.llvm_func"], env
 
