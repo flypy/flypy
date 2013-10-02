@@ -10,7 +10,8 @@ from os.path import dirname, splitext
 sys.path.pop(0) # remove the bin directory so can import numba
 sys.path.append(os.getcwd())
 
-from numba2 import environment, passes, prettyprint
+from numba2 import environment, passes, prettyprint, phase
+from pykit.ir.verification import verify
 
 # ______________________________________________________________________
 
@@ -51,5 +52,8 @@ if __name__ == "__main__":
         'filename': args.filename,
     }
     for ps in passes.all_passes:
-        ps[:] = prettyprint.augment_pipeline(ps)
+        new_passes = prettyprint.augment_pipeline(ps)
+        new_passes = [phase.starcompose(verify, p) for p in new_passes]
+        ps[:] = new_passes
+
     run(args.filename, cmdopts)

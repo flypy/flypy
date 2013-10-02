@@ -181,7 +181,7 @@ class Translate(object):
     def update_phis(self):
         for block in self.dst.blocks:
             phis = self.phis[block]
-            preds  = self.predecessors[block]
+            preds  = list(self.predecessors[block])
             stacks = [self.stacks[pred] for pred in preds]
             stacklen = len(phis)
 
@@ -417,7 +417,7 @@ class Translate(object):
         # Catch
 
         with self.builder.at_front(loopexit):
-            self.insert('exc_catch', StopIteration)
+            self.insert('exc_catch', [StopIteration])
 
     def op_BREAK_LOOP(self, inst):
         scope = self.loops[-1]

@@ -6,6 +6,6 @@ Numba extensions to pykit IR.
 
 from __future__ import print_function, division, absolute_import
 
-from pykit.ir import ops
+from pykit.ir.ops import op
 
-getitem = 'getitem/vl'
+exc_end = op('exc_end')
