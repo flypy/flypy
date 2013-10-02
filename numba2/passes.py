@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from numba2.compiler.backend import lltyping, llvm
 from .compiler.frontend import translate, simplify_exceptions
-from .compiler import simplification, optimizations as opts, lowering
+from .compiler import simplification, optimizations as opts, lowering, copying
 from .compiler.typing import inference
 from .compiler.typing.resolution import (resolve_context, resolve_restype,
                                          rewrite_calls, rewrite_constructors)
@@ -27,11 +27,13 @@ frontend = [
     simplify_exceptions,
     dump_cfg,
     simplification.rewrite_ops,
+    simplification.rewrite_overlays,
     cfa,
 ]
 
 typing = [
     inference,
+    copying,
     resolve_context,
     resolve_restype,
     rewrite_calls,
@@ -39,11 +41,13 @@ typing = [
 ]
 
 optimizations = [
+    copying,
     dce,
     opts.optimize,
 ]
 
 backend_init = [
+    copying,
     lltyping,
     lowering.lower_fields,
     llvm.codegen_init,
