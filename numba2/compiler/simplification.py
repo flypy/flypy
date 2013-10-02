@@ -7,6 +7,7 @@ Simplify untyped IR.
 from __future__ import print_function, division, absolute_import
 import operator
 
+from numba2.typing import overlay_registry
 from numba2.compiler.special import lookup_special
 
 from pykit import types
@@ -28,13 +29,9 @@ def rewrite_ops(func, env=None):
         pycall(operator.add, a, b) -> call(getfield(a, __add__), [a, b])
     """
     for op in func.ops:
-        if op.opcode == 'call':
+        if op.opcode == 'call' and isinstance(op.args[0], Const):
             f, args = op.args
-            if not isinstance(f, Const):
-                continue
-            else:
-                f = f.const
-
+            f = f.const
             try:
                 methname = lookup_special(f)
             except KeyError:
@@ -50,7 +47,17 @@ def rewrite_ops(func, env=None):
             op.replace_uses(call)
             op.replace([m, call])
 
-run = rewrite_ops
+def rewrite_overlays(func, env=None):
+    """
+    Rewrite calls to non-numba functions which have a defined "overlay"
+    implementation.
+    """
+    for op in func.ops:
+        if op.opcode == 'call' and isinstance(op.args[0], Const):
+            f, args = op.args
+            impl = overlay_registry.lookup_overlay(f.const)
+            if impl is not None:
+                op.set_args([Const(impl, type=f.type), args])
 
 #===------------------------------------------------------------------===
 # Helpers

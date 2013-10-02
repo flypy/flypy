@@ -6,7 +6,7 @@ try:
 except ImportError:
     import builtins
 
-from .. import jit, ijit, typedef, overload
+from .. import jit, ijit, overlay, overload
 
 # ____________________________________________________________
 
@@ -42,6 +42,6 @@ def range(start, stop=None, step=1):
 
 # ____________________________________________________________
 
-typedef(builtins.iter, iter)
-typedef(builtins.next, next)
-typedef(builtins.range, range)
+overlay(builtins.iter, iter)
+overlay(builtins.next, next)
+overlay(builtins.range, range)

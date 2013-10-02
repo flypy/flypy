@@ -5,7 +5,7 @@ import sys
 
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
-                             coerce, unify, unify_simple, free)
+                             coercion_cost as coerce, unify, unify_simple, free)
 
 #===------------------------------------------------------------------===
 # Parsing
@@ -173,17 +173,20 @@ def resolve(type, scope, bound):
 # Registry
 #===------------------------------------------------------------------===
 
-class TypedefRegistry(object):
+class OverlayRegistry(object):
     def __init__(self):
-        self.typedefs = {} # builtin -> numba function
+        self.overlays = {} # builtin -> numba function
 
-    def typedef(self, pyfunc, numbafunc):
-        assert pyfunc not in self.typedefs
-        self.typedefs[pyfunc] = numbafunc
+    def overlay(self, pyfunc, numbafunc):
+        assert pyfunc not in self.overlays
+        self.overlays[pyfunc] = numbafunc
+
+    def lookup_overlay(self, pyfunc):
+        return self.overlays.get(pyfunc)
 
 
-typedef_registry = TypedefRegistry()
-typedef = typedef_registry.typedef
+overlay_registry = OverlayRegistry()
+overlay = overlay_registry.overlay
 
 _registry = {}
 
