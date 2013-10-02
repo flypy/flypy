@@ -318,13 +318,13 @@ class ConstraintGenerator(object):
     def op_setfield(self, op):
         pass # Handle this in the type checker
 
-    def exc_setup(self, op):
+    def op_exc_setup(self, op):
         pass
 
-    def exc_throw(self, op):
+    def op_exc_throw(self, op):
         pass
 
-    def exc_catch(self, op):
+    def op_exc_catch(self, op):
         pass
 
     def op_jump(self, op):
