@@ -27,7 +27,8 @@ def cached(cache_name, key=lambda func, env: func):
             cache = env[cache_name]
             cache_key = key(func, env)
             if cache.lookup(cache_key):
-                return cache.lookup(cache_key)
+                func, _ = cache.lookup(cache_key)
+                return func, env
 
             new_func, new_env = f(func, env, *args)
             cache.insert(cache_key, (new_func, new_env))

@@ -12,9 +12,7 @@ from .interfaces.numbers import Number
 
 from pykit import ir, types as ptypes
 
-def add_impl(cls, name, implementation, restype=None):
-    opaque_func = getattr(cls, name)
-
+def add_impl(opaque_func, name, implementation, restype=None):
     def impl(py_func, argtypes):
         # TODO: do this better
         from numba2.compiler.backend.lltyping import ll_type
@@ -32,10 +30,17 @@ def add_impl(cls, name, implementation, restype=None):
 
     opaque.implement_opaque(opaque_func, impl)
 
+
+def add_impl_cls(cls, name, implementation, restype=None):
+    opaque_func = getattr(cls, name)
+    add_impl(opaque_func, name, implementation, restype)
+
+
 def add_binop(cls, name, restype=None):
     special_name = "__%s__" % name
     impl = lambda b, x, y: b.ret(getattr(b, name)(restype or x.type, [x, y]))
-    add_impl(cls, special_name, impl, restype)
+    add_impl_cls(cls, special_name, impl, restype)
+
 
 add_binop(Number, "add")
 add_binop(Number, "mul")

@@ -19,4 +19,6 @@ from .runtime.obj import Function, Pointer, Bool, Int, Float, Void
 bool_   = Bool[()]
 void    = Void[()]
 int32   = Int[32, False]
+int64   = Int[64, False]
+float32 = Float[32]
 float64 = Float[64]

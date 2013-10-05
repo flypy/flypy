@@ -11,6 +11,7 @@ from .typing import overlay, parse, unify_simple as unify
 from .rules import typeof, convert, promote, is_numba_type
 from .types import Type, int32
 from .runtime.interfaces.interface import implements
+from .runtime.special import sizeof
 
 from .passes import translate
 from .errors import error, InferError, SpecializeError

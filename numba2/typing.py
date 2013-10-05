@@ -22,6 +22,8 @@ def resolve_type(t):
     _blaze2numba = {
         ds.bool_   : types.bool_,
         ds.int32   : types.int32,
+        ds.int64   : types.int64,
+        ds.float32 : types.float32,
         ds.float64 : types.float64,
     }
 
@@ -123,6 +125,20 @@ def verify_method_signature(type, signature):
 # Unification and type resolution
 #===------------------------------------------------------------------===
 
+def lookup_builtin_type(name):
+    from . import types
+
+    builtin_scope = {
+        'Function': types.Function,
+        'Pointer':  types.Pointer,
+        'Bool':     types.Bool,
+        'Int':      types.Int,
+        'Float':    types.Float,
+        'Void':     types.Void,
+    }
+
+    return builtin_scope.get(name)
+
 def resolve_in_scope(t, scope):
     """
     Resolve a parsed type in the current scope. For example, if we parse
@@ -131,12 +147,13 @@ def resolve_in_scope(t, scope):
     def resolve(t):
         if isinstance(type(t), TypeConstructor):
             name = type(t).name
-            if name not in scope:
-                raise TypeError(
-                    "Type constructor %s is not in the current scope")
 
             # Get the @jit class (e.g. Int)
-            impl = scope[name]
+            impl = scope.get(name) or lookup_builtin_type(name)
+
+            if impl is None:
+                raise TypeError(
+                    "Type constructor %s is not in the current scope")
 
             # Get the TypeConstructor for the @jit class (e.g.
             # Int[nbits, unsigned])
@@ -165,6 +182,7 @@ def resolve(type, scope, bound):
     Resolve a parsed numba type in its scope.
     Do this before applying unification.
     """
+    type = resolve_type(type)
     type = resolve_in_scope(type, scope)
     type = substitute(bound, type)
     return type
