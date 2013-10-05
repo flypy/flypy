@@ -15,9 +15,9 @@ class TestSpecial(unittest.TestCase):
             return jit(signature)(func)(arg)
 
         self.assertEqual(apply('int32 -> int64', 10), 4)
-        #self.assertEqual(apply('float64 -> int64', 10.0), 8)
+        self.assertEqual(apply('float64 -> int64', 10.0), 8)
 
 
 if __name__ == '__main__':
-    TestSpecial('test_sizeof').debug()
+    #TestSpecial('test_sizeof').debug()
     unittest.main()

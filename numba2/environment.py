@@ -29,6 +29,7 @@ _env = {
     'numba.state.func_code':    None,
     'numba.state.callgraph':    None,
     'numba.state.opaque':       False,  # Whether the function is opaque
+    'numba.state.envs':         {},     # All cached environments
 
     # Typing
     'numba.typing.restype': None,       # Input/Output
@@ -36,7 +37,6 @@ _env = {
     'numba.typing.signature': None,     # Output
     'numba.typing.context': None,       # Output
     'numba.typing.constraints': None,   # Output
-    'numba.typing.envs': {},            # Output, all environments of typed functions
 
     # Flags
     'numba.verify':         True,

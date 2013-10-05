@@ -12,7 +12,9 @@ from .pipeline import run_pipeline
 from .passes import (frontend, typing, optimizations, backend_init,
                      backend_run, backend_finalize)
 from .compiler.overloading import best_match
+from .compiler import copying
 
+from pykit import ir
 from pykit.analysis import callgraph
 
 #===------------------------------------------------------------------===
@@ -26,26 +28,74 @@ def cached(cache_name, key=lambda func, env: func):
         def wrapper(func, env, *args):
             cache = env[cache_name]
             cache_key = key(func, env)
+
+            # -------------------------------------------------
+            # Check cache
+
             if cache.lookup(cache_key):
                 func, _ = cache.lookup(cache_key)
                 return func, env
 
+            # -------------------------------------------------
+            # Apply phase & copy
+
             new_func, new_env = f(func, env, *args)
-            cache.insert(cache_key, (new_func, new_env))
+            copy(cache, new_func, new_env, key)
             return new_func, new_env
 
         return wrapper
     return decorator
+
+
+def copy(cache, func, env, key):
+    if not isinstance(func, ir.Function):
+        return
+
+    # -------------------------------------------------
+    # Build call graph
+
+    graph = callgraph.callgraph(func)
+    envs = env['numba.state.envs']
+
+    # -------------------------------------------------
+    # Build { old_func : (new_func, new_env) } dict
+
+    funcs = {}
+    for f in graph.node:
+        cache_key = key(f, envs[f])
+        result = cache.lookup(cache_key)
+        if result is not None:
+            funcs[f] = result
+
+    # -------------------------------------------------
+    # Copy function graph
+
+    new_funcs = copying.copy_graph(func, env, funcs, graph)
+
+    # -------------------------------------------------
+    # Update cache and 'envs' dict
+
+    for old_func, (new_func, new_env) in new_funcs.iteritems():
+        envs[new_func] = new_env
+        cache_key = key(old_func, envs[old_func])
+        cache.insert(cache_key, (new_func, new_env))
+
 
 def starcompose(f, g):
     """Helper to compose functions in a pipeline"""
     return lambda *args: f(*g(*args))
 
 # ______________________________________________________________________
-# Individual phases
+# Utils
 
 def _cache_key(func, env):
     return (func, tuple(env["numba.typing.argtypes"]))
+
+def _deps(func):
+    return callgraph.callgraph(func).node
+
+# ______________________________________________________________________
+# Individual phases
 
 def setup_phase(func, env):
     # -------------------------------------------------
@@ -66,21 +116,21 @@ def setup_phase(func, env):
 def translation_phase(func, env, passes=frontend):
     if env["numba.state.opaque"]:
         return func, env
-    return run_pipeline(func, env, passes)
+    new_func, new_env = run_pipeline(func, env, passes)
+    envs = env['numba.state.envs']
+    envs[new_func] = new_env
+    return new_func, new_env
 
 @cached('numba.typing.cache', key=_cache_key)
 def typing_phase(func, env, passes=typing):
-    typed, env = run_pipeline(func, env, passes)
-    envs = env["numba.typing.envs"]
-    envs[typed] = env
-    return typed, env
+    return run_pipeline(func, env, passes)
 
 @cached('numba.opt.cache')
 def optimization_phase(func, env, passes=optimizations, dependences=None):
-    envs = env["numba.typing.envs"]
+    envs = env["numba.state.envs"]
 
     if dependences is None:
-        dependences = callgraph.callgraph(func).node
+        dependences = _deps(func)
 
     func, env = run_pipeline(func, env, passes)
     for f in dependences:
@@ -89,13 +139,12 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
 
 def codegen_phase(func, env):
     cache = env['numba.codegen.cache']
-    envs = env["numba.typing.envs"]
+    envs = env["numba.state.envs"]
 
     if func in cache:
         return cache[func]
 
-    dependences = callgraph.callgraph(func).node
-    dependences = [d for d in dependences if d not in cache]
+    dependences = [d for d in _deps(func) if d not in cache]
 
     for f in dependences:
         run_pipeline(f, envs[f], backend_init)
@@ -115,7 +164,7 @@ def codegen_phase(func, env):
 def apply_and_resolve(phase, func, env, graph=None):
     """Apply a phase to a function and its dependences"""
     graph = graph or callgraph.callgraph(func)
-    envs = env["numba.typing.envs"]
+    envs = env["numba.state.envs"]
     for f in graph.node:
         phase(f, envs[f])
 

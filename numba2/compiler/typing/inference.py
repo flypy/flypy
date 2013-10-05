@@ -145,6 +145,8 @@ def infer_opaque(func, env, argtypes):
     restype = env["numba.typing.restype"]
     func = opaque.implement(func, py_func, argtypes, env)
     ctx = Context(func, {'return': set([restype])}, {}, None, {})
+    envs = env['numba.state.envs']
+    envs[func] = env
     return ctx
 
 def infer_function(cache, func, argtypes):

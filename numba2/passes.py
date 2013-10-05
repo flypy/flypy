@@ -33,7 +33,6 @@ frontend = [
 
 typing = [
     inference,
-    copying,
     resolve_context,
     resolve_restype,
     rewrite_calls,
@@ -41,13 +40,11 @@ typing = [
 ]
 
 optimizations = [
-    copying,
     dce,
     opts.optimize,
 ]
 
 backend_init = [
-    copying,
     lltyping,
     lowering.lower_fields,
     llvm.codegen_init,
