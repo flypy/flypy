@@ -39,6 +39,13 @@ def make_parser():
     parser.add_argument('filename', help='Python source filename')
     return parser
 
+def verifier(p):
+    def v(func, env):
+        func, env = p(func, env)
+        verify(func, env)
+        return func, env
+    return v
+
 if __name__ == "__main__":
     parser = make_parser()
     args = parser.parse_args()
@@ -53,7 +60,7 @@ if __name__ == "__main__":
     }
     for ps in passes.all_passes:
         new_passes = prettyprint.augment_pipeline(ps)
-        new_passes = [phase.starcompose(verify, p) for p in new_passes]
+        new_passes = [verifier(p) for p in new_passes]
         ps[:] = new_passes
 
     run(args.filename, cmdopts)
