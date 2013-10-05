@@ -26,6 +26,8 @@ def run(filename, cmdopts):
 
 def make_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--verify', action='store_true',
+                        help='Verify IR at each stage')
     parser.add_argument('--annotate',  help='Annotate source',
                         action='store_true')
     parser.add_argument('--dump-llvm', action="store_true",
@@ -60,7 +62,8 @@ if __name__ == "__main__":
     }
     for ps in passes.all_passes:
         new_passes = prettyprint.augment_pipeline(ps)
-        new_passes = [verifier(p) for p in new_passes]
+        if args.verify:
+            new_passes = [verifier(p) for p in new_passes]
         ps[:] = new_passes
 
     run(args.filename, cmdopts)
