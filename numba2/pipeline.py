@@ -19,8 +19,10 @@ def run_pipeline(func, env, passes):
     Run a sequence of transforms (given as functions or modules) on the
     AIR function.
     """
+    env['numba.state.crnt_func'] = func
     for transform in passes:
         func, env = apply_transform(transform, func, env)
+        env['numba.state.crnt_func'] = func
     return func, env
 
 

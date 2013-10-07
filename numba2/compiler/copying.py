@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from itertools import chain
 from collections import deque
 
-from pykit.ir import copy_function, Function
+from pykit.ir import copy_function, vmap, Function
 from pykit.analysis import callgraph
 from pykit.utils import make_temper
 
@@ -61,13 +61,14 @@ def update_callgraph(graph, funcs):
             if op.opcode == 'call':
                 old_dst, args = op.args
                 if isinstance(old_dst, Function):
-                    new_dst = funcs[old_dst]
+                    new_dst, _ = funcs[old_dst]
                     op.set_args([new_dst, args])
 
 
 def copy(func, env):
     new_func = copy_func(func, env)
     new_env = copy_env(func, new_func, env)
+    env['numba.state.envs'][new_func] = new_env
     return new_func, new_env
 
 
@@ -95,7 +96,8 @@ def copy_ir_valuemap(old_func, new_func, valuemap):
     newops: [Op]
     valuemap: {Op : object}
     """
-    replacements = dict(chain(zip(old_func.ops, new_func.ops),
-                              zip(old_func.args, new_func.args)))
+    old = vmap(lambda x: x, old_func)
+    new = vmap(lambda x: x, new_func)
+    replacements = dict(zip(old, new))
     return dict((replacements.get(oldop, oldop), value)
                     for oldop, value in valuemap.iteritems())

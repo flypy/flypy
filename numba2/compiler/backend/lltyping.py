@@ -7,7 +7,7 @@ Preparation for codegen.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import types, typing
-from pykit.ir import vmap, GlobalValue
+from pykit.ir import vmap, GlobalValue, Function
 from pykit import types as ptypes
 
 #===------------------------------------------------------------------===
@@ -62,7 +62,7 @@ def ll_type(x, seen=None):
 def lltyping(func, env):
     """Annotate the function with the low-level representation types"""
     def resolve_type(op):
-        if not isinstance(op, GlobalValue):
+        if not isinstance(op, (GlobalValue, Function)):
             if not op.type.is_void:
                 type = context[op]
                 if type.__class__.__name__ == 'Method':

@@ -29,6 +29,11 @@ _env = {
     'numba.state.func_code':    None,
     'numba.state.callgraph':    None,
     'numba.state.opaque':       False,  # Whether the function is opaque
+    'numba.state.phase':        None,
+    'numba.state.copies':       None,
+    'numba.state.crnt_func':    None,
+
+    # Global state
     'numba.state.envs':         {},     # All cached environments
 
     # Typing
