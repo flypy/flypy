@@ -33,14 +33,10 @@ def convert(value, type):
 #@overload('Type[α] -> Type[β] -> Type[γ]')
 def promote(type1, type2):
     """Promote two types to a common type"""
-    # return Sum([type1, type2])
-    if type1 == Opaque():
-        return type2
-    elif type2 == Opaque():
+    if type1 == type2:
         return type1
     else:
-        assert type1 == type2
-        return type1
+        raise TypeError("Cannot promote %s and %s" % (type1, type2))
 
 
 def is_numba_type(x):

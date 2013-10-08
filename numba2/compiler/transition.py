@@ -14,7 +14,13 @@ from pykit.analysis import callgraph
 
 Transition = namedtuple('Transition', ['old_func', 'new_func', 'new_env'])
 
-def phase_transition(func, env):
+def single_copy(func, env):
+    if not isinstance(func, ir.Function):
+        return func, env
+    return copying.copy(func, env)
+
+
+def transition_copy_graph(func, env):
     """
     Transition to a new phase:
 
@@ -62,5 +68,3 @@ def update_copies(all_copies, phase):
     for old_func, (new_func, new_env) in all_copies.iteritems():
         f_copies = new_env['numba.state.copies']
         f_copies[phase] = Transition(old_func, new_func, new_env)
-
-run = phase_transition

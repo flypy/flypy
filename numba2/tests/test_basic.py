@@ -52,5 +52,5 @@ class TestTranslation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #TestTranslation('test_while').debug()
+    #TestTranslation('test_call').debug()
     unittest.main()

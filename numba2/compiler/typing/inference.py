@@ -33,7 +33,7 @@ from itertools import product
 from numba2 import promote, typeof, parse
 from numba2.errors import InferError
 from numba2.types import Type, Function, Pointer, bool_, void
-from numba2.typing import resolve
+from numba2.typing import resolve, TypeVar
 from numba2.functionwrapper import FunctionWrapper
 from .resolution import infer_call
 from .. import opaque
@@ -104,6 +104,7 @@ def run(func, env):
     argtypes = env['numba.typing.argtypes']
     ctx, signature = infer(cache, func, env, argtypes)
 
+    env["numba.typing.restype"] = signature.restype
     env['numba.typing.signature'] = signature
     env['numba.typing.context'] = ctx.context
     env['numba.typing.constraints'] = ctx.constraints
@@ -439,6 +440,9 @@ def infer_node(cache, ctx, node):
                 if key not in processed:
                     processed.add(key)
                     _, result = infer_call(func, func_type, arg_types)
+                    if isinstance(result, TypeVar):
+                        raise TypeError("Expected a concrete type result, "
+                                        "not a type variable!")
                     changed |= result not in typeset
                     typeset.add(result)
 

@@ -35,8 +35,12 @@ def cached(phase_name, key=lambda func, env: func):
             env['numba.state.phase'] = phase_name
 
             if cache.lookup(cache_key):
-                func, _ = cache.lookup(cache_key)
-                return func, env
+                new_func, new_env = cache.lookup(cache_key)
+                if phase_name == 'numba.frontend':
+                    # TODO: This is a hack! Do manual caching in
+                    # translation_phase below!
+                    new_env = env # Don't lose the argtypes
+                return new_func, new_env
 
             # -------------------------------------------------
             # Apply phase & cache
@@ -147,3 +151,14 @@ translation = starcompose(translation_phase, setup)
 typing = starcompose(typing_phase, translation)
 opt = starcompose(optimization_phase, typing)
 codegen = starcompose(codegen_phase, opt)
+
+# ______________________________________________________________________
+# Naming
+
+phases = {
+    "setup":        setup,
+    "translation":  translation,
+    "typing":       typing,
+    "opt":          opt,
+    "codegen":      codegen,
+}

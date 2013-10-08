@@ -17,13 +17,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(apply('int32 -> int64', 10), 4)
         self.assertEqual(apply('float64 -> int64', 10.0), 8)
 
-@jit
-def func(x):
-    return sizeof(x)
 
-print (func(10))
-#print(func(10.0))
-
-#if __name__ == '__main__':
+if __name__ == '__main__':
     #TestSpecial('test_sizeof').debug()
-    #unittest.main()
+    unittest.main()

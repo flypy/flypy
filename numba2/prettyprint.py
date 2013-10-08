@@ -62,7 +62,9 @@ def augment_pipeline(passes):
     return [partial(verbose, p) for p in passes]
 
 def verbose(p, func, env):
-    title = "%s [ %s ]" % (_passname(p), _funcname(func))
+    argtypes = env['numba.typing.argtypes']
+    title = "%s [ %s(%s) ]" % (_passname(p), _funcname(func),
+                               ", ".join(map(str, argtypes)))
     print(title.center(60).center(90, "-"))
     if isinstance(func, types.FunctionType):
         dis.dis(func)
