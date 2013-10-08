@@ -13,11 +13,13 @@ I believe we need the following features:
 
         - Careful control over allocation, mutability and ownership
 
-    * Polymorphism: Generic functions, traits, overloading
+    * Polymorphism: Generic functions, subtyping, overloading
 
-        - subtyping and inheritance is left to a runtime implementation
-        - dynamic dispatch for traits is left to a runtime implementation
-            - static dispatch only requires some type checking support
+        - Generic functions are specialized for the cartesian product of
+          input types
+        - Polymorphic code can be generated and implemented in a runtime
+          implementation (e.g. virtual method tables like numba's extension
+          classes)
 
     * User-defined typing rules
     * Careful control over inlining, unrolling and specialization
@@ -37,90 +39,18 @@ Polymorphism is provided through:
 
     - generic (monomorphized) functions (like C++ templates)
     - overloading
-    - traits (like interfaces)
     - subtyping ("python classes")
 
 This language's goals are ultimate control over performance, and a language
 with a well-defined and easily understood subset for the GPU.
 
 This language is inspired by the following languages: Rust, Terra, RPython,
-Julia, Parakeet, mypy, copperhead. The traits are very similar to Rust's
-traits, and are related to type classes in Haskell and interfaces in Go.
-
-However, Go interfaces do not allow type-based specialization, and hence
-need runtime type tagging and method dispatch through vtables. Type
-conversion between interfaces needs to be runtime-checked type (and new
-vtables build at those points, if not cached).
-Compile-time overloading is precluded. In Go, interfaces specify what something
-*can do*, as opposed to what something *can be*. This can be a useful in a few
-situations, but it means we cannot constrain what things can be (e.g.
-any numeric type).
-
-In julia we can constrain the types we operate over, which happens through
-subtyping. E.g.:
-
-.. code-block:: julia
-
-    julia> Int <: Integer
-    true
-    julia> Int <: Real
-    true
-    julia> Int <: FloatingPoint
-    false
-
-So we can define a function which operates only over numbers::
-
-    julia> function f(x :: Number)
-             return x * x
-           end
-
-Here's a the generated code when ``x`` is an ``Int``:
-
-.. code-block:: llvm
-
-    julia> disassemble(f, (Int,))
-
-    define %jl_value_t* @f618(%jl_value_t*, %jl_value_t**, i32) {
-    top:
-      %3 = load %jl_value_t** %1, align 8, !dbg !5256
-      %4 = getelementptr inbounds %jl_value_t* %3, i64 0, i32 0, !dbg !5256
-      %5 = getelementptr %jl_value_t** %4, i64 1, !dbg !5256
-      %6 = bitcast %jl_value_t** %5 to i64*, !dbg !5256
-      %7 = load i64* %6, align 8, !dbg !5256
-      %8 = mul i64 %7, %7, !dbg !5263
-      %9 = call %jl_value_t* @jl_box_int64(i64 %8), !dbg !5263
-      ret %jl_value_t* %9, !dbg !5263
-    }
-
-Disassembling with ``Number`` generates a much larger chunk of code, which
-uses boxed code and ultimately (runtime) multiple dispatch of the ``*``
-function:
-
-.. code-block:: llvm
-
-    %15 = call %jl_value_t* @jl_apply_generic(%jl_value_t* inttoptr (i64 4316726176 to %jl_value_t*), %jl_value_t** %.sub, i32 2), !dbg !5191
-
-However, since the implementation of a function is specialized for the
-supertype, it doesn't know the concrete subtype.
-Type inference can help prevent these situations and use subtype-specialized
-code. However, it's very easy to make it generate slow code:
-
-.. code-block:: julia
-
-    julia> function g(c)
-         if c > 2
-           x = 2
-         else
-           x = 3.0
-         end
-         return f(x)
-       end
-
-    julia> disassemble(g, (Bool,))
-
-This prints a large chunk of LLVM code (using boxed values), since we are
-unifying an Int with a Float. Using both ints, or both floats however leads
-to very efficient code.
+Julia, Parakeet, mypy, copperhead. It focusses on static dispatch flexibility,
+allowing specialization for static dispatch, or allowing generating more
+generic machine code with runtime dispatch. Like RPython, it will further allow
+specialization on constant values, which allows generic code to turn into
+essentially static code, enabling partial evaluation opportunities as well as
+improved type inference.
 
 What we want in our language is full control over specialization and memory
 allocation, and easily-understood semantics for what works on the GPU and what
@@ -128,7 +58,7 @@ doesn't. The following sections will detail how the above features will
 get us there.
 
 1. User-defined Types
-=====================
+---------------------
 
 We want to support user-defined types with:
 
@@ -167,7 +97,7 @@ multiply to check for overflow, and raise an exception or issue a warning, or
 convert to a BigInt.
 
 Representation
---------------
+~~~~~~~~~~~~~~
 Type representation can be specified through a type 'layout':
 
 .. code-block:: python
@@ -177,7 +107,7 @@ Type representation can be specified through a type 'layout':
         layout = Struct([('data', 'Char *')])
 
 Mutability and Allocation
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 Each individual field can be specified to be immutable, or all can be specified
 immutable through a decorator:
 
@@ -216,13 +146,13 @@ to the Rust programming language. We leave stack allocation of mutable
 objects purely as a compile-time optimization.
 
 Destructors
------------
+~~~~~~~~~~~
 Destructors are supported only for heap-allocated types, irrespective of
 mutability. If a __del__ method is implemented, the object will be
 automatically heap-allocated (unless escape analysis can say otherwise).
 
 Ownership
----------
+~~~~~~~~~
 Ownership is tied to mutability:
 
     - Data is owned when (recursively) immutable
@@ -237,7 +167,7 @@ The user must guarantee that 'x' stays alive while it is consumed. This is
 useful for things like parallel computation on arrays.
 
 Type Parameters
----------------
+~~~~~~~~~~~~~~~
 User-defined types are parameterizable:
 
 .. code-block:: python
@@ -285,15 +215,15 @@ which uses higher-level APIs that ultimately construct these types. E.g.:
         return { np.double: Double, ...}[array.dtype]
 
 2. Polymorphism
-===============
-Supported forms of polymorphism are generic functions, overloading, traits
-and subtyping and inheritance.
+---------------
+Supported forms of polymorphism are generic functions, overloading and
+subtyping.
 
 Generic Functions (@autojit)
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Generic functions are like ``@autojit``, they provide specialized code for
 each unique combination of input types. They may be optionally typed and
-constrained (through traits).
+constrained (through classes or sets of types).
 
 .. code-block:: python
 
@@ -303,75 +233,57 @@ constrained (through traits).
 
 This specifies a map implementation that is specialized for each combination
 of type instances for type variables `a` and `b`. Type variables may be
-further constrained through traits, in a similar way to Rust's traits
-(http://static.rust-lang.org/doc/tutorial.html#traits), allowing you to
-operate for instance only on arrays of numbers, or arrays of floating point
-values.
-
-Traits
-------
-Traits specify an interface that value instances implement. Similarly
-to Rust's traits and Haskell's type classes, they are a form of bounded
-polymorphism, allowing users to constrain type variables ("this
-function operates on floating point values only").
-
-They also specify a generic interface that objects can implement. Classes
-can declare they belong to a certain trait, allowing any instance of the class
-to be used through the trait:
+further constrained by sets of types or by abstract classes or interfaces,
+e.g.:
 
 .. code-block:: python
 
-    @jit('(a -> b) -> Iterable[a] -> [b]')
-    def map(f, xs):
+    @jit('Array[A : Float] -> A')
+    def sum(xs):
         ...
 
-Our map now takes an iterable and returns a list. Written this way,
-a single map implementation now works for *any* iterable. Any value
-implementing the Iterable trait can now be used:
+Here ``Float`` is the unparameterized version of the the ``Float[nbits]`` class,
+which allows ``sum`` to accept any array with floating point numbers of any
+size.
+
+An other, perhaps more flexible, way to contrain type variables in generic
+functions is to use the subtype relation. By default, typed code will accept
+subtypes, e.g. if we have a typed argument ``A``, then we will also accept
+a subtype ``B`` for that argument. With parameterized types, we have to be
+more careful. By default, we allow only invariant parameters, e.g.
+``B <: A`` does not imply ``C[B] <: C[A]``. That is, even though ``B``
+may be a subtype of ``A``, a class ``C`` parameterized by ``B`` is not a subtype
+of class ``C`` parameterized by ``A``. In generic functions, we may however
+indicate variance using ``+`` for `covariance` and ``-`` for `contra-variance`:
 
 .. code-block:: python
 
-    @jit('Array[Type dtype, Int ndim]')
-    class Array(Iterable['dtype']):
+    @jit('Array[A : +Number] -> A')
+    def sum(array):
         ...
 
-We can now use map() over our array. The generated code must now insert
-a `conversion` between ``Array[dtype, ndim]`` and trait ``Iterable[dtype]``,
-which concretely means packing up a vtable pointer and a boxed Array pointer.
-This form of polymorphism will likely be *incompatible with the GPU backend*.
-However, we can still use our generic functions by telling the compiler to
-specialize on input types:
+This indicates we will accept an array of ``Number``s, or any subtypes
+of ``Number``. This is natural for algorithms that read data, e.g if you can
+read objects of type ``A``, you can also read objects of subtype ``B`` of ``A``.
+
+However, if we were writing objects, this would break! Consider the following
+code:
 
 .. code-block:: python
 
-    @specialize.argtypes('f', 'xs')
-    @jit('(a -> b) -> Iterable[a] -> [b]')
-    def map(f, xs):
-        ...
+    @jit('Array[T : +A] -> Void')
+    def write(array):
+        array[0] = B()
 
-Alternatively, we can allow them to simply constrain type variables, and
-not actually specify the type as the trait. The type is supplied instead by
-the calling context:
+Here we write an ``B``, which clearly satisfies being an ``A``. However,
+if we also have ``C <: B``, and if we provide ``write`` with a ``Array[C]``,
+we cannot write a ``B`` into this array!
 
-.. code-block:: python
-
-    @signature('(it:Iterable[a]) => (a -> b) -> it -> [b]')
-    def map(f, xs):
-        ...
-
-The constraints are specified in similar way to Haskell's type classes.
-The only implementation required in the compiler to support this is the type
-checking feature, otherwise it's entirely the same as generic functions above.
-Multiple constraints can be expressed, e.g. ``(it:Iterable[a], a:Integral)``.
-Alternative syntax could be '(a -> b) -> lst : Iterable[a] -> [b]', but this
-is less clear when 'it' is reused elsewhere as a type variable.
-
-Traits can further use inheritance and have default implementations. This can
-be trivially implemented at the Python level, requiring no special knowledge
-in the compiler.
+Instead, this code must have a contra-variant parameter, that is, it may accept
+an array of ``B`` and an array of any super-type of ``B``.
 
 Overloading and Multiple-dispatch
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 These mechanisms provide compile-time selection for our language.
 It is required to support the compiled ``convert`` from section 3, and
 necessary for many implementations, e.g.:
@@ -409,7 +321,7 @@ implementations for all builtins:
     pytypedef(builtins.int, int)
 
 3. User-defined Typing Rules
-============================
+----------------------------
 I think Julia does really well here. Analogously we define three functions:
 
     - typeof(pyobj) -> Type
@@ -504,10 +416,9 @@ rpython (``rpython/rlib/objectmodel.py``).
     and insert the result in the code stream. The result must have a type
     compatible with the signature.
 
-.. function:: specialize.argtypes(*args)
+.. function:: specialize.generic()
 
-    Specialize on trait argument types, potentially "untraiting" the
-    specialization.
+    Generate generic machine code instead of specialized code.
 
 These decorators should also be supported as extra arguments to ``@signature``
 etc.
@@ -578,7 +489,7 @@ is GPU incompatible, i.e. anything that:
 
     - uses CFFI (this implies use of Object, which is implemented in terms
       of CFFI)
-    - uses traits that don't merely constrain type variables
+    - uses specialize.generic()
     - allocates anything mutable
 
 Everything else should still work.

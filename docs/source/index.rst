@@ -9,7 +9,8 @@ Welcome to numba's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 0
+   :titlesonly:
+   :maxdepth: 1
 
    numbacore.rst
    fusion.rst
