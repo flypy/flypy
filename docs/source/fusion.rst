@@ -391,7 +391,7 @@ The most important optimization is the fusion, SIMD is a useful extension.
 Depending on the LLVM vectorizer (or possibly our own), it may not be necessary.
 
 References
-==========
+----------
 .. [1]_ Deforestation: Transforming programs to eliminate trees
 .. [2]_ Playing by the Rules: Rewriting as a practical optimisation technique in GHC
 .. [3]_ A short-cut to deforestation

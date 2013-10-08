@@ -371,7 +371,7 @@ These functions are used at compile time to determine which conversions to
 insert, or whether to issue typing errors.
 
 4. Optimization and Specialization
-==================================
+----------------------------------
 We need to allow careful control over optimizations and code specialization.
 This allows us to use the abstractions we need, without paying them if we
 know we can't afford it. We propose the following intrinsics exposed to
@@ -381,7 +381,7 @@ users:
     - ``@specialize.arg(0)``
 
 Unrolling
----------
+~~~~~~~~~
 The first compiler intrinsic allows unrolling over constant iterables.
 For instance, the following would be a valid usage:
 
@@ -397,7 +397,7 @@ iterables, where the result of ``len()`` must be ultimately constant (after
 inlining and register promotion).
 
 Specialization
---------------
+~~~~~~~~~~~~~~
 The ability to specialize on various things, similar to specialization in
 rpython (``rpython/rlib/objectmodel.py``).
 
@@ -424,12 +424,12 @@ These decorators should also be supported as extra arguments to ``@signature``
 etc.
 
 5. Data-parallel Operators
-==========================
+--------------------------
 Parakeet and copperhead do this really well. We need map, reduce, zip,
 list comprehensions, etc.
 
 6. Extension of the Code Generator
-==================================
+----------------------------------
 We can support an ``@opaque`` decorator that marks a function or method as
 "opaque", which means it must be resolved by the code generator. A decorator
 ``@codegen(thefunc)`` registers a code generator function for the function or
@@ -448,7 +448,7 @@ method being called:
         # return a new typed function...
 
 Conclusion
-==========
+----------
 The mechanisms above allow us to easily evaluate how code will be compiled,
 and asses the performance implications. Furthermore, we can easily see what
 is GPU incompatible, i.e. anything that:

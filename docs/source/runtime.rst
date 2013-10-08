@@ -3,7 +3,7 @@ Numba Runtime
 Nearly all built-in data types are implemented in the runtime.
 
 Garbage Collector
-=================
+-----------------
 To support mutable heap-allocated types, we need a garbage collector.
 To get started quickly we can use Boehm or reference counting. We will
 want to port one of the available copying collectors and use a shadowstack or
@@ -14,7 +14,7 @@ and borrowed data is allowed).
 Garbage collection is abstracted by pykit.
 
 Exceptions
-==========
+----------
 Exceptions are also handled by pykit. We can implement several models,
 depending on the target architecture:
 
@@ -42,7 +42,7 @@ simplification can further optimize the extra jump (jump to break, break to
 loop exit).
 
 Threads
-=======
+-------
 As mentioned in the core language overview, memory is not shared unless
 borrowed. This process is unsafe and correctness must be ensured by the
 user. Immutable data can be copied over channels between threads. Due to
@@ -51,16 +51,8 @@ at the same time.
 
 We will remove prange and simply use a parallel map with a closure.
 
-Traits
-======
-Traits are mostly a compile-time type-checking detail and some simple runtime
-decorator support. Traits with dynamic dispatch require vtables, something
-we can implement in the runtime as well:
-
-    https://github.com/zdevito/terra/blob/master/tests/lib/golike.t
-
 Extension Types
-===============
+---------------
 Extension types are currently built on top of CPython objects. This should
 be avoided. We need to decouple numba with anything CPython, for the sake
 of portability as well as pycc.
@@ -76,7 +68,7 @@ The approach is simple: generate a wrapper method for each method in the
 extension type that does a vtable lookup.
 
 Closures
-========
+--------
 This time we will start with the most common case: closures consumed as
 inner functions. This means we don't need dynamic binding for our cell
 variables, and we can do simple lambda lifting instead of complicated

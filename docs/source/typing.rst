@@ -65,7 +65,7 @@ assigned a union type). WIthout using the cartesian product this would lead
 to exponential behaviour since there are 2^N subsets for N types.
 
 Type inference in Numba
-=======================
+-----------------------
 We use the cartesian product algorithm on a constraint network based on the
 dataflow graph. To understand it, we need to understand the input language.
 Since we put most functionality of the language in the user-domain, we
@@ -102,7 +102,7 @@ E.g. if ``B`` is a function call, and ``A`` is an input argument, we analyze
 the function call with the new values in the cartesian product.
 
 Coercions
-=========
+---------
 Coercions may happen in two syntactic constructs:
 
     * application
@@ -115,7 +115,7 @@ whether to create a sum-type. A post-pass can simply insert coercions where
 argument types do not match parameter types.
 
 Subtyping
-=========
+---------
 We intend to support subtyping in the runtime through python inheritance. When
 a class B inherits from a class A, we check for a compatible interface for
 the methods (argument types are contravariant and return types covariant).
@@ -141,13 +141,13 @@ The exception is maybe function types, for which we have built-in variance
 rules.
 
 Parameterization
-================
+----------------
 Types can only be parameterized by variables and user-defined or
 built-in types. Type variables may be constrained through traits (type
 sets can readily be constructed by implementing (empty) traits).
 
 References
-==========
+----------
 .. [1]: A Theory of Type Polymorphism in Programming Languages, Milner
 .. [2]: A proof of correctness for the Hindley-Milner type inference algorithm
 .. [3]: The Cartesian Product Algorithm
