@@ -28,6 +28,8 @@ def len_range(start, stop, step):
         return 0
     return (stop - start - 1) // step + 1
 
+# TODO: Implement generator fusion
+
 @jit #('Int -> Int -> Int -> Iterable[Int]')
 def range(start, stop=None, step=1):
     if stop is None:

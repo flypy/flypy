@@ -10,6 +10,7 @@ from numba2.environment import fresh_env
 from numba2 import promote, unify, is_numba_type
 from numba2.functionwrapper import FunctionWrapper
 from numba2.runtime.type import Type
+from numba2.compiler.overloading import flatargs
 
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, Function
@@ -51,6 +52,9 @@ def infer_call(func, func_type, arg_types):
         # Translate # to untyped IR and infer types
         # TODO: Support recursion !
 
+        if len(func.overloads) == 1 and not func.opaque:
+            arg_types = fill_missing_argtypes(func.py_func, tuple(arg_types))
+
         env = fresh_env(func, arg_types)
         func, env = phase.typing(func, env)
         return func, env["numba.typing.restype"]
@@ -76,6 +80,16 @@ def infer_call(func, func_type, arg_types):
 
     else:
         raise NotImplementedError(func, func_type)
+
+def get_remaining_args(func, args):
+    newargs = flatargs(func, args, {})
+    return newargs[len(args):]
+
+def fill_missing_argtypes(func, argtypes):
+    from numba2 import typeof
+
+    remaining = get_remaining_args(func, argtypes)
+    return argtypes + tuple(typeof(arg) for arg in remaining)
 
 #===------------------------------------------------------------------===
 # Type resolution
@@ -118,7 +132,6 @@ def rewrite_calls(func, env):
     b = OpBuilder()
     for op in func.ops:
         if op.opcode == 'call':
-
             # Retrieve typed function
             f, args = op.args
             signature = context[f]
@@ -172,3 +185,44 @@ def rewrite_constructors(func, env):
                 op.replace([alloc, call])
 
                 context[alloc] = type
+
+def rewrite_optional_args(func, env):
+    """
+    Rewrite function application with missing arguments, which are supplied
+    from defaults.
+
+        def f(x, y=4):
+            ...
+
+        call(f, [x]) -> call(f, [x, const(4)])
+    """
+    from numba2 import typeof
+
+    envs = env['numba.state.envs']
+
+    for op in func.ops:
+        if op.opcode == 'call':
+
+            # Retrieve function and environment
+            f, args = op.args
+            f_env = envs[f]
+
+            # Retrieve Python version and opaqueness
+            py_func = f_env['numba.state.py_func']
+            opaque = f_env['numba.state.opaque']
+
+            if py_func and not opaque:
+                # Add any potentially remaining values
+                remaining = get_remaining_args(py_func, (None,) * len(args))
+                consts = [allocate_const(func, env, op, value, typeof(value))
+                              for value in remaining]
+                op.set_args([f, args + consts])
+
+
+def allocate_const(func, env, op, value, type):
+    # TODO: Move this elsewhere
+    # TODO: Handle complex values (non-pykit constants)
+    const = Const(value, types.Opaque)
+    context = env['numba.typing.context']
+    context[const] = type
+    return const

@@ -86,7 +86,6 @@ class Translate(object):
         # Error checks
 
         argspec = inspect.getargspec(self.func)
-        assert not argspec.defaults, "does not support defaults"
         assert not argspec.varargs, "does not support varargs"
         assert not argspec.keywords, "does not support keywords"
 
