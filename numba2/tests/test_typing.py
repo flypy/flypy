@@ -77,6 +77,7 @@ class TestTyping(unittest.TestCase):
         self.assertIsInstance(x, type(int32))
         self.assertEqual(int32, x)
 
+
 if __name__ == '__main__':
     #TestTyping('test_typevar_resolution').debug()
     unittest.main()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from numba2.typing import resolve
+from numba2.typing import resolve, to_blaze
 
 from blaze import overloading
 from blaze.kernel import lookup_previous
@@ -25,6 +25,7 @@ def resolve_overloads(o, scope, bound):
     result = Dispatcher()
     for (f, signature, kwds) in o.overloads:
         new_sig = resolve(signature, scope, bound)
+        new_sig = to_blaze(new_sig) # Use blaze's coercion rules for now
         overload(new_sig, result, **kwds)(f)
     return result
 
@@ -48,8 +49,9 @@ def best_match(func_wrapper, argtypes):
     scope = determine_scope(func_wrapper.py_func)
     bound = {} # TODO:
     overloaded = resolve_overloads(o, scope, bound)
+    argtypes = [to_blaze(t) for t in argtypes]
     overload = overloading.best_match(overloaded, argtypes)
-    return (overload.func, overload.resolved_sig)
+    return (overload.func, resolve(overload.resolved_sig, scope, bound))
 
 
 def determine_scope(py_func):

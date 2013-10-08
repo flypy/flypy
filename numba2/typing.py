@@ -16,7 +16,7 @@ def parse(s):
         return TypeConstructor(s, 0, [])
     return dshape(s)
 
-def resolve_type(t):
+def typemap():
     from . import types
 
     _blaze2numba = {
@@ -26,8 +26,17 @@ def resolve_type(t):
         ds.float32 : types.float32,
         ds.float64 : types.float64,
     }
+    return _blaze2numba
 
+# TODO: implement our own typing rules
+
+def resolve_type(t):
+    _blaze2numba = typemap()
     return ds.tmap(lambda x: _blaze2numba.get(x, x), t)
+
+def to_blaze(t):
+    replacements = dict((v, k) for k, v in typemap().iteritems())
+    return ds.tmap(lambda x: replacements.get(x, x), t)
 
 #===------------------------------------------------------------------===
 # Runtime
