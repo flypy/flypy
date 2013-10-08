@@ -444,42 +444,8 @@ method being called:
             return a + b
 
     @codegen(Int.__add__)
-    def emit_add(codegen, self, other):
-        # 'self' and 'other' are (typed) pykit values
-        return codegen.builder.add(self, other)
-
-This can also be useful to retain high-level information, instead of expanding
-it out beforehand. This can enable high-level optimizations, e.g. consider
-the following code:
-
-.. code-block:: python
-
-    L = []
-    for i in range(n):
-        L.append(i)
-
-    L = map(f, L)
-
-If we expand ``L = []`` and ``L.append(i)`` into memory allocations and
-resizes before considering the ``map``, we forgo a potential optimization
-where the compiler performs loop fusion and eliminates the intermediate list.
-
-So an opague function *may* have an implementation, but it may be resolved at
-a later stage during the pipeline if it is still needed:
-
-.. code-block:: python
-
-    @codegen(List.__init__)
-    def emit_new_list(codegen, self):
-        return codegen.builder.new_list(self.type)
-
-    @llcodegen('new_list')
-    def emit_new_list(codegen, self):
-        return codegen.gen_call(List.__init__)
-
-This should be done with low-level code that doesn't need further high-level
-optimizations. Users must also ensure this process terminates (there must
-be no cycles the call graph).
+    def emit_add(func, argtypes):
+        # return a new typed function...
 
 Conclusion
 ==========
