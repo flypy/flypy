@@ -18,4 +18,4 @@ NoneValue = NoneType()
 
 @typeof.case(types.NoneType)
 def typeof(pyval):
-     return NoneType
+     return NoneType[()]

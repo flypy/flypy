@@ -109,6 +109,12 @@ def run(func, env):
     env['numba.typing.context'] = ctx.context
     env['numba.typing.constraints'] = ctx.constraints
 
+    if env['numba.script']:
+        print("Type context:".center(90))
+        for op, typeset in ctx.context.iteritems():
+            print("%s%15s = %s" % (" " * 30, op, typeset))
+        pprint(ctx.context, indent=30)
+
     return ctx.func, env
 
 def infer(cache, func, env, argtypes):

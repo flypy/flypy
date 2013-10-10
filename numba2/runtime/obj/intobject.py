@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 """
@@ -15,4 +16,8 @@ class Int(object):
 
 @typeof.case(int)
 def typeof(pyval):
+    if isinstance(pyval, bool):
+        # TODO: Make this go away... Fix the pyoverload
+        from .boolobject import Bool
+        return Bool[()]
     return Int[32, False]

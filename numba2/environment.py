@@ -14,7 +14,8 @@ from pykit.codegen import llvm as llvm_codegen
 
 _env = {
     # Command line args
-    'numba.cmdopts':        {},
+    'numba.cmdopts':            {},
+    'numba.script':             False, # True when run from the numba script
 
     # Caching
     'numba.frontend.cache':     Cache(),

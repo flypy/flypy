@@ -85,10 +85,11 @@ def verbose(p, func, env):
 # ______________________________________________________________________
 
 def _passname(transform):
-    if isinstance(transform, types.ModuleType):
-        return transform.__name__
-    else:
-        return ".".join([transform.__module__, transform.__name__])
+    return transform.__name__
+    #if isinstance(transform, types.ModuleType):
+    #    return transform.__name__
+    #else:
+    #    return ".".join([transform.__module__, transform.__name__])
 
 def _funcname(func):
     if isinstance(func, types.FunctionType):
