@@ -5,10 +5,13 @@ Preparation for codegen.
 """
 
 from __future__ import print_function, division, absolute_import
+from functools import partial
 
 from numba2 import types, typing
-from pykit.ir import vmap, GlobalValue, Function
+
+from pykit.ir import FuncArg, Op, Const, Pointer, Struct
 from pykit import types as ptypes
+from pykit.utils import nestedmap
 
 #===------------------------------------------------------------------===
 # Types
@@ -27,7 +30,10 @@ _typemap = {
     _type_constructor(types.Int)        : ptypes.Integral,
     _type_constructor(types.Float)      : ptypes.Real,
     _type_constructor(types.Pointer)    : ptypes.Pointer,
+    #_type_constructor(types.Struct)     : ptypes.Struct,
 }
+
+dummy_type = [('dummy',), (types.int32,)]
 
 def ll_type(x, seen=None):
     """
@@ -49,11 +55,31 @@ def ll_type(x, seen=None):
     else:
         t = typing.get_type_data(type(x))
         fields = t.layout
-        names, field_types = zip(*fields.items()) or [(), ()]
+        names, field_types = zip(*fields.items()) or dummy_type
         lltype = ptypes.Pointer(ptypes.Struct(
             names, [ll_type(t, seen) for t in field_types]))
 
     return lltype
+
+def resolve_type(context, op):
+    if isinstance(op, (FuncArg, Const, Op)):
+        if not op.type.is_void:
+            type = context[op]
+            if type.__class__.__name__ == 'Method':
+                return op # TODO: Remove this
+
+            ltype = ll_type(type)
+            if isinstance(op, Const):
+                const = op.const
+                if isinstance(const, Struct) and not const.values:
+                    const = Struct(['dummy'], [Const(0, ptypes.Int32)])
+                if ltype.is_pointer and not isinstance(const, Pointer):
+                    const = Pointer(const)
+                op = Const(const, ltype)
+            else:
+                op.type = ltype
+
+    return op
 
 #===------------------------------------------------------------------===
 # Passes
@@ -61,18 +87,15 @@ def ll_type(x, seen=None):
 
 def lltyping(func, env):
     """Annotate the function with the low-level representation types"""
-    def resolve_type(op):
-        if not isinstance(op, (GlobalValue, Function)):
-            if not op.type.is_void:
-                type = context[op]
-                if type.__class__.__name__ == 'Method':
-                    return
-                ltype = ll_type(type)
-                op.type = ltype
-
     if not env['numba.state.opaque']:
         context = env['numba.typing.context']
-        vmap(resolve_type, func)
+        resolve = partial(resolve_type, context)
+
+        for arg in func.args:
+            resolve(arg)
+        for op in func.ops:
+            op.replace(resolve(op))
+            op.set_args(nestedmap(resolve, op.args))
 
         func.type = ptypes.Function(ll_type(env['numba.typing.restype']),
                                     [arg.type for arg in func.args])

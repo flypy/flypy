@@ -6,13 +6,13 @@ Numba passes that perform translation, type inference, code generation, etc.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.compiler.backend import lltyping, llvm, lowering
+from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
 from .compiler.frontend import translate, simplify_exceptions
 from .compiler import simplification, optimizations as opts, copying, transition
 from .compiler.typing import inference
 from .compiler.typing.resolution import (resolve_context, resolve_restype)
 from .compiler.lower import (rewrite_calls, rewrite_constructors,
-                             rewrite_optional_args)
+                             rewrite_optional_args, rewrite_constants)
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
@@ -40,6 +40,7 @@ typing = [
     rewrite_calls,
     rewrite_constructors,
     rewrite_optional_args,
+    rewrite_constants,
 ]
 
 optimizations = [
@@ -49,6 +50,7 @@ optimizations = [
 
 backend_init = [
     lltyping,
+    rewrite_lowlevel_constants,
     lowering.lower_fields,
     llvm.codegen_init,
 ]

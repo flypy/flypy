@@ -6,18 +6,29 @@ Handle constants.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.types import Int, Float
+from numba2.types import Bool, Int, Float, NoneType
+from numba2.runtime.obj import NoneValue
 
-from pykit.ir import Const, Struct
-from pykit.utils import nestedmap
+from pykit.ir import Const, Struct, Builder, collect_constants, substitute_args
 
 #===------------------------------------------------------------------===
-# Helpers
+# Constant mapping
 #===------------------------------------------------------------------===
 
-def _collect_constants(x):
-    if isinstance(x, Const):
-        return x
+# Builtin Type -> (pyval -> Value)
+builtin_types = {
+    NoneType[()]: lambda x: NoneValue,
+}
+
+def resolve_builtin(ty, const):
+    ctor = builtin_types.get(ty)
+    if ctor:
+        value = ctor(const.const)
+        return Const(value, const.type)
+    return const
+
+# -----------------------------------------------------------------------
+# Layout
 
 def build_struct_value(value, seen=None):
     """
@@ -30,34 +41,43 @@ def build_struct_value(value, seen=None):
     seen.add(id(value))
 
     cls = type(value)
-    names, types = zip(*cls.fields)
+    names, types = zip(*cls.fields) or [(), ()]
     values = [getattr(value, name) for name in names]
     return Struct(names, values)
 
+def resolve_layout(ty, const):
+    py_class = type(ty).impl
+    if not is_builtin(py_class):
+        assert isinstance(const.const, py_class), (const.const, py_class)
+        value = build_struct_value(const.const)
+        const = Const(value, const.type)
+    return const
+
+is_builtin = lambda cls: cls in (Bool, Int, Float)
+
 #===------------------------------------------------------------------===
-# Passes
+# Pass
 #===------------------------------------------------------------------===
 
 def rewrite_constants(func, env):
     """
-    Rewrite constants with user-defined types to IR constants.
+    Rewrite constants with user-defined types to IR constants. Also rewrite
+    constants of builtins to instances of numba classes.
+
+        e.g. constant(None)  -> constant(NoneValue)
+             constant("foo") -> constant(Bytes("foo"))
     """
     context = env['numba.typing.context']
 
     for op in func.ops:
-        constants = nestedmap(_collect_constants, op.args)
+        constants = collect_constants(op)
         new_constants = []
         for c in constants:
             ty = context[c]
-            value = c
-            if type(ty) not in (Int, Float):
-                assert isinstance(c.const, ty)
-                value = build_struct_value(value)
-                context[value] = ty
+            c = resolve_builtin(ty, c)
+            c = resolve_layout(ty, c)
 
-            new_constants.append(value)
+            context[c] = ty
+            new_constants.append(c)
 
-        if constants != new_constants:
-            replacements = dict(zip(constants, new_constants))
-            new_args = nestedmap(lambda x: replacements.get(x, x), op.args)
-            op.set_args(new_args)
+        substitute_args(op, constants, new_constants)

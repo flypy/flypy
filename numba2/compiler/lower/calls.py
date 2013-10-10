@@ -45,6 +45,7 @@ def rewrite_calls(func, env):
 
     env['numba.state.callgraph'] = None
 
+
 def rewrite_optional_args(func, env):
     """
     Rewrite function application with missing arguments, which are supplied
