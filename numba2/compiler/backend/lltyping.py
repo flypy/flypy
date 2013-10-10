@@ -49,7 +49,7 @@ def ll_type(x, seen=None):
     else:
         t = typing.get_type_data(type(x))
         fields = t.layout
-        names, field_types = zip(*fields.items())
+        names, field_types = zip(*fields.items()) or [(), ()]
         lltype = ptypes.Pointer(ptypes.Struct(
             names, [ll_type(t, seen) for t in field_types]))
 

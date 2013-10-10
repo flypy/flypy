@@ -13,7 +13,8 @@ from numba2.runtime.type import Type
 from numba2.compiler.overloading import flatargs
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function
+from pykit.ir import OpBuilder, Builder, Const, Function, GlobalValue
+from pykit.utils import nestedmap
 
 #===------------------------------------------------------------------===
 # Function call typing
@@ -117,112 +118,3 @@ def resolve_restype(func, env):
         restype = unify(inferred_restype, restype)
 
     env['numba.typing.restype'] = restype
-
-#===------------------------------------------------------------------===
-# Call rewrites
-#===------------------------------------------------------------------===
-
-def rewrite_calls(func, env):
-    """
-    Resolve methods and function calls (which may be overloaded!) via static
-    function calls.
-    """
-    context = env['numba.typing.context']
-
-    b = OpBuilder()
-    for op in func.ops:
-        if op.opcode == 'call':
-            # Retrieve typed function
-            f, args = op.args
-            signature = context[f]
-
-            # Retrieve typed function from the given arg types
-            argtypes = [context[a] for a in args]
-            typed_func, restype = infer_call(f, signature, argtypes)
-
-            if is_method(signature):
-                # Insert self in args list
-                getfield = op.args[0]
-                self = getfield.args[0]
-                args = [self] + args
-
-            # Rewrite call
-            newop = b.call(op.type, [typed_func, args], op.result)
-            op.replace(newop)
-
-    env['numba.state.callgraph'] = None
-
-
-def rewrite_constructors(func, env):
-    """
-    Rewrite constructor application to object allocation followed by
-    cls.__init__:
-
-        call(C, x, y) -> call(C.__init__, x, y)
-    """
-    from numba2 import phase
-
-    context = env['numba.typing.context']
-    b = OpBuilder()
-
-    for op in func.ops:
-        if op.opcode == 'call':
-            cls, args = op.args
-            if isinstance(cls, Const) and is_numba_type(cls.const):
-                cls = cls.const
-                f = cls.__init__
-                type = context[op]
-                argtypes = [type] + [context[arg] for arg in op.args[1]]
-
-                # TODO: implement this on Type.__call__ when we support *args
-                e = fresh_env(f, argtypes)
-                __init__, _ = phase.typing(f, e)
-
-                alloc = b.alloca(types.Pointer(types.Opaque))
-                call = b.call(types.Void, [__init__, [alloc] + args])
-
-                op.replace_uses(alloc)
-                op.replace([alloc, call])
-
-                context[alloc] = type
-
-def rewrite_optional_args(func, env):
-    """
-    Rewrite function application with missing arguments, which are supplied
-    from defaults.
-
-        def f(x, y=4):
-            ...
-
-        call(f, [x]) -> call(f, [x, const(4)])
-    """
-    from numba2 import typeof
-
-    envs = env['numba.state.envs']
-
-    for op in func.ops:
-        if op.opcode == 'call':
-
-            # Retrieve function and environment
-            f, args = op.args
-            f_env = envs[f]
-
-            # Retrieve Python version and opaqueness
-            py_func = f_env['numba.state.py_func']
-            opaque = f_env['numba.state.opaque']
-
-            if py_func and not opaque:
-                # Add any potentially remaining values
-                remaining = get_remaining_args(py_func, (None,) * len(args))
-                consts = [allocate_const(func, env, op, value, typeof(value))
-                              for value in remaining]
-                op.set_args([f, args + consts])
-
-
-def allocate_const(func, env, op, value, type):
-    # TODO: Move this elsewhere
-    # TODO: Handle complex values (non-pykit constants)
-    const = Const(value, types.Opaque)
-    context = env['numba.typing.context']
-    context[const] = type
-    return const
