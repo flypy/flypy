@@ -158,17 +158,30 @@ def resolve_in_scope(t, scope):
             name = type(t).name
 
             # Get the @jit class (e.g. Int)
-            impl = scope.get(name) or lookup_builtin_type(name)
+            if hasattr(t, 'impl'):
+                impl = t.impl # already resolved!
+            else:
+                impl = scope.get(name) or lookup_builtin_type(name)
 
             if impl is None:
                 raise TypeError(
-                    "Type constructor %s is not in the current scope")
+                    "Type constructor %r is not in the current scope" % (name,))
 
             # Get the TypeConstructor for the @jit class (e.g.
             # Int[nbits, unsigned])
             ctor = impl.type.__class__
 
             return ctor(*t.parameters)
+
+        elif isinstance(t, TypeVar) and t.symbol[0].isupper():
+            # Resolve bare types, e.g. a name like 'NoneType' is parsed as a
+            # TypeVar
+            if t.symbol == 'NoneType':
+                assert t.symbol in scope
+            if scope.get(t.symbol):
+                cls = scope[t.symbol]
+                return cls[()]
+            return t
 
         return t
 
