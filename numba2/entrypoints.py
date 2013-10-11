@@ -58,7 +58,8 @@ def jit_class(cls, signature=None, abstract=False):
 
     constructor, type = allocate_type_constructor(cls, signature)
     cls.type = type
-    patch_class(cls)
+    if not abstract:
+        patch_class(cls)
 
     result = MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
     set_type_data(constructor, result)

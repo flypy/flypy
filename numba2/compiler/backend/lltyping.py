@@ -42,17 +42,17 @@ def ll_type(x, seen=None):
     if seen is None:
         seen = set()
     if x in seen:
-        raise NotImplementedError("Recursive types")
-
-    seen.add(x)
+        raise NotImplementedError("Recursive types", x)
 
     x = typing.resolve_type(x)
     if not isinstance(x, types.Type):
         return x
     elif type(x) in _typemap:
+        seen.add(x)
         ctor = _typemap[type(x)]
         lltype = ctor(*map(ll_type, x.parameters))
     else:
+        seen.add(x)
         t = typing.get_type_data(type(x))
         fields = t.layout
         names, field_types = zip(*fields.items()) or dummy_type

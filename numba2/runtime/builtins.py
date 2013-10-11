@@ -7,6 +7,7 @@ except ImportError:
     import builtins
 
 from .. import jit, ijit, overlay, overload
+from .interfaces import Sequence, Iterable, Iterator
 
 # ____________________________________________________________
 
@@ -20,6 +21,8 @@ def next(x):
 
 # ____________________________________________________________
 
+# TODO: Implement generator fusion
+
 @jit
 def len_range(start, stop, step):
     if step < 0:
@@ -28,19 +31,44 @@ def len_range(start, stop, step):
         return 0
     return (stop - start - 1) // step + 1
 
-# TODO: Implement generator fusion
-
-@jit #('Int -> Int -> Int -> Iterable[Int]')
-def range(start, stop=None, step=1):
-    if stop is None:
+@jit
+def range(start, stop=0xdeadbeef, step=1):
+    # TODO: We need to either optimize variants, or recognize that
+    # 'x is None' is equivalent to isinstance(x, NoneType) and prune the
+    # alternative branch during type inference
+    if stop == 0xdeadbeef:
         stop = start
         start = 0
 
-    length = len_range(start, stop, step)
-    i = 0
-    while i < length:
-        yield start
-        start += step
+    return Range(start, stop, step)
+
+@jit
+class Range(Sequence):
+
+    layout = [('start', 'int64'), ('stop', 'int64'), ('step', 'int64')]
+
+    @jit
+    def __iter__(self):
+        return RangeIterator(self.start, self.step, len(self))
+
+    @jit
+    def __len__(self):
+        return len_range(self.start, self.stop, self.step)
+
+
+@jit
+class RangeIterator(Iterator):
+
+    layout = [('start', 'int64'), ('step', 'int64'), ('length', 'int64')]
+
+    @jit
+    def __next__(self):
+        if self.length > 0:
+            result = self.start
+            self.start += self.step
+            self.length -= 1
+            return result
+        raise StopIteration
 
 # ____________________________________________________________
 

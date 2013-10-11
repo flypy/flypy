@@ -682,7 +682,9 @@ class Translate(object):
 #===------------------------------------------------------------------===
 
 def func_name(func):
-    return ".".join([func.__module__, func.__name__])
+    if func.__module__:
+        return ".".join([func.__module__, func.__name__])
+    return func.__name__
 
 def slicearg(v):
     """Construct an argument to a slice instruction"""
