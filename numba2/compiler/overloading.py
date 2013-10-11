@@ -50,6 +50,10 @@ def best_match(func_wrapper, argtypes):
     bound = {} # TODO:
     overloaded = resolve_overloads(o, scope, bound)
     argtypes = [to_blaze(t) for t in argtypes]
+    #print('------------------')
+    #print(overloaded)
+    #print(argtypes)
+    #print('------------------')
     overload = overloading.best_match(overloaded, argtypes)
     return (overload.func, resolve(overload.resolved_sig, scope, bound))
 
