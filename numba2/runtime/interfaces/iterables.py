@@ -19,10 +19,39 @@ class Iterable(object):
     def __iter__(self):
         raise NotImplementedError
 
+
 @abstract('Iterator[X]')
 class Iterator(Iterable):
     """Inferface for iterators"""
 
     @abstract('Iterator[X] -> Iterator[X]')
+    def __iter__(self):
+        return self
+
+    @abstract('Iterator[X] -> Iterator[X]')
     def __next__(self):
         raise NotImplementedError
+
+@abstract('Sequence[X]')
+class Sequence(Iterable):
+    """Interface for iterables"""
+
+    @abstract('Sequence[X] -> int64')
+    def __contains__(self, value):
+        for item in self:
+            if item == value:
+                return True
+        return False
+
+    @abstract('Sequence[X] -> int64 -> X')
+    def __getitem__(self, item):
+        raise NotImplementedError
+
+    @abstract('Sequence[X] -> int64')
+    def __len__(self):
+        raise NotImplementedError
+
+    @abstract('Sequence[X] -> Iterator[X]')
+    def __reversed__(self):
+        for i in range(len(self) - 1, -1 , -1):
+            yield self[i] # TODO: Generators
