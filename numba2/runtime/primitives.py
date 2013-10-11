@@ -17,7 +17,9 @@ from .. import jit, typeof, overlay
 
 @jit('a -> b -> bool')
 def is_(a, b):
-    raise NotImplementedError("is comparison")
+    return False
+
+# TODO: Overload for variants !
 
 @jit('NoneType -> NoneType -> bool')
 def is_(a, b):
