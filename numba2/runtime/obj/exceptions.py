@@ -26,7 +26,7 @@ def ejit(exc_cls):
 
     @typeof.case(py_cls)
     def exc_typeof(pyval):
-        return exc_cls
+        return exc_cls[()]
 
     return exc_cls
 
