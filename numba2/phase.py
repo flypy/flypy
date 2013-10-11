@@ -108,7 +108,8 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
         dependences = _deps(func)
 
     for f in dependences:
-        optimization_phase(f, envs[f], passes, [])
+        if f != func:
+            optimization_phase(f, envs[f], passes, [])
     run_pipeline(func, env, passes)
 
     return func, env
