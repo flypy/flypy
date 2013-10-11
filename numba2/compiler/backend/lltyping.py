@@ -6,6 +6,7 @@ Preparation for codegen.
 
 from __future__ import print_function, division, absolute_import
 from functools import partial
+from collections import defaultdict
 
 from numba2 import types, typing
 
@@ -40,25 +41,25 @@ def ll_type(x, seen=None):
     Get the low-level representation type for a high-level (user-defined) type.
     """
     if seen is None:
-        seen = set()
-    if x in seen:
+        seen = defaultdict(int)
+    if seen[x]:
         raise NotImplementedError("Recursive types", x)
 
     x = typing.resolve_type(x)
+    seen[x] += 1
     if not isinstance(x, types.Type):
-        return x
+        lltype = x
     elif type(x) in _typemap:
-        seen.add(x)
         ctor = _typemap[type(x)]
         lltype = ctor(*map(ll_type, x.parameters))
     else:
-        seen.add(x)
-        t = typing.get_type_data(type(x))
-        fields = t.layout
+        fields = x.layout
         names, field_types = zip(*fields.items()) or dummy_type
+        field_types = [typing.resolve(t, x.scope, x.bound) for t in field_types]
         lltype = ptypes.Pointer(ptypes.Struct(
             names, [ll_type(t, seen) for t in field_types]))
 
+    seen[x] -= 1
     return lltype
 
 def resolve_type(context, op):

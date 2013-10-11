@@ -68,17 +68,16 @@ def patch_class(cls):
     from ..entrypoints import jit
 
     if '__init__' not in vars(cls) and cls.layout:
-        nargs = len(cls.layout)
-        cls.__init__ = jit(fabricate_init(nargs))
+        names = [name for name, type in cls.layout]
+        cls.__init__ = jit(fabricate_init(names))
 
-def fabricate_init(nargs):
-    args = string.ascii_lowercase[:nargs]
-    stmts = ["self.%s = %s" % (a, a) for a in args]
+def fabricate_init(names):
+    stmts = ["self.%s = %s" % (name, name) for name in names]
 
     source = textwrap.dedent("""
     def __init__(self, %s):
         %s
-    """) % (", ".join(args), "\n    ".join(stmts))
+    """) % (", ".join(names), "\n    ".join(stmts))
 
     result = {}
     exec source in result, result

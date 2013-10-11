@@ -23,6 +23,8 @@ def next(x):
 
 # TODO: Implement generator fusion
 
+Py_ssize_t = 'int32' # TODO:
+
 @jit
 def len_range(start, stop, step):
     if step < 0:
@@ -45,7 +47,7 @@ def range(start, stop=0xdeadbeef, step=1):
 @jit
 class Range(Sequence):
 
-    layout = [('start', 'int64'), ('stop', 'int64'), ('step', 'int64')]
+    layout = [('start', Py_ssize_t), ('stop', Py_ssize_t), ('step', Py_ssize_t)]
 
     @jit
     def __iter__(self):
@@ -59,7 +61,7 @@ class Range(Sequence):
 @jit
 class RangeIterator(Iterator):
 
-    layout = [('start', 'int64'), ('step', 'int64'), ('length', 'int64')]
+    layout = [('start', Py_ssize_t), ('step', Py_ssize_t), ('length', Py_ssize_t)]
 
     @jit
     def __next__(self):

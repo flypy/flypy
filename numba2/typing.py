@@ -12,7 +12,7 @@ from blaze.datashape import (TypeVar, TypeConstructor, dshape,
 #===------------------------------------------------------------------===
 
 def parse(s):
-    if  re.match('\w+$', s):
+    if s[0].isupper() and re.match('\w+$', s): # HACK
         return TypeConstructor(s, 0, [])
     return dshape(s)
 
@@ -91,7 +91,8 @@ class MetaType(type):
         type_constructor.bound = bound
 
         modname = dct['__module__']
-        type_constructor.scope = vars(sys.modules[modname])
+        module = sys.modules.get(modname)
+        type_constructor.scope = vars(module) if module else {}
 
     def __getitem__(self, key):
         if not isinstance(key, tuple):
@@ -207,6 +208,8 @@ def resolve(type, scope, bound):
     type = resolve_type(type)
     type = resolve_in_scope(type, scope)
     type = substitute(bound, type)
+    if isinstance(type, ds.DataShape) and not type.shape: # HACK
+        type = type.measure
     return type
 
 #===------------------------------------------------------------------===
@@ -227,14 +230,3 @@ class OverlayRegistry(object):
 
 overlay_registry = OverlayRegistry()
 overlay = overlay_registry.overlay
-
-_registry = {}
-
-def get_type_data(t):
-    assert isinstance(t, TypeConstructor)
-    r = _registry
-    return _registry[t]
-
-def set_type_data(t, data):
-    _registry[t] = data
-

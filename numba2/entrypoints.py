@@ -9,7 +9,7 @@ import types
 from functools import partial
 
 from .functionwrapper import wrap
-from .typing import MetaType, set_type_data
+from .typing import MetaType
 from .utils import applyable_decorator
 
 @applyable_decorator
@@ -61,9 +61,7 @@ def jit_class(cls, signature=None, abstract=False):
     if not abstract:
         patch_class(cls)
 
-    result = MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
-    set_type_data(constructor, result)
-    return result
+    return MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
 
 
 @applyable_decorator

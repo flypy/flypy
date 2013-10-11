@@ -7,6 +7,7 @@ Type resolution and method resolution.
 from __future__ import print_function, division, absolute_import
 
 from numba2.environment import fresh_env
+from numba2.typing import resolve
 from numba2 import promote, unify, is_numba_type
 from numba2.functionwrapper import FunctionWrapper
 from numba2.runtime.type import Type
@@ -102,7 +103,8 @@ def resolve_context(func, env):
     for op, typeset in context.iteritems():
         if typeset:
             typeset = context[op]
-            context[op] = reduce(promote, typeset)
+            ty = reduce(promote, typeset)
+            context[op] = ty
 
 def resolve_restype(func, env):
     """Figure out the return type and update the context and environment"""
