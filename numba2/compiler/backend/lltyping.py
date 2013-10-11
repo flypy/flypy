@@ -45,6 +45,7 @@ def ll_type(x, seen=None):
     if seen[x]:
         raise NotImplementedError("Recursive types", x)
 
+    # TODO: Implement type resolution in a single pass !
     x = typing.resolve_type(x)
     seen[x] += 1
     if not isinstance(x, types.Type):
@@ -55,7 +56,7 @@ def ll_type(x, seen=None):
     else:
         fields = x.layout
         names, field_types = zip(*fields.items()) or dummy_type
-        field_types = [typing.resolve(t, x.scope, x.bound) for t in field_types]
+        field_types = [typing.resolve_simple(x, t) for t in field_types]
         lltype = ptypes.Pointer(ptypes.Struct(
             names, [ll_type(t, seen) for t in field_types]))
 

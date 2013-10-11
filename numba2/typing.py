@@ -212,6 +212,20 @@ def resolve(type, scope, bound):
         type = type.measure
     return type
 
+def resolve_simple(defining_type, type):
+    """
+    Resolve type `type` with respect to the scope and bound variables of
+    `defining_type`.
+
+    E.g. if we have
+
+        class C(object):
+            layout = [('x', 'B[int32]')]
+
+    we must resolve B as a class in the scope `C` is defined in.
+    """
+    return resolve(type, defining_type.scope, defining_type.bound)
+
 #===------------------------------------------------------------------===
 # Registry
 #===------------------------------------------------------------------===
