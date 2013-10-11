@@ -11,13 +11,19 @@ from .interfaces import Sequence, Iterable, Iterator
 
 # ____________________________________________________________
 
-@jit('Iterable[a] -> Iterator[a]')
+# TODO: Type join!
+
+@jit #('Iterable[a] -> Iterator[a]')
 def iter(x):
     return x.__iter__()
 
-@jit('Iterator[a] -> a')
+@jit #('Iterator[a] -> a')
 def next(x):
     return x.__next__()
+
+@jit #('Sequence[a] -> Py_ssize_t')
+def len(x):
+    return x.__len__()
 
 # ____________________________________________________________
 
@@ -76,4 +82,5 @@ class RangeIterator(Iterator):
 
 overlay(builtins.iter, iter)
 overlay(builtins.next, next)
+overlay(builtins.len, len)
 overlay(builtins.range, range)
