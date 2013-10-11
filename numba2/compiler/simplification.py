@@ -11,7 +11,7 @@ from numba2.typing import overlay_registry
 from numba2.compiler.special import lookup_special
 
 from pykit import types
-from pykit.ir import Const, Op
+from pykit.ir import Const, Op, collect_constants, substitute_args
 
 #===------------------------------------------------------------------===
 # Simplifiers
@@ -49,15 +49,17 @@ def rewrite_ops(func, env=None):
 
 def rewrite_overlays(func, env=None):
     """
-    Rewrite calls to non-numba functions which have a defined "overlay"
-    implementation.
+    Resolve overlays of constants.
     """
     for op in func.ops:
-        if op.opcode == 'call' and isinstance(op.args[0], Const):
-            f, args = op.args
-            impl = overlay_registry.lookup_overlay(f.const)
-            if impl is not None:
-                op.set_args([Const(impl, type=f.type), args])
+        consts = collect_constants(op)
+        new = []
+        for c in consts:
+            overlain = overlay_registry.lookup_overlay(c.const)
+            if overlain:
+                c = Const(overlain, type=c.type)
+            new.append(c)
+        substitute_args(op, consts, new)
 
 #===------------------------------------------------------------------===
 # Helpers
