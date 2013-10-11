@@ -33,6 +33,7 @@ _env = {
     'numba.state.phase':        None,
     'numba.state.copies':       None,
     'numba.state.crnt_func':    None,
+    'numba.state.options':      None,
 
     # Global state
     'numba.state.envs':         {},     # All cached environments

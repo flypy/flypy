@@ -40,11 +40,11 @@ def _jit(f, *args, **kwds):
         return jit_func(f, *args, **kwds)
 
 
-def jit_func(f, signature=None, abstract=False, opaque=False):
+def jit_func(f, signature=None, abstract=False, opaque=False, inline=False):
     """
     @jit('a -> List[a] -> List[a]')
     """
-    return wrap(f, signature, abstract=abstract, opaque=opaque)
+    return wrap(f, signature, abstract=abstract, opaque=opaque, inline=inline)
 
 
 def jit_class(cls, signature=None, abstract=False):
@@ -71,4 +71,6 @@ def abstract(f, *args, **kwds):
 
 # --- shorthands
 
-ijit = partial(jit, inline=True)
+@applyable_decorator
+def ijit(f, *args, **kwds):
+    return _jit(f, *args, inline=True, **kwds)

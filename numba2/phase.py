@@ -73,7 +73,7 @@ def setup_phase(func, env):
     # -------------------------------------------------
     # Find Python function implementation
     argtypes = env["numba.typing.argtypes"]
-    py_func, signature = best_match(func, list(argtypes))
+    py_func, signature, kwds = best_match(func, list(argtypes))
 
     # -------------------------------------------------
     # Update environment
@@ -82,6 +82,7 @@ def setup_phase(func, env):
     env["numba.typing.restype"] = signature.restype
     env["numba.typing.argtypes"] = signature.argtypes
     env["numba.state.crnt_func"] = func
+    env["numba.state.options"] = dict(kwds)
     env["numba.state.copies"] = {}
     env["numba.state.phase"] = "setup"
 
@@ -103,13 +104,13 @@ def typing_phase(func, env, passes=typing):
 @cached('numba.opt')
 def optimization_phase(func, env, passes=optimizations, dependences=None):
     envs = env["numba.state.envs"]
-
     if dependences is None:
         dependences = _deps(func)
 
-    func, env = run_pipeline(func, env, passes)
     for f in dependences:
         optimization_phase(f, envs[f], passes, [])
+    run_pipeline(func, env, passes)
+
     return func, env
 
 def codegen_phase(func, env):

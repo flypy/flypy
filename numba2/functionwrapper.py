@@ -68,7 +68,7 @@ class FunctionWrapper(object):
         return "<numba function (%s)>" % str(self.dispatcher)
 
 
-def wrap(py_func, signature, **kwds):
+def wrap(py_func, signature, inline=False, **kwds):
     """
     Wrap a function in a FunctionWrapper. Take care of overloading.
     """
@@ -82,7 +82,7 @@ def wrap(py_func, signature, **kwds):
     else:
         func = Dispatcher()
 
-    dispatcher = overload(signature, func=func)(py_func)
+    dispatcher = overload(signature, func=func, inline=inline, **kwds)(py_func)
 
     if isinstance(py_func, types.FunctionType):
         return FunctionWrapper(dispatcher, py_func, **kwds)

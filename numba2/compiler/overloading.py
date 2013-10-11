@@ -55,7 +55,8 @@ def best_match(func_wrapper, argtypes):
     #print(argtypes)
     #print('------------------')
     overload = overloading.best_match(overloaded, argtypes)
-    return (overload.func, resolve(overload.resolved_sig, scope, bound))
+    signature = resolve(overload.resolved_sig, scope, bound)
+    return (overload.func, signature, overload.kwds)
 
 
 def determine_scope(py_func):
