@@ -48,7 +48,7 @@ def build_struct_value(value, seen=None):
 def resolve_layout(ty, const):
     py_class = type(ty).impl
     if not is_builtin(py_class):
-        assert isinstance(const.const, py_class), (const.const, py_class)
+        #assert isinstance(const.const, py_class), (const.const, str(ty))
         value = build_struct_value(const.const)
         const = Const(value, const.type)
     return const

@@ -13,15 +13,15 @@ from .interfaces import Sequence, Iterable, Iterator
 
 # TODO: Type join!
 
-@jit #('Iterable[a] -> Iterator[a]')
+@ijit #('Iterable[a] -> Iterator[a]')
 def iter(x):
     return x.__iter__()
 
-@jit #('Iterator[a] -> a')
+@ijit #('Iterator[a] -> a')
 def next(x):
     return x.__next__()
 
-@jit #('Sequence[a] -> Py_ssize_t')
+@ijit #('Sequence[a] -> Py_ssize_t')
 def len(x):
     return x.__len__()
 
@@ -55,11 +55,11 @@ class Range(Sequence):
 
     layout = [('start', Py_ssize_t), ('stop', Py_ssize_t), ('step', Py_ssize_t)]
 
-    @jit
+    @ijit
     def __iter__(self):
         return RangeIterator(self.start, self.step, len(self))
 
-    @jit
+    @ijit
     def __len__(self):
         return len_range(self.start, self.stop, self.step)
 
@@ -69,7 +69,7 @@ class RangeIterator(Iterator):
 
     layout = [('start', Py_ssize_t), ('step', Py_ssize_t), ('length', Py_ssize_t)]
 
-    @jit
+    @ijit
     def __next__(self):
         if self.length > 0:
             result = self.start

@@ -67,12 +67,12 @@ def patch_class(cls):
     """
     from ..entrypoints import jit
 
-    if '__init__' not in vars(cls) and cls.layout:
+    if '__init__' not in vars(cls):
         names = [name for name, type in cls.layout]
         cls.__init__ = jit(fabricate_init(names))
 
 def fabricate_init(names):
-    stmts = ["self.%s = %s" % (name, name) for name in names]
+    stmts = ["self.%s = %s" % (name, name) for name in names] or ["pass"]
 
     source = textwrap.dedent("""
     def __init__(self, %s):

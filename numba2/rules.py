@@ -22,6 +22,8 @@ def typeof(pyval):
 
     if is_numba_type(pyval):
         return Type[pyval.type]
+    elif is_numba_type(type(pyval)):
+        return pyval.type
 
     raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
 
@@ -40,4 +42,4 @@ def promote(type1, type2):
 
 
 def is_numba_type(x):
-   return isinstance(x, type) and hasattr(x, 'fields') and hasattr(x, 'layout')
+    return getattr(x, '_is_numba_class', False)

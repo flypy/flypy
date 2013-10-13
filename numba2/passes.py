@@ -12,8 +12,10 @@ from .compiler import simplification, transition
 from .compiler.typing import inference, typecheck
 from .compiler.typing.resolution import (resolve_context, resolve_restype)
 from .compiler.optimizations import optimize, inliner
-from .compiler.lower import (rewrite_calls, rewrite_constructors,
-                             rewrite_optional_args, rewrite_constants)
+from .compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
+                             rewrite_constructors,
+                             rewrite_optional_args, rewrite_constants,
+                             convert_retval)
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
@@ -40,9 +42,11 @@ typing = [
     resolve_restype,
     typecheck,
     rewrite_calls,
+    rewrite_raise_exc_type,
     rewrite_constructors,
     rewrite_optional_args,
     rewrite_constants,
+    convert_retval,
 ]
 
 optimizations = [

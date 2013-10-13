@@ -6,6 +6,7 @@ Numba function wrapper.
 
 from __future__ import print_function, division, absolute_import
 import types
+from functools import partial
 
 from numba2.rules import typeof
 from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
@@ -66,6 +67,11 @@ class FunctionWrapper(object):
 
     def __str__(self):
         return "<numba function (%s)>" % str(self.dispatcher)
+
+    def __get__(self, instance, owner=None):
+        if instance is not None:
+            return partial(self.py_func, instance)
+        return self
 
 
 def wrap(py_func, signature, inline=False, **kwds):

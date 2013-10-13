@@ -5,8 +5,6 @@ Copy functions to a function with a new name.
 """
 
 from __future__ import print_function, division, absolute_import
-from itertools import chain
-from collections import deque
 
 from pykit.ir import copy_function, vmap, Function
 from pykit.analysis import callgraph

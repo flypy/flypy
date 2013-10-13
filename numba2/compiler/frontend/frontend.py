@@ -5,12 +5,9 @@ Post-passes on untyped IR emitted by the front-end bytecode translation.
 """
 
 from __future__ import print_function, division, absolute_import
-
-from numba2.functionwrapper import FunctionWrapper
 from .translation import Translate
 
-from pykit import types
-from pykit.ir import Builder, OpBuilder
+from pykit.ir import Builder
 
 #===------------------------------------------------------------------===
 # Entrypoint

@@ -64,6 +64,8 @@ class MetaType(type):
             Dict of methods
     """
 
+    _is_numba_class = True
+
     def __init__(self, name, bases, dct):
         if 'type' not in dct:
             return
