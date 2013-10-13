@@ -38,7 +38,6 @@ special = {
     ops.ge            : '__ge__',
     ops.eq            : '__eq__',
     ops.ne            : '__ne__',
-    ops.contains      : '__contains__',
 }
 special2op = invert(special)
 

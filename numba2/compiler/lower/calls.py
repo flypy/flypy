@@ -40,7 +40,7 @@ def rewrite_calls(func, env):
                 args = [self] + args
 
             # Rewrite call
-            newop = b.call(op.type, [typed_func, args], op.result)
+            newop = b.call(op.type, typed_func, args, result=op.result)
             op.replace(newop)
 
     env['numba.state.callgraph'] = None

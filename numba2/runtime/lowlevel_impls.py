@@ -38,7 +38,7 @@ def add_impl_cls(cls, name, implementation, restype=None):
 
 def add_binop(cls, name, restype=None):
     special_name = "__%s__" % name
-    impl = lambda b, x, y: b.ret(getattr(b, name)(restype or x.type, [x, y]))
+    impl = lambda b, x, y: b.ret(getattr(b, name)(x, y))
     add_impl_cls(cls, special_name, impl, restype)
 
 

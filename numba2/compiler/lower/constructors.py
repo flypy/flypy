@@ -38,7 +38,7 @@ def rewrite_constructors(func, env):
                 __init__, _ = phase.typing(f, e)
 
                 alloc = b.alloca(types.Pointer(types.Opaque))
-                call = b.call(types.Void, [__init__, [alloc] + args])
+                call = b.call(types.Void, __init__, [alloc] + args)
 
                 op.replace_uses(alloc)
                 op.replace([alloc, call])
