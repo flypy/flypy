@@ -12,7 +12,7 @@ from .type import Type
 
 # ____________________________________________________________
 
-@jit('a -> Type[a] -> bool')
+@ijit('a -> Type[a] -> bool')
 def isinstance(obj, type):
     return True
 

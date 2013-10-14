@@ -51,7 +51,8 @@ typing = [
 
 optimizations = [
     dce,
-    #inliner,
+    inliner,
+    cfa,
     optimize,
 ]
 

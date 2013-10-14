@@ -71,7 +71,7 @@ def copy(func, env):
 
 
 def copy_func(func, env):
-    new_func = copy_function(func)
+    new_func, _ = copy_function(func)
     new_func.name = temper(new_func.name)
     return new_func
 
