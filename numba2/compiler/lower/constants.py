@@ -30,7 +30,7 @@ def resolve_builtin(ty, const):
 # -----------------------------------------------------------------------
 # Layout
 
-def build_struct_value(value, seen=None):
+def build_struct_value(ty, value, seen=None):
     """
     Build a constant struct value from the given runtime Python
     user-defined object.
@@ -40,8 +40,7 @@ def build_struct_value(value, seen=None):
         raise TypeError("Cannot use recursive value as a numba constant")
     seen.add(id(value))
 
-    cls = type(value)
-    names, types = zip(*cls.fields) or [(), ()]
+    names, types = zip(*ty.layout) or [(), ()]
     values = [getattr(value, name) for name in names]
     return Struct(names, values)
 
@@ -49,7 +48,7 @@ def resolve_layout(ty, const):
     py_class = type(ty).impl
     if not is_builtin(py_class):
         #assert isinstance(const.const, py_class), (const.const, str(ty))
-        value = build_struct_value(const.const)
+        value = build_struct_value(ty, const.const)
         const = Const(value, const.type)
     return const
 

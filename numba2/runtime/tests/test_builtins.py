@@ -6,7 +6,14 @@ import unittest
 from numba2 import jit
 from numba2.runtime.builtins import len_range
 
-class TestRange(unittest.TestCase):
+class TestBuiltins(unittest.TestCase):
+
+    def test_isinstance(self):
+        @jit
+        def trivial():
+            return isinstance(StopIteration(), StopIteration)
+
+        self.assertTrue(trivial())
 
     def test_len_range(self):
         for start in range(-10, 10):
@@ -19,5 +26,5 @@ class TestRange(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #TestTranslation('test_call').debug()
-    unittest.main()
+    TestBuiltins('test_isinstance').debug()
+    #unittest.main()

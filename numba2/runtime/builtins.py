@@ -8,6 +8,17 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
+from .type import Type
+
+# ____________________________________________________________
+
+@jit('a -> Type[a] -> bool')
+def isinstance(obj, type):
+    return True
+
+@jit('a -> Type[b] -> bool')
+def isinstance(obj, type):
+    raise NotImplementedError
 
 # ____________________________________________________________
 
@@ -80,6 +91,7 @@ class RangeIterator(Iterator):
 
 # ____________________________________________________________
 
+overlay(builtins.isinstance, isinstance)
 overlay(builtins.iter, iter)
 overlay(builtins.next, next)
 overlay(builtins.len, len)

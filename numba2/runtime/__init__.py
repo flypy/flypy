@@ -5,3 +5,4 @@ from . import lowlevel_impls
 from . import builtins
 from . import special
 from . import primitives
+from .type import Type
