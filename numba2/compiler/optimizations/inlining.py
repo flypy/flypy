@@ -47,4 +47,5 @@ def update_context(env, callee_env, valuemap):
         if not isinstance(const, Op):
             context[const] = type
 
+
 run = inliner

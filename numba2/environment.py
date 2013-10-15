@@ -22,6 +22,7 @@ _env = {
     'numba.typing.cache':       TypingCache(),
     'numba.inference.cache':    InferenceCache(),
     'numba.opt.cache':          Cache(),
+    'numba.lowering.cache':     Cache(),
     'numba.codegen.cache':      Cache(),
 
     # General state

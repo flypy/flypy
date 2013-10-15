@@ -51,15 +51,19 @@ typing = [
 
 optimizations = [
     dce,
+    #cfa,
+    optimize,
+    lltyping, # TODO: lowering phase
+]
+
+lowering = [
     inliner,
     cfa,
-    optimize,
+    rewrite_lowlevel_constants,
+    lowering.lower_fields,
 ]
 
 backend_init = [
-    lltyping,
-    rewrite_lowlevel_constants,
-    lowering.lower_fields,
     llvm.codegen_init,
 ]
 
@@ -76,6 +80,6 @@ backend_finalize = [
     llvm.get_ctypes,
 ]
 
-passes = frontend + typing + optimizations + backend_init + backend_run
-
-all_passes = [frontend, typing, optimizations, backend_init, backend_run, passes]
+all_passes = [frontend, typing, optimizations, lowering,
+              backend_init, backend_run]
+passes = sum(all_passes, [])

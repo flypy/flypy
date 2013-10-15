@@ -100,7 +100,7 @@ class TestBytecodeTranslation(unittest.TestCase):
             return sum
 
         # dis.dis(f)
-        # print(translate(f))
+        #print(translate(f)[0])
         try:
             run(f, 15, [0, 10]) # TODO: exc_throw
         except UncaughtException, e:
@@ -142,5 +142,5 @@ class TestBytecodeTranslation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #TestBytecodeTranslation('test_recursion').debug()
+    #TestBytecodeTranslation('test_raise').debug()
     unittest.main()

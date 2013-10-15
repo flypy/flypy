@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial
 from collections import defaultdict
 
-from numba2 import types, typing
+from numba2 import types, typing, errors
 
 from pykit.ir import FuncArg, Op, Const, Pointer, Struct
 from pykit import types as ptypes
@@ -66,6 +66,8 @@ def ll_type(x, seen=None):
 def resolve_type(context, op):
     if isinstance(op, (FuncArg, Const, Op)):
         if not op.type.is_void:
+            if op not in context:
+                raise errors.CompileError("Type for %s was lost" % (op,))
             type = context[op]
             if type.__class__.__name__ == 'Method':
                 return op # TODO: Remove this

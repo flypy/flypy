@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial, wraps
 
 from .pipeline import run_pipeline
-from .passes import (frontend, typing, optimizations, backend_init,
+from .passes import (frontend, typing, optimizations, lowering, backend_init,
                      backend_run, backend_finalize)
 from .compiler.overloading import best_match
 
@@ -114,6 +114,19 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
 
     return func, env
 
+@cached('numba.lowering')
+def lowering_phase(func, env, passes=lowering, dependences=None):
+    envs = env["numba.state.envs"]
+    if dependences is None:
+        dependences = _deps(func)
+
+    for f in dependences:
+        if f != func:
+            lowering_phase(f, envs[f], passes, [])
+    run_pipeline(func, env, passes)
+
+    return func, env
+
 def codegen_phase(func, env):
     cache = env['numba.codegen.cache']
     envs = env["numba.state.envs"]
@@ -152,7 +165,8 @@ setup = setup_phase
 translation = starcompose(translation_phase, setup)
 typing = starcompose(typing_phase, translation)
 opt = starcompose(optimization_phase, typing)
-codegen = starcompose(codegen_phase, opt)
+lower = starcompose(lowering_phase, opt)
+codegen = starcompose(codegen_phase, lower)
 
 # ______________________________________________________________________
 # Naming
