@@ -50,5 +50,5 @@ def simplify_exceptions(func, env=None):
     for op in func.ops:
         if op.opcode == 'exc_end':
             b.position_after(op)
-            b.splitblock(terminate=True)
+            b.splitblock(terminate=True, preserve_exc=False)
             op.delete()
