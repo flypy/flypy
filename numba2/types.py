@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-__all__ = ['Function', 'Type', 'Bool', 'Int', 'Float']
+__all__ = ['Function', 'Mono', 'Bool', 'Int', 'Float']
 
 #===------------------------------------------------------------------===
 # Types
@@ -9,7 +9,7 @@ __all__ = ['Function', 'Type', 'Bool', 'Int', 'Float']
 
 from blaze import dshape
 from blaze.datashape import free, TypeVar, TypeConstructor
-from blaze.datashape import Mono as Type
+from blaze.datashape import Mono as Mono
 from .runtime.obj import Function, Pointer, Bool, Int, Float, Void, NoneType
 
 #===------------------------------------------------------------------===

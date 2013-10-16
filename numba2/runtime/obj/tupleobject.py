@@ -6,10 +6,12 @@ tuple implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, typeof, overload
+from numba2 import jit, abstract, typeof, overload
 from ..interfaces import Number, implements
+from ..conversion import fromobject, toobject
+from .noneobject import NoneType
 
-T = TypeVar()
+#T = TypeVar()
 
 @abstract
 class Tuple(object):
@@ -17,7 +19,7 @@ class Tuple(object):
 
 
 @jit('GenericTuple[T]')
-class Tuple(object):
+class GenericTuple(object):
     layout = [('items', 'List[T]')]
 
     @jit('a -> T')
@@ -36,10 +38,18 @@ class Tuple(object):
     def __add__(self, other):
         return Tuple(self.items + other.items)
 
+@jit
+class EmptyTuple(object):
+    layout = []
 
-@jit('StaticTuple[T1, T2 : <StaticTuple, None>]', Number)
+@jit('StaticTuple[a, b]')
 class StaticTuple(object):
-    layout = [('hd', 'T1'), ('tl', 'T2 | None')]
+    layout = [('hd', 'a'), ('tl', 'b')]
+
+    @jit
+    def __init__(self, hd, tl):
+        self.hd = hd
+        self.tl = tl
 
     @jit('a -> b : integral -> c')
     def __getitem__(self, item):
@@ -63,19 +73,23 @@ class StaticTuple(object):
         else:
             return len(self.tl) + 1
 
-    @overload('a -> StaticTuple[t1, t2] -> c')
+    @jit('a -> StaticTuple[t1, t2] -> c')
     def __add__(self, other):
-        for i in unroll(range(len(self) - 1, -1, -1)):
-            item = self[i]
-            other = StaticTuple(item, other)
-        return other
+        if self.tl is None:
+            return StaticTuple(self.hd, other)
+        else:
+            return StaticTuple(self.hd, self.tl + other)
 
-    @overload('a -> Tuple[T] -> Tuple[T]')
+    @jit('a -> Tuple[T] -> Tuple[T]')
     def __add__(self, other):
         result = List[T]()
         for x in self:
             result.append(x)
         return tuple(result) + other
+
+    @jit('a -> a -> bool')
+    def __eq__(self, other):
+        return self.hd == other.hd and self.tl == other.tl
 
     def element_type(self):
         if self.hd is None:
@@ -86,11 +100,32 @@ class StaticTuple(object):
                 type = promote(type, self.tl.element_type())
             return type
 
+    @staticmethod
+    def fromobject(tuple, type):
+        head, tail = type.parameters
+        hd = fromobject(tuple[0], head)
+        if tuple[1:]:
+            tl = fromobject(tuple[1:], tail)
+        else:
+            tl = None
+
+        return StaticTuple(hd, tl)
+
+    @staticmethod
+    def toobject(value, type):
+        head, tail = type.parameters
+        hd = toobject(value.hd, head)
+        if value.tl is None:
+            return (hd,)
+        return (hd,) + toobject(value.tl, tail)
 
 
 @typeof.case(tuple)
 def typeof(pyval):
     valtypes = tuple(map(typeof, pyval))
     if len(pyval) <= 4:
-        return StaticTuple[valtypes]
+        result = NoneType[()]
+        for ty in reversed(valtypes):
+            result = StaticTuple[ty, result]
+        return result
     return GenericTuple[reduce(promote, valtypes)]

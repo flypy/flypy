@@ -8,6 +8,7 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
+from .obj.listobject import List
 from .type import Type
 
 # ____________________________________________________________
@@ -38,6 +39,25 @@ def len(x):
 
 # ____________________________________________________________
 
+@ijit
+def str(x):
+    return x.__str__()
+
+@ijit
+def repr(x):
+    return x.__repr__()
+
+@ijit
+def unicode(x):
+    return x.__unicode__()
+
+@ijit
+def print(value, sep=' ', end='\n'):
+    # TODO: *args and **kwargs
+    raise NotImplementedError
+
+# ____________________________________________________________
+
 # TODO: Implement generator fusion
 
 Py_ssize_t = 'int32' # TODO:
@@ -50,7 +70,7 @@ def len_range(start, stop, step):
         return 0
     return (stop - start - 1) // step + 1
 
-@jit
+@ijit
 def range(start, stop=0xdeadbeef, step=1):
     # TODO: We need to either optimize variants, or recognize that
     # 'x is None' is equivalent to isinstance(x, NoneType) and prune the
@@ -91,8 +111,25 @@ class RangeIterator(Iterator):
 
 # ____________________________________________________________
 
+@ijit('Iterable[x] -> List[x]')
+def list(value):
+    result = []
+    result.extend(value)
+    return result
+
+# TODO: Overloading on arity
+#@ijit
+#def list():
+#    return []
+
+# ____________________________________________________________
+
 overlay(builtins.isinstance, isinstance)
 overlay(builtins.iter, iter)
 overlay(builtins.next, next)
 overlay(builtins.len, len)
+overlay(builtins.str, str)
+overlay(builtins.repr, repr)
+overlay(builtins.unicode, unicode)
 overlay(builtins.range, range)
+overlay(builtins.list, list)

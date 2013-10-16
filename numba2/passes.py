@@ -54,18 +54,19 @@ optimizations = [
     dce,
     #cfa,
     optimize,
-    lltyping, # TODO: lowering phase
+    lltyping,
 ]
 
 lowering = [
     inliner,
     cfa,
-    #throwing,
+    throwing.rewrite_local_exceptions,
     rewrite_lowlevel_constants,
     lowering.lower_fields,
 ]
 
 backend_init = [
+    throwing.rewrite_exceptions,
     llvm.codegen_init,
 ]
 
