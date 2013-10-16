@@ -11,7 +11,7 @@ from .compiler.frontend import translate, simplify_exceptions
 from .compiler import simplification, transition
 from .compiler.typing import inference, typecheck
 from .compiler.typing.resolution import (resolve_context, resolve_restype)
-from .compiler.optimizations import optimize, inliner
+from .compiler.optimizations import optimize, inliner, throwing
 from .compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                              rewrite_constructors,
                              rewrite_optional_args, rewrite_constants,
@@ -20,6 +20,7 @@ from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
 from pykit.transform import dce
+#from pykit.optimizations import local_exceptions
 from pykit.codegen.llvm import verify, optimize
 
 #===------------------------------------------------------------------===
@@ -59,6 +60,7 @@ optimizations = [
 lowering = [
     inliner,
     cfa,
+    #throwing,
     rewrite_lowlevel_constants,
     lowering.lower_fields,
 ]

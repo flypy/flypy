@@ -416,7 +416,7 @@ class Translate(object):
         # Catch
 
         with self.builder.at_front(loopexit):
-            self.insert('exc_catch', [StopIteration])
+            self.insert('exc_catch', [Const(StopIteration, type=types.Exception)])
 
     def op_BREAK_LOOP(self, inst):
         scope = self.loops[-1]
