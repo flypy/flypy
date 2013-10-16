@@ -6,8 +6,8 @@ Handle constants.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.types import Bool, Int, Float, NoneType
-from numba2.runtime.obj import NoneValue
+from numba2.types import Bool, Int, Float
+from numba2.compiler import representation
 
 from pykit.ir import Const, Struct, Builder, collect_constants, substitute_args
 
@@ -15,40 +15,11 @@ from pykit.ir import Const, Struct, Builder, collect_constants, substitute_args
 # Constant mapping
 #===------------------------------------------------------------------===
 
-# Builtin Type -> (pyval -> Value)
-builtin_types = {
-    NoneType[()]: lambda x: NoneValue,
-}
-
-def resolve_builtin(ty, const):
-    ctor = builtin_types.get(ty)
-    if ctor:
-        value = ctor(const.const)
-        return Const(value, const.type)
-    return const
-
-# -----------------------------------------------------------------------
-# Layout
-
-def build_struct_value(ty, value, seen=None):
-    """
-    Build a constant struct value from the given runtime Python
-    user-defined object.
-    """
-    seen = seen or set()
-    if id(value) in seen:
-        raise TypeError("Cannot use recursive value as a numba constant")
-    seen.add(id(value))
-
-    names, types = zip(*ty.layout) or [(), ()]
-    values = [getattr(value, name) for name in names]
-    return Struct(names, values)
-
 def resolve_layout(ty, const):
     py_class = type(ty).impl
     if not is_builtin(py_class):
         #assert isinstance(const.const, py_class), (const.const, str(ty))
-        value = build_struct_value(ty, const.const)
+        value = representation.build_struct_value(ty, const.const)
         const = Const(value, const.type)
     return const
 
@@ -73,7 +44,6 @@ def rewrite_constants(func, env):
         new_constants = []
         for c in constants:
             ty = context[c]
-            c = resolve_builtin(ty, c)
             c = resolve_layout(ty, c)
 
             context[c] = ty

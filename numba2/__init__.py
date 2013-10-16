@@ -9,7 +9,8 @@ from .entrypoints import jit, ijit, abstract
 from .compiler import (annotate, overload, overloadable)
 from .typing import overlay, parse, unify_simple as unify
 from .rules import typeof, convert, promote, is_numba_type
-from .types import Type, int32
+from .types import Mono, int32
+from .runtime import toobject, fromobject
 from .runtime.interfaces.interface import implements
 from .runtime.special import sizeof
 

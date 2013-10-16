@@ -32,7 +32,7 @@ from itertools import product
 
 from numba2 import promote, typeof, parse
 from numba2.errors import InferError
-from numba2.types import Type, Function, Pointer, bool_, void
+from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar
 from numba2.functionwrapper import FunctionWrapper
 from .resolution import infer_call
@@ -392,7 +392,7 @@ def infer_node(cache, ctx, node):
     """Infer types for a single node"""
     changed = False
     C = ctx.constraints.get(node, 'flow')
-    if isinstance(node, Type):
+    if isinstance(node, Mono):
         typeset = set([node])
     else:
         typeset = ctx.context[node]

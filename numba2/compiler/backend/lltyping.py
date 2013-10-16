@@ -9,6 +9,7 @@ from functools import partial
 from collections import defaultdict
 
 from numba2 import types, typing, errors
+from numba2.compiler import representation
 
 from pykit.ir import FuncArg, Op, Const, Pointer, Struct
 from pykit import types as ptypes
@@ -18,50 +19,14 @@ from pykit.utils import nestedmap
 # Types
 #===------------------------------------------------------------------===
 
-def _type_constructor(x):
-    """Given a numba class, get the type constructor class"""
-    # TODO: This muck should go away once we finish typedefs between python
-    # objects and numba objects (e.g. bool <-> Bool)
-    return type(x.type)
-
-_typemap = {
-    _type_constructor(types.Function)   : ptypes.Function,
-    _type_constructor(types.Void)       : ptypes.VoidT,
-    _type_constructor(types.Bool)       : ptypes.Boolean,
-    _type_constructor(types.Int)        : ptypes.Integral,
-    _type_constructor(types.Float)      : ptypes.Real,
-    _type_constructor(types.Pointer)    : ptypes.Pointer,
-    #_type_constructor(types.Struct)     : ptypes.Struct,
-}
-
 dummy_type = [('dummy',), (types.int32,)]
 
-def ll_type(x, seen=None):
+def ll_type(x):
     """
     Get the low-level representation type for a high-level (user-defined) type.
     """
-    if seen is None:
-        seen = defaultdict(int)
-    if seen[x]:
-        raise NotImplementedError("Recursive types", x)
+    return representation.representation_type(x)
 
-    # TODO: Implement type resolution in a single pass !
-    x = typing.resolve_type(x)
-    seen[x] += 1
-    if not isinstance(x, types.Type):
-        lltype = x
-    elif type(x) in _typemap:
-        ctor = _typemap[type(x)]
-        lltype = ctor(*map(ll_type, x.parameters))
-    else:
-        fields = x.layout
-        names, field_types = zip(*fields.items()) or dummy_type
-        field_types = [typing.resolve_simple(x, t) for t in field_types]
-        lltype = ptypes.Pointer(ptypes.Struct(
-            names, [ll_type(t, seen) for t in field_types]))
-
-    seen[x] -= 1
-    return lltype
 
 def resolve_type(context, op):
     if isinstance(op, (FuncArg, Const, Op)):
