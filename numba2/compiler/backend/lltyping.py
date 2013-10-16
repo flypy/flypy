@@ -98,6 +98,8 @@ def lltyping(func, env):
         for arg in func.args:
             resolve(arg)
         for op in func.ops:
+            if op.opcode == 'exc_catch':
+                continue
             op.replace(resolve(op))
             op.set_args(nestedmap(resolve, op.args))
 
