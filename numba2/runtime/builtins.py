@@ -50,7 +50,7 @@ def len_range(start, stop, step):
         return 0
     return (stop - start - 1) // step + 1
 
-@jit
+@ijit
 def range(start, stop=0xdeadbeef, step=1):
     # TODO: We need to either optimize variants, or recognize that
     # 'x is None' is equivalent to isinstance(x, NoneType) and prune the
