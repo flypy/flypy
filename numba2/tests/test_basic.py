@@ -32,13 +32,13 @@ class TestTranslation(unittest.TestCase):
 
     def test_for(self):
         @jit
-        def f(L):
+        def f(n):
             sum = 0
-            for x in L:
+            for x in range(n):
                 sum += x
             return sum
 
-        self.assertEqual(f(5), 17)
+        self.assertEqual(f(6), 15)
 
     def test_call(self):
         @jit

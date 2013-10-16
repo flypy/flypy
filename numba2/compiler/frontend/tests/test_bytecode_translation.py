@@ -83,7 +83,7 @@ class TestBytecodeTranslation(unittest.TestCase):
             return sum
 
         # dis.dis(f)
-        # print(translate(f))
+        # print(translate(f)[0])
         run(f, 45, [0, 10])
 
     #===------------------------------------------------------------------===
@@ -142,5 +142,5 @@ class TestBytecodeTranslation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #TestBytecodeTranslation('test_raise').debug()
+    TestBytecodeTranslation('test_for').debug()
     unittest.main()
