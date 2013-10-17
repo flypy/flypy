@@ -7,11 +7,11 @@ int/long implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, typeof
-from ..interfaces import Number, implements
+from numba2 import sjit, typeof
+from ..interfaces import Number
 
-@implements('Int[nbits, unsigned]', Number)
-class Int(object):
+@sjit('Int[nbits, unsigned]')
+class Int(Number):
     layout = [('x', 'Int[nbits, unsigned]')]
 
     @staticmethod

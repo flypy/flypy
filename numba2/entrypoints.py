@@ -47,19 +47,24 @@ def jit_func(f, signature=None, abstract=False, opaque=False, inline=False):
     return wrap(f, signature, abstract=abstract, opaque=opaque, inline=inline)
 
 
-def jit_class(cls, signature=None, abstract=False):
+def jit_class(cls, signature=None, abstract=False, stackallocate=False):
     """
     @jit('Array[dtype, ndim]')
     """
     from .runtime.classes import allocate_type_constructor, patch_class
+    from .runtime.interfaces import copy_methods
 
     if not abstract and not hasattr(cls, 'layout'):
         raise ValueError("layout of class %s not set" % (cls,))
 
     constructor, type = allocate_type_constructor(cls, signature)
     cls.type = type
+    cls.stackallocate = stackallocate
     if not abstract:
         patch_class(cls)
+
+    for base in cls.__mro__:
+        copy_methods(cls, base)
 
     return MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
 
@@ -73,4 +78,10 @@ def abstract(f, *args, **kwds):
 
 @applyable_decorator
 def ijit(f, *args, **kwds):
+    """@jit(inline=True)"""
     return _jit(f, *args, inline=True, **kwds)
+
+@applyable_decorator
+def sjit(cls, *args, **kwds):
+    """@jit(stackallocate=True)"""
+    return jit_class(cls, *args, stackallocate=True, **kwds)

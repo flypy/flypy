@@ -79,7 +79,8 @@ def stack_allocate(type):
     Determine whether values of this type should be stack-allocated and partake
     directly as values under composition.
     """
-    return _type_constructor(type.impl) in _typemap
+    return type.impl.stackallocate
+    #return _type_constructor(type.impl) in _typemap
 
 
 def build_struct_value(ty, value, seen=None):

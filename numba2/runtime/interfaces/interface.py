@@ -18,6 +18,8 @@ def implements(signature, *interfaces):
         @implements(Number)
         ...
     """
+    raise NotImplementedError
+
     def decorator(cls):
         assert isinstance(cls, type), cls
 

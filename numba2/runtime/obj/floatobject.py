@@ -6,11 +6,11 @@ float/double implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from ... import jit, typeof
-from ..interfaces import Number, implements
+from ... import sjit, typeof
+from ..interfaces import Number
 
-@implements('Float[nbits]', Number)
-class Float(object):
+@sjit('Float[nbits]', Number)
+class Float(Number):
     layout = [('x', 'Float[nbits]')]
 
     @staticmethod
