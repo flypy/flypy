@@ -5,6 +5,9 @@ Convert between objects and numba representations.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
+
+from numba2 import typing
 
 #===------------------------------------------------------------------===
 # Object Conversion
@@ -16,9 +19,10 @@ def fromobject(value, type):
     (e.g. list -> List)
     """
     cls = type.impl
-    if hasattr(cls, 'fromobject'):
+    if hasattr(cls, 'fromobject') and not isinstance(value, cls):
         return cls.fromobject(value, type)
     return value
+
 
 def toobject(value, type):
     """
@@ -29,18 +33,82 @@ def toobject(value, type):
         return cls.toobject(value, type)
     return value
 
-def toctypes(value, type, seen=None, keepalive=None):
+
+def toctypes(value, type, keepalive, memo=None):
     """Return (ctypes_value, keep_alive)"""
-    if keepalive is None:
-        keepalive = []
+    if memo is None:
+        memo = {}
 
     cls = type.impl
     if hasattr(cls, 'toctypes'):
         return cls.toctypes(value, type)
+    elif stack_allocate(type):
+        cty = ctype(type, memo)
+        return cty(*[getattr(value, name) for name, _ in cty._fields_])
+    else:
+        cty = ctype(type, memo)
+        cty = cty._type_
+        result = cty(*[getattr(value, name) for name, _ in cty._fields_])
+        keepalive.append(result)
+        return ctypes.pointer(result)
 
-    from numba2.compiler.representation import build_ctypes_representation
-    value, _ = build_ctypes_representation(type, value, seen, keepalive)
-    return value
+
+def ctype(type, memo=None):
+    # -------------------------------------------------
+    # Setup cache
+
+    if memo is None:
+        memo = {}
+    if type in memo:
+        return memo[type]
+
+    # -------------------------------------------------
+    # Create ctypes type
+
+    cls = type.impl
+    if hasattr(cls, 'ctype'):
+        result = cls.ctype(type)
+    else:
+        # -------------------------------------------------
+        # Determine field ctypes
+
+        names, types = zip(*dict(type.layout).items()) or [(), ()]
+        types = [typing.resolve_simple(type, t) for t in types]
+        types = [ctype(ty, memo) for ty in types]
+        if not types:
+            types = [ctypes.c_int32]
+
+        # -------------------------------------------------
+        # Build struct
+
+        class result(ctypes.Structure):
+            _fields_ = zip(names, types)
+
+            def __repr__(self):
+                return "{ %s }" % (", ".join("%s:%s" % (name, getattr(self, name))
+                                                 for name in names))
+
+        result.__name__ = 'CTypes' + type.__class__.__name__
+
+        # -------------------------------------------------
+        # Handle stack allocation
+
+        if not stack_allocate(type):
+            result = ctypes.POINTER(result)
+
+    # -------------------------------------------------
+    # Cache result
+    memo[type] = result
+    return result
+
+
+def stack_allocate(type):
+    """
+    Determine whether values of this type should be stack-allocated and partake
+    directly as values under composition.
+    """
+    return type.impl.stackallocate
+
 
 def make_coercers(type):
     """

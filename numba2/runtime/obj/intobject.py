@@ -6,6 +6,7 @@ int/long implementation.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
 
 from numba2 import sjit, typeof
 from ..interfaces import Number
@@ -14,12 +15,14 @@ from ..interfaces import Number
 class Int(Number):
     layout = [('x', 'Int[nbits, unsigned]')]
 
-    @staticmethod
-    def toctypes(val, ty):
-        import ctypes
+    @classmethod
+    def toctypes(cls, val, ty):
+        return cls.ctype(ty)(val)
+
+    @classmethod
+    def ctype(cls, ty):
         nbits, unsigned = ty.parameters
-        ctype = getattr(ctypes, 'c_%sint%d' % ('u' if unsigned else '', nbits))
-        return ctype(val)
+        return getattr(ctypes, 'c_%sint%d' % ('u' if unsigned else '', nbits))
 
 
 @typeof.case(int)

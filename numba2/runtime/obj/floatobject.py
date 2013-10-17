@@ -5,6 +5,7 @@ float/double implementation.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
 
 from ... import sjit, typeof
 from ..interfaces import Number
@@ -13,12 +14,14 @@ from ..interfaces import Number
 class Float(Number):
     layout = [('x', 'Float[nbits]')]
 
-    @staticmethod
-    def toctypes(val, ty):
-        import ctypes
+    @classmethod
+    def toctypes(cls, val, ty):
+        return cls.ctype(ty)(val)
+
+    @classmethod
+    def ctype(cls, ty):
         [nbits] = ty.parameters
-        ctype = {32: ctypes.c_float, 64: ctypes.c_double}[nbits]
-        return ctype(val)
+        return {32: ctypes.c_float, 64: ctypes.c_double}[nbits]
 
 
 @typeof.case(float)

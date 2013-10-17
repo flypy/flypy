@@ -5,6 +5,7 @@ Pointer implementation.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
 
 from ... import jit, typeof
 
