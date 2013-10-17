@@ -8,12 +8,16 @@ from __future__ import print_function, division, absolute_import
 
 from numba2.types import Bool, Int, Float
 from numba2.compiler import representation
+from numba2.runtime import fromobject
 
 from pykit.ir import Const, Struct, Builder, collect_constants, substitute_args
 
 #===------------------------------------------------------------------===
 # Constant mapping
 #===------------------------------------------------------------------===
+
+def resolve_builtin(ty, const):
+    return Const(fromobject(const.const, ty), const.type)
 
 def resolve_layout(ty, const):
     py_class = type(ty).impl
@@ -44,6 +48,7 @@ def rewrite_constants(func, env):
         new_constants = []
         for c in constants:
             ty = context[c]
+            c = resolve_builtin(ty, c)
             c = resolve_layout(ty, c)
 
             context[c] = ty

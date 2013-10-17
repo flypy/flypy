@@ -6,7 +6,9 @@ Numba function wrapper.
 
 from __future__ import print_function, division, absolute_import
 import types
+import ctypes
 from functools import partial
+from itertools import starmap
 
 from numba2.rules import typeof
 from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
@@ -33,9 +35,17 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
+        from numba2.runtime import toctypes, toobject
+
         args = flatargs(self.dispatcher.f, args, kwargs)
         argtypes = [typeof(x) for x in args]
         cfunc = self.translate(argtypes)
+        args = starmap(toobject, zip(args, argtypes))
+        args = list(starmap(toctypes, zip(args, argtypes)))
+
+        ctype = ctypes.CFUNCTYPE(cfunc._restype_, *[type(arg) for arg in args])
+        cfunc = ctypes.cast(cfunc, ctype)
+
         return cfunc(*args)
 
     def translate(self, argtypes):

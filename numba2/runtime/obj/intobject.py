@@ -14,6 +14,14 @@ from ..interfaces import Number, implements
 class Int(object):
     layout = [('x', 'Int[nbits, unsigned]')]
 
+    @staticmethod
+    def toctypes(val, ty):
+        import ctypes
+        nbits, unsigned = ty.parameters
+        ctype = getattr(ctypes, 'c_%sint%d' % ('u' if unsigned else '', nbits))
+        return ctype(val)
+
+
 @typeof.case(int)
 def typeof(pyval):
     if isinstance(pyval, bool):

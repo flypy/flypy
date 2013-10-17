@@ -6,13 +6,16 @@ Construct numba objects from python values.
 
 from __future__ import print_function, division, absolute_import
 
+import ctypes
 from collections import defaultdict
 
 from numba2 import typing
 from numba2.types import Mono, Bool, Int, Float, Function, Void, Pointer, int32
+from numba2.runtime.conversion import toctypes
 
-from pykit.ir import Const, Struct
+from pykit import ir
 from pykit import types as ptypes
+from pykit.codegen.llvm import llvm_types
 
 #===------------------------------------------------------------------===
 # Type Representation
@@ -76,7 +79,7 @@ def stack_allocate(type):
     Determine whether values of this type should be stack-allocated and partake
     directly as values under composition.
     """
-    return False
+    return _type_constructor(type.impl) in _typemap
 
 
 def build_struct_value(ty, value, seen=None):
@@ -93,4 +96,59 @@ def build_struct_value(ty, value, seen=None):
     values = [getattr(value, name) for name in names]
     values = [build_struct_value(ty, value, seen)
                   for ty, value in zip(types, values)]
-    return Struct(names, values)
+    if not values:
+        names =  ['dummy']
+        values = [ir.Const(0, ptypes.Int32)]
+
+    result = ir.Struct(names, values)
+    if not stack_allocate(ty):
+        result = ir.Pointer(result)
+    return result
+
+#===------------------------------------------------------------------===
+# Ctypes Type Representation
+#===------------------------------------------------------------------===
+
+def ctype(ty):
+    lltype = representation_type(ty)
+    llvm_type = llvm_types.llvm_type(lltype)
+    return llvm_types.ctype(llvm_type)
+
+def build_ctypes_representation(ty, value, seen=None, keepalive=None):
+    """
+    Build a constant ctypes struct value from the given runtime Python
+    user-defined object.
+    """
+    if seen is None:
+        seen = set()
+        keepalive = []
+
+    if id(value) in seen:
+        raise TypeError("Cannot use recursive value as a numba constant")
+
+    seen.add(id(value))
+
+    names, types = zip(*dict(ty.layout).items()) or [(), ()]
+    types = [typing.resolve_simple(ty, t) for t in types]
+    values = [getattr(value, name) for name in names]
+    values = [toctypes(value, t, seen, keepalive)
+                  for t, value in zip(types, values)]
+    if not values:
+        names =  ['dummy']
+        values = [ctypes.c_int32(0)]
+    ctypes_types = [type(v) for v in values]
+
+    class MyStruct(ctypes.Structure):
+        _fields_ = zip(names, ctypes_types)
+
+        def __repr__(self):
+            return "{ %s }" % (", ".join("%s:%s" % (name, getattr(self, name))
+                                             for name in names))
+
+    MyStruct.__name__ = 'CTypes' + type(ty).__name__
+
+    result = MyStruct(*values)
+    if not stack_allocate(ty):
+        keepalive.append(result)
+        result = ctypes.pointer(result)
+    return result, keepalive

@@ -13,6 +13,13 @@ from ..interfaces import Number, implements
 class Float(object):
     layout = [('x', 'Float[nbits]')]
 
+    @staticmethod
+    def toctypes(val, ty):
+        import ctypes
+        [nbits] = ty.parameters
+        ctype = {32: ctypes.c_float, 64: ctypes.c_double}[nbits]
+        return ctype(val)
+
 
 @typeof.case(float)
 def typeof(pyval):

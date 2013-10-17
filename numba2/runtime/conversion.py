@@ -29,6 +29,18 @@ def toobject(value, type):
         return cls.toobject(value, type)
     return value
 
+def toctypes(value, type, seen=None, keepalive=None):
+    """Return (ctypes_value, keep_alive)"""
+    if keepalive is None:
+        keepalive = []
+
+    cls = type.impl
+    if hasattr(cls, 'toctypes'):
+        return cls.toctypes(value, type)
+
+    from numba2.compiler.representation import build_ctypes_representation
+    value, _ = build_ctypes_representation(type, value, seen, keepalive)
+    return value
 
 def make_coercers(type):
     """
@@ -58,3 +70,5 @@ def make_coercers(type):
 #===------------------------------------------------------------------===
 # General Type Conversion
 #===------------------------------------------------------------------===
+
+# TODO:
