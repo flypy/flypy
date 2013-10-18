@@ -6,9 +6,8 @@ Preparation for codegen.
 
 from __future__ import print_function, division, absolute_import
 from functools import partial
-from collections import defaultdict
 
-from numba2 import types, typing, errors
+from numba2 import types, errors
 from numba2.compiler import representation
 
 from pykit.ir import FuncArg, Op, Const, Pointer, Struct
@@ -43,7 +42,7 @@ def resolve_type(context, op):
                 if isinstance(const, Struct) and not const.values:
                     const = Struct(['dummy'], [Const(0, ptypes.Int32)])
                 if ltype.is_pointer and not isinstance(const, Pointer):
-                    const = Pointer(const)
+                    const = Pointer(const, ltype)
                 op = Const(const, ltype)
             else:
                 op.type = ltype

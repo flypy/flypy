@@ -53,9 +53,8 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
             cty = cty._type_ # Get the base type
 
         # Resolve types
-        layout = dict(cls.layout)
+        layout = type.resolved_layout
         types = [layout[name] for name, _ in cty._fields_] or [int8]
-        types = [typing.resolve_simple(type, t) for t in types]
 
         # Resolve values
         values = [getattr(value, name) for name, _ in cty._fields_]
@@ -92,8 +91,7 @@ def ctype(type, memo=None):
         # -------------------------------------------------
         # Determine field ctypes
 
-        names, types = zip(*dict(type.layout).items()) or [(), ()]
-        types = [typing.resolve_simple(type, t) for t in types]
+        names, types = zip(*type.resolved_layout.items()) or [(), ()]
         types = [ctype(ty, memo) for ty in types]
         if not types:
             types = [ctypes.c_int32]

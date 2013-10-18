@@ -3,6 +3,8 @@ from __future__ import print_function, division, absolute_import
 import re
 import sys
 
+from pykit.utils import cached
+
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
                              coercion_cost as coerce, unify, unify_simple, free)
@@ -57,7 +59,7 @@ class MetaType(type):
 
     Attributes:
 
-        layout: [(str, Type)]
+        layout: {str: Type}
             Layout of the type
 
         fields: {str: FunctionWrapper}
@@ -91,6 +93,12 @@ class MetaType(type):
         type_constructor.fields = fields
         type_constructor.layout = layout
         type_constructor.bound = bound
+
+        @property
+        def resolved_layout(self):
+            return dict((n, resolve_simple(self, t)) for n, t in layout.items())
+
+        type_constructor.resolved_layout = resolved_layout
 
         modname = dct['__module__']
         module = sys.modules.get(modname)

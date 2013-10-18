@@ -426,8 +426,7 @@ def infer_node(cache, ctx, node):
                 func, self = value, type
                 result = Method(func, self)
             elif attr in type.layout:
-                result = type.layout[attr]
-                result = resolve_simple(type, result)
+                result = type.resolved_layout[attr]
             else:
                 raise InferError("Type %s has no attribute %s" % (type, attr))
 
