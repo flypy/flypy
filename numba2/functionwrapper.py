@@ -6,7 +6,9 @@ Numba function wrapper.
 
 from __future__ import print_function, division, absolute_import
 import types
+import ctypes
 from functools import partial
+from itertools import starmap
 
 from numba2.rules import typeof
 from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
@@ -33,17 +35,45 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
+        from numba2.runtime import toctypes, toobject
+
+        keepalive = [] # Keep this alive for the duration of the call
+
+        # Order arguments
         args = flatargs(self.dispatcher.f, args, kwargs)
         argtypes = [typeof(x) for x in args]
-        cfunc = self.translate(argtypes)
-        return cfunc(*args)
+
+        # Translate
+        cfunc, restype = self.translate(argtypes)
+
+        # Construct numba values
+        args = starmap(toobject, zip(args, argtypes))
+
+        # Map numba values to a ctypes representation
+        args = [toctypes(arg, argtype, keepalive)
+                    for arg, argtype in  zip(args, argtypes)]
+
+        # We need this cast since the ctypes function constructed from LLVM
+        # IR has different structs (which are structurally equivalent)
+        ctype = ctypes.CFUNCTYPE(cfunc._restype_, *[type(arg) for arg in args])
+        cfunc = ctypes.cast(cfunc, ctype)
+
+        # Execute
+        result = cfunc(*args)
+
+        # Map ctypes result back to a python value
+
+        # TODO: fromctypes
+        return toobject(result, restype)
+
 
     def translate(self, argtypes):
         from . import phase, environment
 
         key = tuple(argtypes)
         if key in self.ctypes_funcs:
-            return self.ctypes_funcs[key]
+            env = self.envs[key]
+            return self.ctypes_funcs[key], env["numba.typing.restype"]
 
         # Translate
         env = environment.fresh_env(self, argtypes)
@@ -55,7 +85,7 @@ class FunctionWrapper(object):
         self.ctypes_funcs[key] = cfunc
         self.envs[key] = env
 
-        return cfunc
+        return cfunc, env["numba.typing.restype"]
 
     @property
     def signatures(self):

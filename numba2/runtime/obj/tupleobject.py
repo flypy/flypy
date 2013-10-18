@@ -6,8 +6,7 @@ tuple implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, abstract, typeof, overload
-from ..interfaces import Number, implements
+from numba2 import jit, sjit, abstract, typeof
 from ..conversion import fromobject, toobject
 from .noneobject import NoneType
 
@@ -38,11 +37,11 @@ class GenericTuple(object):
     def __add__(self, other):
         return Tuple(self.items + other.items)
 
-@jit
+@sjit
 class EmptyTuple(object):
     layout = []
 
-@jit('StaticTuple[a, b]')
+@sjit('StaticTuple[a, b]')
 class StaticTuple(object):
     layout = [('hd', 'a'), ('tl', 'b')]
 

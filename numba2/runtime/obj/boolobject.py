@@ -5,11 +5,26 @@ bool implementation.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
 from numba2 import jit, typeof
 
 @jit
 class Bool(object):
     layout = [('x', 'Bool')]
+
+    @classmethod
+    def toctypes(cls, val, ty):
+        return cls.ctype(ty)(val)
+
+    @classmethod
+    def ctype(cls, ty):
+        return ctypes.c_bool
+
+    @classmethod
+    def toobject(cls, value, ty):
+        assert value in (0, 1, True, False), value
+        return bool(value)
+
 
 @typeof.case(bool)
 def typeof(pyval):

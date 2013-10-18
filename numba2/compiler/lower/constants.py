@@ -6,28 +6,16 @@ Handle constants.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.types import Bool, Int, Float
-from numba2.compiler import representation
+from numba2.runtime import fromobject, toctypes
 
-from pykit.ir import Const, Struct, Builder, collect_constants, substitute_args
-
-#===------------------------------------------------------------------===
-# Constant mapping
-#===------------------------------------------------------------------===
-
-def resolve_layout(ty, const):
-    py_class = type(ty).impl
-    if not is_builtin(py_class):
-        #assert isinstance(const.const, py_class), (const.const, str(ty))
-        value = representation.build_struct_value(ty, const.const)
-        const = Const(value, const.type)
-    return const
-
-is_builtin = lambda cls: cls in (Bool, Int, Float)
+from pykit.utils.ctypes import from_ctypes_value
+from pykit.ir import collect_constants, substitute_args
 
 #===------------------------------------------------------------------===
-# Pass
+# Constant rewriting
 #===------------------------------------------------------------------===
+
+_keep_alive = []
 
 def rewrite_constants(func, env):
     """
@@ -44,9 +32,15 @@ def rewrite_constants(func, env):
         new_constants = []
         for c in constants:
             ty = context[c]
-            c = resolve_layout(ty, c)
 
-            context[c] = ty
-            new_constants.append(c)
+            # Python -> Numba (if not already)
+            numba_obj = fromobject(c.const, ty)
+            # Numba -> ctypes
+            ctype_obj = toctypes(numba_obj, ty, _keep_alive)
+            # ctypes -> pykit
+            new_const = from_ctypes_value(ctype_obj)
+
+            context[new_const] = ty
+            new_constants.append(new_const)
 
         substitute_args(op, constants, new_constants)

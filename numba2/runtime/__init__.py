@@ -7,4 +7,4 @@ from . import special
 from . import primitives
 from . import obj
 from .type import Type
-from .conversion import toobject, fromobject
+from .conversion import toobject, fromobject, toctypes, ctype
