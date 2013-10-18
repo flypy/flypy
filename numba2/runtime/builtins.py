@@ -8,6 +8,7 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
+from .obj.rangeobject import Range
 from .obj.listobject import List
 from .type import Type
 
@@ -62,14 +63,6 @@ def print(value, sep=' ', end='\n'):
 
 Py_ssize_t = 'int32' # TODO:
 
-@jit
-def len_range(start, stop, step):
-    if step < 0:
-        start, stop, step = stop, start, -step
-    if stop <= start:
-        return 0
-    return (stop - start - 1) // step + 1
-
 @ijit
 def range(start, stop=0xdeadbeef, step=1):
     # TODO: We need to either optimize variants, or recognize that
@@ -80,34 +73,6 @@ def range(start, stop=0xdeadbeef, step=1):
         start = 0
 
     return Range(start, stop, step)
-
-@jit
-class Range(Sequence):
-
-    layout = [('start', Py_ssize_t), ('stop', Py_ssize_t), ('step', Py_ssize_t)]
-
-    @ijit
-    def __iter__(self):
-        return RangeIterator(self.start, self.step, len(self))
-
-    @ijit
-    def __len__(self):
-        return len_range(self.start, self.stop, self.step)
-
-
-@jit
-class RangeIterator(Iterator):
-
-    layout = [('start', Py_ssize_t), ('step', Py_ssize_t), ('length', Py_ssize_t)]
-
-    @ijit
-    def __next__(self):
-        if self.length > 0:
-            result = self.start
-            self.start += self.step
-            self.length -= 1
-            return result
-        raise StopIteration
 
 # ____________________________________________________________
 

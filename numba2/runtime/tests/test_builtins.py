@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from numba2 import jit
-from numba2.runtime.builtins import len_range
+from numba2.runtime.obj.rangeobject import len_range
 
 class TestBuiltins(unittest.TestCase):
 
