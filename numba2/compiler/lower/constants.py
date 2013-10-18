@@ -28,6 +28,8 @@ def rewrite_constants(func, env):
     context = env['numba.typing.context']
 
     for op in func.ops:
+        if op.opcode == 'exc_catch':
+            continue
         constants = collect_constants(op)
         new_constants = []
         for c in constants:

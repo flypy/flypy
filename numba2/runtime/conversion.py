@@ -34,23 +34,43 @@ def toobject(value, type):
     return value
 
 
-def toctypes(value, type, keepalive, memo=None):
+def toctypes(value, type, keepalive, valmemo=None, typememo=None):
     """Return (ctypes_value, keep_alive)"""
-    if memo is None:
-        memo = {}
+    from numba2.types import int8
+
+    if valmemo is None:
+        valmemo = {}
+        typememo = {}
+    if id(value) in valmemo:
+        return valmemo[id(value)]
 
     cls = type.impl
     if hasattr(cls, 'toctypes'):
-        return cls.toctypes(value, type)
-    elif stack_allocate(type):
-        cty = ctype(type, memo)
-        return cty(*[getattr(value, name) for name, _ in cty._fields_])
+        result = cls.toctypes(value, type)
     else:
-        cty = ctype(type, memo)
-        cty = cty._type_
-        result = cty(*[getattr(value, name) for name, _ in cty._fields_])
-        keepalive.append(result)
-        return ctypes.pointer(result)
+        cty = ctype(type, typememo)
+        if not stack_allocate(type):
+            cty = cty._type_ # Get the base type
+
+        # Resolve types
+        layout = dict(cls.layout)
+        types = [layout[name] for name, _ in cty._fields_] or [int8]
+        types = [typing.resolve_simple(type, t) for t in types]
+
+        # Resolve values
+        values = [getattr(value, name) for name, _ in cty._fields_]
+        values = [toctypes(v, t, keepalive, valmemo, typememo)
+                      for v, t in zip(values, types)]
+
+        # Construct value from ctypes struct
+        result = cty(*values)
+
+        if not stack_allocate(type):
+            keepalive.append(result)
+            result = ctypes.pointer(result)
+
+    valmemo[id(value)] = result
+    return result
 
 
 def ctype(type, memo=None):

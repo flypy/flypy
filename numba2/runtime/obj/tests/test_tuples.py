@@ -44,7 +44,8 @@ class TestSmallTuple(unittest.TestCase):
         "ctypes"
         ty = typeof((1, 2, 3))
         obj = fromobject((1, 2, 3), ty)
-        rep = toctypes(obj, ty)
+        keepalive = []
+        rep = toctypes(obj, ty, keepalive)
 
         # print(rep) -> { tl:{ tl:{ tl:{ dummy:0 }, hd:3 }, hd:2 }, hd:1 }
         self.assertEqual(rep.hd, 1)

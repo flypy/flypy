@@ -104,7 +104,6 @@ def run(func, env):
     argtypes = env['numba.typing.argtypes']
     ctx, signature = infer(cache, func, env, argtypes)
 
-    env["numba.typing.restype"] = signature.restype
     env['numba.typing.signature'] = signature
     env['numba.typing.context'] = ctx.context
     env['numba.typing.constraints'] = ctx.constraints
@@ -140,7 +139,10 @@ def infer(cache, func, env, argtypes):
     # Cache result
 
     typeset = ctx.context['return']
-    restype = reduce(promote, typeset)
+    if typeset:
+        restype = reduce(promote, typeset)
+    else:
+        restype = void
 
     signature = Function[argtypes + (restype,)]
     cache.typings[func, argtypes] = ctx, signature

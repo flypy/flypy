@@ -110,9 +110,10 @@ def resolve_restype(func, env):
     """Figure out the return type and update the context and environment"""
     context = env['numba.typing.context']
     restype = env['numba.typing.restype']
+    signature = env['numba.typing.signature']
 
     typeset = context['return']
-    inferred_restype = reduce(promote, typeset)
+    inferred_restype = signature.restype
 
     if restype is None:
         restype = inferred_restype
