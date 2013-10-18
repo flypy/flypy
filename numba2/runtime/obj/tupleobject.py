@@ -10,7 +10,7 @@ from numba2 import jit, sjit, abstract, typeof
 from ..conversion import fromobject, toobject
 from .noneobject import NoneType
 
-#T = TypeVar()
+STATIC_THRESHOLD = 5
 
 @abstract
 class Tuple(object):
@@ -122,7 +122,7 @@ class StaticTuple(object):
 @typeof.case(tuple)
 def typeof(pyval):
     valtypes = tuple(map(typeof, pyval))
-    if len(pyval) <= 4:
+    if len(pyval) < STATIC_THRESHOLD:
         result = NoneType[()]
         for ty in reversed(valtypes):
             result = StaticTuple[ty, result]

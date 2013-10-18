@@ -16,6 +16,7 @@ import operator
 import collections
 
 from numba2.errors import error_context, CompileError, EmptyStackError
+from numba2.runtime.obj import tupleobject
 from .bytecode import ByteCode
 
 from pykit.ir import Function, Builder, Op, Const, Value, ops
@@ -36,6 +37,8 @@ COMPARE_OP_FUNC = {
     'is': operator.is_,
     'exception match': isinstance,
 }
+
+const = lambda val: Const(val, types.Opaque)
 
 class Translate(object):
     """
@@ -251,8 +254,8 @@ class Translate(object):
 
     def call(self, func, args=()):
         if not isinstance(func, Value):
-            func = Const(func, types.Opaque)
-        self.push_insert('call', func, list(args))
+            func = const(func)
+        return self.push_insert('call', func, list(args))
 
     def binary_op(self, op):
         rhs = self.pop()
@@ -425,11 +428,19 @@ class Translate(object):
     def op_BUILD_TUPLE(self, inst):
         count = inst.arg
         items = [self.pop() for _ in range(count)]
-        ordered = [i for i in reversed(items)]
-        # if all(it.opcode == 'const' for it in ordered):   # create const tuple
-        #     self.push_insert('const', tuple(i.value for i in ordered))
-        # else:
-        self.push_insert('new_tuple', ordered)
+        ordered = list(reversed(items))
+        if all(isinstance(item, Const) for item in ordered):
+            # create constant tuple
+             self.push(const(tuple(item.const for item in ordered)))
+        elif len(ordered) == 0:
+            self.call(tupleobject.EmptyTuple)
+        elif len(ordered) < tupleobject.STATIC_THRESHOLD:
+            # Build static tuple
+            result = const(None)
+            for item in items:
+                result = self.call(tupleobject.StaticTuple, args=(item, result))
+        else:
+            raise NotImplementedError("Generic tuples")
 
     def op_LOAD_ATTR(self, inst):
         attr = self.names[inst.arg]
@@ -441,21 +452,21 @@ class Translate(object):
         if name not in self.globals:
             raise NameError("Could not resolve %r at compile time" % name)
         value = self.globals[name]
-        self.push(Const(value, types.Opaque))
+        self.push(const(value))
 
     def op_LOAD_DEREF(self, inst):
         i = inst.arg
         cell = self.func.__closure__[i]
         value = cell.cell_contents
-        self.push(Const(value, types.Opaque))
+        self.push(const(value))
 
     def op_LOAD_FAST(self, inst):
         name = self.varnames[inst.arg]
         self.push_insert('load', self.allocas[name])
 
     def op_LOAD_CONST(self, inst):
-        const = self.consts[inst.arg]
-        self.push(Const(const, types.Opaque))
+        val = self.consts[inst.arg]
+        self.push(const(val))
 
     def op_STORE_FAST(self, inst):
         value = self.pop()

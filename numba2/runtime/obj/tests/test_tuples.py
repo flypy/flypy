@@ -53,6 +53,16 @@ class TestSmallTuple(unittest.TestCase):
         self.assertEqual(rep.tl.tl.hd, 3)
 
 
+class TestJitTuple(unittest.TestCase):
+
+    def test_jit_smalltup(self):
+        @jit
+        def f(a, b):
+            t = (a, b)
+            return t[1]
+
+        self.assertEqual(f(5, 6), 6)
+
 if __name__ == '__main__':
     #TestSmallTuple('test_representation').debug()
     unittest.main()
