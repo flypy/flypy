@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from numba2 import jit, int32
+from numba2 import jit, sjit, int32
 
 #===------------------------------------------------------------------===
 # Test code
@@ -33,6 +33,10 @@ def call_special(x):
 def call_method(x):
     return C(x).method(C(2))
 
+@jit
+def return_obj(x):
+    return C(x)
+
 #===------------------------------------------------------------------===
 # Tests
 #===------------------------------------------------------------------===
@@ -44,6 +48,14 @@ class TestClasses(unittest.TestCase):
 
     def test_methods(self):
         self.assertEqual(call_method(5), 10)
+
+    def test_return_obj(self):
+        # TODO: Heap types: allocation, returning
+        # TODO: stack allocated types: return by value, pass by pointer,
+        # validate immutability in typechecker
+        obj = return_obj(10)
+        self.assertIsInstance(obj, C)
+        self.assertEqual(obj.x, 10)
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()
