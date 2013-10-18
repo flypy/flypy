@@ -5,10 +5,11 @@ Type resolution and method resolution.
 """
 
 from __future__ import print_function, division, absolute_import
+import inspect
 
 from numba2.environment import fresh_env
 from numba2.typing import resolve
-from numba2 import promote, unify, is_numba_type
+from numba2 import promote, unify, unify_constraints, free, is_numba_type
 from numba2.functionwrapper import FunctionWrapper
 from numba2.runtime.type import Type
 from numba2.compiler.overloading import flatargs
@@ -26,7 +27,7 @@ from pykit.utils import nestedmap
 def is_method(t):
     return type(t).__name__ == 'Method' # hargh
 
-def infer_call(func, func_type, arg_types):
+def infer_call(func, func_type, argtypes):
     """
     Infer a single call. We have three cases:
 
@@ -47,7 +48,7 @@ def infer_call(func, func_type, arg_types):
 
         if is_method(func_type):
             func = func_type.parameters[0]
-            arg_types = [func_type.parameters[1]] + list(arg_types)
+            argtypes = [func_type.parameters[1]] + list(argtypes)
         else:
             func = func.const
 
@@ -55,9 +56,9 @@ def infer_call(func, func_type, arg_types):
         # TODO: Support recursion !
 
         if len(func.overloads) == 1 and not func.opaque:
-            arg_types = fill_missing_argtypes(func.py_func, tuple(arg_types))
+            argtypes = fill_missing_argtypes(func.py_func, tuple(argtypes))
 
-        env = fresh_env(func, arg_types)
+        env = fresh_env(func, argtypes)
         func, env = phase.typing(func, env)
         return func, env["numba.typing.restype"]
 
@@ -65,12 +66,13 @@ def infer_call(func, func_type, arg_types):
         # -------------------------------------------------
         # Constructor application
 
-        restype = func_type.parameters[0]
+        classtype = func_type.parameters[0] # extract T from Type[T]
+        freevars = classtype.parameters
+        argtypes = [classtype] + list(argtypes)
+        if freevars:
+            classtype = infer_constructor_application(classtype, argtypes)
 
-        # TODO: Instantiate restype with parameter types
-        nargs = restype.parameters
-
-        return func, restype
+        return func, classtype
 
     elif not isinstance(func, Function):
         # -------------------------------------------------
@@ -82,6 +84,47 @@ def infer_call(func, func_type, arg_types):
 
     else:
         raise NotImplementedError(func, func_type)
+
+def infer_constructor_application(classtype, argtypes):
+    """
+    Resolve the free type variables of a constructor given the argument types
+    we instantiate the class with.
+
+    This means we need to match up argument types with variables from the
+    class layout. In the most general case this means we need to fixpoint
+    infer all methods called from the constructor.
+
+    For now, we do the dumb thing: Match up argument names with variable names
+    from the layout.
+    """
+    # Figure out the list of argtypes
+    cls = classtype.impl
+    init = cls.__init__.py_func
+    argtypes = fill_missing_argtypes(init, tuple(argtypes))
+
+    # Determine __init__ argnames
+    argspec = inspect.getargspec(init)
+    assert not argspec.varargs
+    assert not argspec.keywords
+    argnames = argspec.args
+    assert len(argtypes) == len(argnames)
+
+    # Build constraint list for unification
+    constraints = [(argtype, classtype.resolved_layout[argname])
+                       for argtype, argname in zip(argtypes, argnames)
+                           if argname in cls.layout]
+    # Add the constructor type with itself, this will flow in resolved variables
+    # from the arguments
+    constraints.append((classtype, classtype))
+    result, remaining = unify_constraints(constraints)
+
+    result_type = result[-1]
+    if free(result_type):
+        raise TypeError(
+            "Result classtype stil has free variables: %s" % (result_type,))
+
+    return result_type
+
 
 def get_remaining_args(func, args):
     newargs = flatargs(func, args, {})
