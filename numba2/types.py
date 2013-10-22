@@ -21,7 +21,8 @@ from blaze import dshape
 from blaze.datashape import free, TypeVar, TypeConstructor
 from blaze.datashape import Mono as Mono
 from .runtime import Type
-from .runtime.obj import Function, Pointer, Bool, Int, Float, Void, NoneType
+from .runtime.obj import (Function, Pointer, Bool, Int, Float, Void, NoneType,
+                          Tuple, StaticTuple)
 
 #===------------------------------------------------------------------===
 # Units

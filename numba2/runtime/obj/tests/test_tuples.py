@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from numba2 import jit, typeof, int32
+from numba2 import jit, typeof, int32, float64
 #from numba2.compiler.representation import build_ctypes_representation
 from numba2.runtime.obj.tupleobject import StaticTuple, NoneType
 from numba2.runtime.conversion import fromobject, toobject, toctypes
@@ -17,9 +17,12 @@ class TestSmallTuple(unittest.TestCase):
         self.assertEqual(typeof((10, 20)),
                          StaticTuple[int32, StaticTuple[int32, NoneType[()]]])
 
-    #def test_typeof_constant(self):
-    #    t = StaticTuple(10, none)
-    #    self.assertEqual(typeof(t), StaticTuple[int32, NoneType[()]])
+    def test_typeof_constant(self):
+        t = StaticTuple(10, none)
+        self.assertEqual(typeof(t), StaticTuple[int32, NoneType[()]])
+        t2 = StaticTuple(2.0, t)
+        self.assertEqual(typeof(t2), StaticTuple[float64, StaticTuple[int32, NoneType[()]]])
+
 
     def test_py_obj(self):
         "Test py impl"
@@ -64,5 +67,4 @@ class TestJitTuple(unittest.TestCase):
         self.assertEqual(f(5, 6), 6)
 
 if __name__ == '__main__':
-    #TestSmallTuple('test_representation').debug()
     unittest.main()

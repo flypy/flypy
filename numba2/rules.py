@@ -10,6 +10,7 @@ User-defined typing rules:
 
 from __future__ import print_function, division, absolute_import
 from . import pyoverload
+from numba2.typing import unify, free
 
 #===------------------------------------------------------------------===
 # User-defined typing rules
@@ -23,9 +24,56 @@ def typeof(pyval):
     if is_numba_type(pyval):
         return Type[pyval.type]
     elif is_numba_type(type(pyval)):
-        return pyval.type
+        return infer_constant(pyval)
 
     raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
+
+
+def infer_constant(value):
+    """
+    Infer the type of a user-defined type instance.
+
+    E.g. Foo(10) -> Foo[int32]
+    """
+    if not is_numba_type(type(value)):
+        return typeof(value)
+
+    classtype = type(value).type
+
+    if not classtype.parameters:
+        return classtype
+
+    concrete_layout = {}
+    for argname in classtype.resolved_layout:
+        concrete_layout[argname] = infer_constant(getattr(value, argname))
+    return infer_type_from_layout(classtype, concrete_layout.items())
+
+
+def infer_type_from_layout(classtype, concrete_layout):
+    """
+    Infer class type from concrete layout.
+
+    E.g. Foo[x, y], [('x', 'int32'), ('y', 'float32')] => Foo[int32, float32]
+    """
+    cls = classtype.impl
+    argnames, argtypes = zip(*concrete_layout)
+
+    # Build constraint list for unification
+    constraints = [(argtype, classtype.resolved_layout[argname])
+                       for argtype, argname in zip(argtypes, argnames)
+                           if argname in cls.layout]
+    # Add the constructor type with itself, this will flow in resolved variables
+    # from the arguments
+    constraints.append((classtype, classtype))
+    result, remaining = unify(constraints)
+
+    result_type = result[-1]
+    if free(result_type):
+        raise TypeError(
+            "Result classtype stil has free variables: %s" % (result_type,))
+
+    return result_type
+
 
 #@overload('ν -> Type[τ] -> τ')
 def convert(value, type):
@@ -39,7 +87,6 @@ def promote(type1, type2):
         return type1
     else:
         raise TypeError("Cannot promote %s and %s" % (type1, type2))
-
 
 def is_numba_type(x):
     return getattr(x, '_is_numba_class', False)

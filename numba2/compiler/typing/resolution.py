@@ -8,15 +8,13 @@ from __future__ import print_function, division, absolute_import
 import inspect
 
 from numba2.environment import fresh_env
-from numba2.typing import resolve
-from numba2 import promote, unify, unify_constraints, free, is_numba_type
+from numba2 import promote, unify
 from numba2.functionwrapper import FunctionWrapper
 from numba2.runtime.type import Type
 from numba2.compiler.overloading import flatargs
+from numba2.rules import infer_type_from_layout
 
-from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function, GlobalValue
-from pykit.utils import nestedmap
+from pykit.ir import Const, Function
 
 #===------------------------------------------------------------------===
 # Function call typing
@@ -109,21 +107,7 @@ def infer_constructor_application(classtype, argtypes):
     argnames = argspec.args
     assert len(argtypes) == len(argnames)
 
-    # Build constraint list for unification
-    constraints = [(argtype, classtype.resolved_layout[argname])
-                       for argtype, argname in zip(argtypes, argnames)
-                           if argname in cls.layout]
-    # Add the constructor type with itself, this will flow in resolved variables
-    # from the arguments
-    constraints.append((classtype, classtype))
-    result, remaining = unify_constraints(constraints)
-
-    result_type = result[-1]
-    if free(result_type):
-        raise TypeError(
-            "Result classtype stil has free variables: %s" % (result_type,))
-
-    return result_type
+    return infer_type_from_layout(classtype, zip(argnames, argtypes))
 
 
 def get_remaining_args(func, args):
