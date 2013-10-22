@@ -13,7 +13,7 @@ from .rules import typeof, convert, promote, is_numba_type
 from .types import (Mono, int8, int16, int32, int64,
                     uint8, uint16, uint32, uint64,
                     float32, float64)
-from .runtime import toobject, fromobject
+from .runtime import toobject, fromobject, specialize_value
 from .runtime.interfaces.interface import implements
 from .runtime.special import sizeof
 

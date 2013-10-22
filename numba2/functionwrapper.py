@@ -121,7 +121,10 @@ def wrap(py_func, signature, inline=False, **kwds):
     dispatcher = overload(signature, func=func, inline=inline, **kwds)(py_func)
 
     if isinstance(py_func, types.FunctionType):
-        return FunctionWrapper(dispatcher, py_func, **kwds)
+        abstract = kwds.pop('abstract')
+        opaque = kwds.pop('opaque')
+        return FunctionWrapper(dispatcher, py_func,
+                               abstract=abstract, opaque=opaque)
     else:
         assert isinstance(py_func, FunctionWrapper), py_func
         return py_func
