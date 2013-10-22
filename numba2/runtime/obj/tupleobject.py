@@ -37,11 +37,8 @@ class GenericTuple(object):
     def __add__(self, other):
         return Tuple(self.items + other.items)
 
-@sjit
-class EmptyTuple(object):
-    layout = []
 
-@sjit('StaticTuple[a, b]')
+@jit('StaticTuple[a, b]')
 class StaticTuple(object):
     layout = [('hd', 'a'), ('tl', 'b')]
 
@@ -90,6 +87,10 @@ class StaticTuple(object):
     def __eq__(self, other):
         return self.hd == other.hd and self.tl == other.tl
 
+    @jit('a -> str')
+    def __repr__(self):
+        return '(%s)' % ", ".join(map(str, self))
+
     def element_type(self):
         if self.hd is None:
             raise TypeError("Cannot compute element type of empty tuple!")
@@ -106,7 +107,7 @@ class StaticTuple(object):
         if tuple[1:]:
             tl = fromobject(tuple[1:], tail)
         else:
-            tl = None
+            tl = EmptyTuple()
 
         return StaticTuple(hd, tl)
 
@@ -114,16 +115,36 @@ class StaticTuple(object):
     def toobject(value, type):
         head, tail = type.parameters
         hd = toobject(value.hd, head)
-        if value.tl is None:
+        if isinstance(value.tl, EmptyTuple):
             return (hd,)
         return (hd,) + toobject(value.tl, tail)
 
+
+@jit
+class EmptyTuple(object):
+    layout = []
+
+    @jit
+    def __getitem__(self, item):
+        raise IndexError
+
+    @jit
+    def __iter__(self):
+        return self
+
+    @jit
+    def next(self):
+        raise StopIteration
+
+    @jit
+    def __eq__(self, other):
+        return isinstance(other, EmptyTuple)
 
 @typeof.case(tuple)
 def typeof(pyval):
     valtypes = tuple(map(typeof, pyval))
     if len(pyval) < STATIC_THRESHOLD:
-        result = NoneType[()]
+        result = EmptyTuple[()]
         for ty in reversed(valtypes):
             result = StaticTuple[ty, result]
         return result

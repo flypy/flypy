@@ -432,11 +432,9 @@ class Translate(object):
         if all(isinstance(item, Const) for item in ordered):
             # create constant tuple
              self.push(const(tuple(item.const for item in ordered)))
-        elif len(ordered) == 0:
-            self.call(tupleobject.EmptyTuple)
         elif len(ordered) < tupleobject.STATIC_THRESHOLD:
             # Build static tuple
-            result = const(None)
+            result = self.call(tupleobject.EmptyTuple)
             for item in items:
                 result = self.call(tupleobject.StaticTuple, args=(item, result))
         else:
