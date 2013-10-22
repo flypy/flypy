@@ -29,8 +29,13 @@ def is_(a, b):
 # Overlays
 #===------------------------------------------------------------------===
 
+@jit
+def getitem(obj, idx):
+    return obj.__getitem__(idx)
+
 # We overlay operator.is_ with our own implementation. This works not only
 # when operator.is_ is used in user-code, but frontend/translation.py itself
 # turns 'is' operations into operator.is_ calls
 
 overlay(operator.is_, is_)
+overlay(operator.getitem, getitem)
