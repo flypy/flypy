@@ -20,7 +20,6 @@ from .runtime.special import sizeof
 from .passes import translate
 from .errors import error, InferError, SpecializeError
 
-
 __version__ = '0.1'
 
 # ______________________________________________________________________

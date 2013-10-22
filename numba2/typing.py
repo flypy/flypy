@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 import re
 import sys
 
-from pykit.utils import cached
+from pykit.utils import hashable
 
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
@@ -249,6 +249,8 @@ class OverlayRegistry(object):
         self.overlays[pyfunc] = numbafunc
 
     def lookup_overlay(self, pyfunc):
+        if not hashable(pyfunc):
+            return None
         return self.overlays.get(pyfunc)
 
 

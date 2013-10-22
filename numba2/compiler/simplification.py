@@ -12,6 +12,7 @@ from numba2.compiler.special import lookup_special
 
 from pykit import types
 from pykit.ir import Const, Op, collect_constants, substitute_args
+from pykit.utils import hashable
 
 #===------------------------------------------------------------------===
 # Simplifiers
@@ -32,6 +33,9 @@ def rewrite_ops(func, env=None):
         if op.opcode == 'call' and isinstance(op.args[0], Const):
             f, args = op.args
             f = f.const
+            if not hashable(f):
+                continue
+
             try:
                 methname = lookup_special(f)
             except KeyError:
