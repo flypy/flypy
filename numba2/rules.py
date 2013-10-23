@@ -12,8 +12,8 @@ from __future__ import print_function, division, absolute_import
 from . import pyoverload
 from numba2.typing import unify, free
 
-from pykit.utils.ctypes import (is_ctypes_value, is_ctypes_function,
-                                from_ctypes_type, from_ctypes_value)
+#from pykit.utils.ctypes import (is_ctypes_value, is_ctypes_function,
+#                                from_ctypes_type, from_ctypes_value)
 
 #===------------------------------------------------------------------===
 # User-defined typing rules
@@ -23,16 +23,20 @@ from pykit.utils.ctypes import (is_ctypes_value, is_ctypes_function,
 def typeof(pyval):
     """Python value -> Type"""
     from .runtime.type import Type
+    from numba2 import cffi_support
 
     if is_numba_type(pyval):
         return Type[pyval.type]
     elif is_numba_type(type(pyval)):
         return infer_constant(pyval)
-    elif is_ctypes_value(pyval) and is_ctypes_function(pyval):
-        funcptr = from_ctypes_value(pyval) # pykit.ir.value.Pointer
-        return funcptr.type
-    elif is_ctypes_value(pyval):
-        return from_ctypes_type(type(pyval))
+    elif cffi_support.is_cffi(pyval):
+        cffi_type = cffi_support.ffi.typeof(pyval)
+        return cffi_support.map_type(cffi_type)
+    #elif is_ctypes_value(pyval) and is_ctypes_function(pyval):
+    #    funcptr = from_ctypes_value(pyval) # pykit.ir.value.Pointer
+    #    return funcptr.type
+    #elif is_ctypes_value(pyval):
+    #    return from_ctypes_type(type(pyval))
 
     raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
 

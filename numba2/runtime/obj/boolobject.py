@@ -10,7 +10,7 @@ from numba2 import jit, typeof
 
 @jit
 class Bool(object):
-    layout = [('x', 'Bool')]
+    layout = []
 
     @classmethod
     def toctypes(cls, val, ty):

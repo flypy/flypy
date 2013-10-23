@@ -33,7 +33,7 @@ def allocate_type_constructor(cls, signature):
 
 def parse_constructor(signature):
     """Parse a type pass to @jit on a class"""
-    from numba2.types import Mono, TypeVar
+    from numba2.types import Mono, TypeVar, EllipsisT
 
     if isinstance(signature, basestring):
         t = parse(signature)
@@ -51,7 +51,7 @@ def parse_constructor(signature):
         params = t.parameters
 
     for i, param in enumerate(params):
-        if not isinstance(param, TypeVar):
+        if not isinstance(param, (TypeVar, EllipsisT)):
             raise TypeError(
                 "Parameter %s is not a type variable! Got %s." % (i, param))
 

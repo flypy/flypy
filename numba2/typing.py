@@ -23,6 +23,7 @@ def typemap():
 
     _blaze2numba = {
         ds.void    : types.void,
+        ds.char    : types.char,
         ds.bool_   : types.bool_,
         ds.int32   : types.int32,
         ds.int64   : types.int64,
