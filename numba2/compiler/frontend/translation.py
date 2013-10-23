@@ -481,7 +481,7 @@ class Translate(object):
         tos0 = self.pop()
         tos1 = self.pop()
         tos2 = self.pop()
-        self.insert('setitem', tos1, tos0, tos2)
+        self.call(operator.setitem, (tos1, tos0, tos2))
         self.pop()
 
     def op_UNPACK_SEQUENCE(self, inst):

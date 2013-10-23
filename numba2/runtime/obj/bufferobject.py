@@ -7,7 +7,7 @@ Buffer objects.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit, typeof
-from .listobject import List
+from . import Pointer
 
 @jit('Buffer[base]')
 class Buffer(object):

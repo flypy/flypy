@@ -35,7 +35,12 @@ def toobject(value, type):
 
 
 def toctypes(value, type, keepalive, valmemo=None, typememo=None):
-    """Return (ctypes_value, keep_alive)"""
+    """
+    Convert a numba object given as a Python value to a low-level ctypes
+    representation.
+
+    Returns (ctypes_value, keep_alive)
+    """
     from numba2.types import int8
 
     if valmemo is None:
@@ -73,6 +78,10 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
 
 
 def ctype(type, memo=None):
+    """
+    Return the low-level ctypes type representation for a numba type instance.
+    """
+
     # -------------------------------------------------
     # Setup cache
 

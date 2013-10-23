@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial
 
 from numba2 import types, errors
-from numba2.compiler import representation
+from numba2 import representation
 
 from pykit.ir import FuncArg, Op, Const, Pointer, Struct
 from pykit import types as ptypes

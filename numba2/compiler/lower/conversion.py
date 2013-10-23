@@ -11,6 +11,9 @@ def convert_retval(func, env):
     """
     Rewrite 'return x' to 'return (restype) x'
     """
+    if env['numba.state.opaque']:
+        return
+
     restype = func.type.restype
     context = env['numba.typing.context']
 

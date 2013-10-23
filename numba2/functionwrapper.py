@@ -35,7 +35,7 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
-        from numba2.runtime import toctypes, toobject
+        from numba2.runtime import toctypes, fromobject, toobject
 
         keepalive = [] # Keep this alive for the duration of the call
 
@@ -47,7 +47,7 @@ class FunctionWrapper(object):
         cfunc, restype = self.translate(argtypes)
 
         # Construct numba values
-        args = starmap(toobject, zip(args, argtypes))
+        args = starmap(fromobject, zip(args, argtypes))
 
         # Map numba values to a ctypes representation
         args = [toctypes(arg, argtype, keepalive)

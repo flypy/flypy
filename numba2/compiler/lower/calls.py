@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from ..typing.resolution import infer_call, is_method, get_remaining_args
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const
+from pykit.ir import OpBuilder, Builder, Const, Function
 
 #===------------------------------------------------------------------===
 # Call rewrites
@@ -65,6 +65,9 @@ def rewrite_optional_args(func, env):
 
             # Retrieve function and environment
             f, args = op.args
+            if not isinstance(f, Function):
+                continue
+
             f_env = envs[f]
 
             # Retrieve Python version and opaqueness

@@ -7,6 +7,7 @@ from .intobject import Int
 from .floatobject import Float
 from .tupleobject import Tuple, StaticTuple, GenericTuple
 from .listobject import List
+from .stringobject import String
 from .noneobject import NoneType, NoneValue
-from .dummy import Void, Function
+from .dummy import Void, Function, ForeignFunction
 from . import exceptions

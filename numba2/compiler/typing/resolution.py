@@ -10,7 +10,7 @@ import inspect
 from numba2.environment import fresh_env
 from numba2 import promote, unify
 from numba2.functionwrapper import FunctionWrapper
-from numba2.runtime.type import Type
+from numba2.types import Type, ForeignFunction
 from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
@@ -76,7 +76,10 @@ def infer_call(func, func_type, argtypes):
         # -------------------------------------------------
         # Higher-order function
 
-        restype = func_type.restype
+        if isinstance(func_type, type(ForeignFunction.type)):
+            restype = func_type.parameters[0]
+        else:
+            restype = func_type.restype
         assert restype
         return func, restype
 

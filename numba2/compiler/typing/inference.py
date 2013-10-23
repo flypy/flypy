@@ -449,7 +449,7 @@ def infer_node(cache, ctx, node):
                     _, result = infer_call(func, func_type, arg_types)
                     if isinstance(result, TypeVar):
                         raise TypeError("Expected a concrete type result, "
-                                        "not a type variable!")
+                                        "not a type variable! (%s)" % (func,))
                     changed |= result not in typeset
                     typeset.add(result)
 
