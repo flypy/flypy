@@ -32,10 +32,11 @@ class Type(object):
     def ctype(cls, ty):
         return ctypes.POINTER(ctypes.c_int)
 
+
 @jit('Constructor[a]')
 class Constructor(object):
-    layout = []
+    layout = [('ctor', 'a')]
 
-    @jit #('Constructor[a] -> Type[b] -> a[b]')
+    @jit('Constructor[a] -> Type[b] -> Type[a[b]]', opaque=True)
     def __getitem__(self, item):
-        return Type(item)
+        return self.ctor[item]

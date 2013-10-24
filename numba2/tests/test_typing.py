@@ -93,20 +93,41 @@ def match(x):
     return 3
 
 @jit
-def type_indexing():
+def type_as_value():
     return match(int32)
+
+# ______________________________________________________________________
+
+@jit('P[a]')
+class P(object):
+    layout = []
+
+@jit('Type[P[int32]] -> int32')
+def indexed(type):
+    return 4
+
+@jit
+def type_indexing():
+    return indexed(P[int32])
+
+# ______________________________________________________________________
 
 #@jit
 #def type_return():
 #    return Float[int32]
 
+# ______________________________________________________________________
+
 class TestTyping(unittest.TestCase):
 
+    def test_type_as_value(self):
+        self.assertEqual(type_as_value(), 2)
+
     def test_type_indexing(self):
-        self.assertEqual(type_indexing(), 2)
+        self.assertEqual(type_indexing(), 4)
 
 
 if __name__ == '__main__':
     #TestTyping('test_typevar_resolution').debug()
-    #print(type_return())
-    unittest.main()
+    type_indexing()
+    #unittest.main()

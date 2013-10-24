@@ -162,7 +162,7 @@ def lookup_builtin_type(name):
 
     return builtin_scope.get(name)
 
-def resolve_in_scope(t, scope):
+def resolve_in_scope(ty, scope):
     """
     Resolve a parsed type in the current scope. For example, if we parse
     Foo[X], look up Foo in the current scope and reconstruct it with X.
@@ -178,6 +178,10 @@ def resolve_in_scope(t, scope):
                 impl = scope.get(name) or lookup_builtin_type(name)
 
             if impl is None:
+                if name in freevars:
+                    # `a[b]` where `a` is a variable type constructor
+                    return freevars[name]
+
                 raise TypeError(
                     "Type constructor %r is not in the current scope" % (name,))
 
@@ -199,7 +203,8 @@ def resolve_in_scope(t, scope):
 
         return t
 
-    return ds.tmap(resolve, t)
+    freevars = dict((v.symbol, v) for v in free(ty))
+    return ds.tmap(resolve, ty)
 
 def substitute(solution, t):
     """
