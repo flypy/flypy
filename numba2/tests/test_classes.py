@@ -37,6 +37,18 @@ def call_method(x):
 def return_obj(x):
     return C(x)
 
+@jit('Parameterized[a]')
+class Parameterized(object):
+    layout = [('x', 'a')]
+
+    @jit
+    def __init__(self, x):
+        self.x = x
+
+@jit
+def call_parameterized(x):
+    return Parameterized(x).x
+
 #===------------------------------------------------------------------===
 # Tests
 #===------------------------------------------------------------------===
@@ -56,6 +68,13 @@ class TestClasses(unittest.TestCase):
         obj = return_obj(10)
         self.assertIsInstance(obj, C)
         self.assertEqual(obj.x, 10)
+
+
+class TestParameterized(unittest.TestCase):
+
+    def test_parameterized(self):
+        self.assertEqual(call_parameterized(2.0), 2.0)
+
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()
