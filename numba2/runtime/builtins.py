@@ -8,9 +8,7 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
-from .obj.rangeobject import Range
-from .obj.listobject import List
-from .type import Type
+from .obj import Range, List, Type
 
 # ____________________________________________________________
 

@@ -112,9 +112,9 @@ def type_indexing():
 
 # ______________________________________________________________________
 
-#@jit
-#def type_return():
-#    return Float[int32]
+@jit
+def type_return():
+    return int32
 
 # ______________________________________________________________________
 
@@ -123,11 +123,13 @@ class TestTyping(unittest.TestCase):
     def test_type_as_value(self):
         self.assertEqual(type_as_value(), 2)
 
+    def test_type_as_value_return(self):
+        self.assertEqual(type_return(), int32)
+
     def test_type_indexing(self):
         self.assertEqual(type_indexing(), 4)
 
 
 if __name__ == '__main__':
     #TestTyping('test_typevar_resolution').debug()
-    type_indexing()
-    #unittest.main()
+    unittest.main()

@@ -19,7 +19,7 @@ from numba2.typing import unify, free
 @pyoverload
 def typeof(pyval):
     """Python value -> Type"""
-    from .runtime.type import Type, Constructor
+    from .runtime.obj import Type, Constructor
     from numba2 import cffi_support, ctypes_support, types
 
     if is_numba_type(pyval):

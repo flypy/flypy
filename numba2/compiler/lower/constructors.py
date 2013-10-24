@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from numba2.environment import fresh_env
 from numba2 import is_numba_type, typing
-from numba2.runtime.type import Type
+from numba2.runtime.obj import Type
 
 from pykit import types as ptypes
 from pykit.ir import Builder, OpBuilder, Const

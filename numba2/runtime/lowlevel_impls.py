@@ -10,9 +10,12 @@ import string
 from numba2 import representation
 from numba2.compiler import opaque
 from .interfaces.numbers import Number
-from .obj import Pointer
+from .obj import Pointer, Constructor, Type
 
 from pykit import ir, types as ptypes
+from pykit.utils.ctypes import from_ctypes_type
+
+lltype = representation.representation_type
 
 def add_impl(opaque_func, name, implementation, restype=None, restype_func=None):
     def impl(py_func, argtypes):
@@ -90,10 +93,20 @@ def pointer_store(builder, argtypes, ptr, value):
 
 def _getitem_type(argtypes):
     base = argtypes[0].parameters[0]
-    return representation.representation_type(base)
+    return lltype(base)
 
 # Implement
 
 add_impl_cls(Pointer, "__add__", pointer_add)
 add_impl_cls(Pointer, "deref", pointer_load, restype_func=_getitem_type)
 add_impl_cls(Pointer, "store", pointer_store, restype=ptypes.Void)
+
+#===------------------------------------------------------------------===
+# Type
+#===------------------------------------------------------------------===
+
+def firstarg(builder, argtypes, *args):
+    builder.ret(args[0])
+
+add_impl_cls(Constructor, "__getitem__", firstarg,
+             restype_func=lambda argtypes: lltype(argtypes[1]))

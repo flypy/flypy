@@ -6,6 +6,6 @@ from . import builtins
 from . import special
 from . import primitives
 from . import obj
-from .type import Type, Constructor
+from .obj import Type, Constructor
 from .conversion import toobject, fromobject, toctypes, ctype
 from .classes import dummy_layout

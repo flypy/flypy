@@ -5,7 +5,7 @@ Exception model.
 """
 
 from numba2.runtime.obj.exceptions import Exception
-from numba2.runtime.type import Type
+from numba2.runtime.obj import Type
 
 from pykit.ir import interp, Const
 

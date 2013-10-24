@@ -14,11 +14,14 @@ import exceptions
 
 from numba2 import overlay, typeof, jit
 
+__all__ = []
+
 #===------------------------------------------------------------------===
 # Decorator
 #===------------------------------------------------------------------===
 
 def ejit(exc_cls):
+    __all__.append(exc_cls.__name__)
     py_cls = getattr(exceptions, exc_cls.__name__)
     exc_cls.layout = []
     exc_cls = jit(exc_cls)
