@@ -443,7 +443,11 @@ class Translate(object):
     def op_LOAD_ATTR(self, inst):
         attr = self.names[inst.arg]
         obj = self.pop()
-        self.push_insert('getfield', obj, attr)
+        if isinstance(obj, Const):
+            val = getattr(obj.const, attr)
+            self.push(const(val))
+        else:
+            self.push_insert('getfield', obj, attr)
 
     def op_LOAD_GLOBAL(self, inst):
         name = self.names[inst.arg]
