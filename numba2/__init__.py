@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 from os.path import dirname, abspath
+import sys
 import unittest
 
 from pykit.utils.pattern import match as pyoverload
@@ -31,7 +32,7 @@ pattern = "test_*.py"
 def test(root=root, pattern=pattern):
     """Run tests and return exit status"""
     tests =  unittest.TestLoader().discover(root, pattern=pattern)
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=1 + ('-v' in sys.argv))
     result = runner.run(tests)
     return not result.wasSuccessful()
 
