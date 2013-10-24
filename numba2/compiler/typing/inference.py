@@ -30,7 +30,7 @@ from pprint import pprint
 import collections
 from itertools import product
 
-from numba2 import promote, typeof, parse
+from numba2 import promote, typeof, parse, typejoin
 from numba2.errors import InferError
 from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar
@@ -140,7 +140,7 @@ def infer(cache, func, env, argtypes):
 
     typeset = ctx.context['return']
     if typeset:
-        restype = reduce(promote, typeset)
+        restype = reduce(typejoin, typeset)
     else:
         restype = void
 

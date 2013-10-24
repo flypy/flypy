@@ -87,18 +87,35 @@ def infer_type_from_layout(classtype, concrete_layout):
     return result_type
 
 
-#@overload('ν -> Type[τ] -> τ')
 def convert(value, type):
     """Convert a value of type 'a' to the given type"""
     return value
 
-#@overload('Type[α] -> Type[β] -> Type[γ]')
+
 def promote(type1, type2):
     """Promote two types to a common type"""
     if type1 == type2:
         return type1
     else:
         raise TypeError("Cannot promote %s and %s" % (type1, type2))
+
+
+def typejoin(type1, type2):
+    """
+    Join two types to a type encompassing both. We promote them, join them to
+    common supertype or use a variant.
+    """
+    from .types import void
+
+    if type1 == type2:
+        return type1
+    elif type1 == void:
+        return type2
+    elif type2 == void:
+        return type1
+    else:
+        return promote(type1, type2)
+
 
 def is_numba_type(x):
     return getattr(x, '_is_numba_class', False)

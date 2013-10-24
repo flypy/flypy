@@ -10,7 +10,7 @@ from .entrypoints import jit, ijit, sjit, abstract
 from .compiler import (annotate, overload, overloadable)
 from .typing import (overlay, parse, unify_simple as unify,
                      unify as unify_constraints, free)
-from .rules import typeof, convert, promote, is_numba_type
+from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import (Mono, int8, int16, int32, int64,
                     uint8, uint16, uint32, uint64,
                     float32, float64)

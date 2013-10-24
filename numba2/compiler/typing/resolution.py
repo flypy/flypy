@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 import inspect
 
 from numba2.environment import fresh_env
-from numba2 import promote, unify
+from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
 from numba2.types import Type, ForeignFunction
 from numba2.compiler.overloading import flatargs
@@ -133,7 +133,7 @@ def resolve_context(func, env):
     for op, typeset in context.iteritems():
         if typeset:
             typeset = context[op]
-            ty = reduce(promote, typeset)
+            ty = reduce(typejoin, typeset)
             context[op] = ty
 
 def resolve_restype(func, env):
