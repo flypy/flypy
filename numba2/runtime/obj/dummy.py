@@ -23,6 +23,8 @@ class Function(object):
         return ctypes.POINTER(ctypes.CFUNCTYPE(restype, *argtypes))
 
 
+
+
 @jit('ForeignFunction[restype, ...]')
 class ForeignFunction(object):
     layout = [('p', 'Pointer[a]')]
@@ -43,15 +45,7 @@ class ForeignFunction(object):
 
     @staticmethod
     def toctypes(value, type):
-        from numba2.cffi_support import is_cffi, ffi
-
         value = value.p
-
-        #if is_cffi(value):
-        #    value = ffi.addressof(value)
-        #else:
-        #    value = ctypes.pointer(value)
-
         return Pointer.toctypes(Pointer(value), Pointer[type])
 
 @jit

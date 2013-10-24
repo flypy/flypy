@@ -67,12 +67,16 @@ class Pointer(object):
 
 def make_ctypes_ptr(ptr, type):
     from numba2.cffi_support import is_cffi, ffi
+    from numba2.ctypes_support import is_ctypes_pointer_type
+
+    cty = ctype(type)
 
     if is_cffi(ptr):
         addr = ffi.cast('uintptr_t', ptr)
-        cty = ctype(type)
         ctypes_ptr = ctypes.c_void_p(int(addr))
         ptr = ctypes.cast(ctypes_ptr, cty)
+    else:
+        ptr = ctypes.cast(ptr, cty)
 
     return ptr
 

@@ -40,7 +40,7 @@ class TestCFFI(unittest.TestCase):
         def f(value):
             return cos(value)
 
-        f(math.pi)
+        self.assertEqual(f(math.pi), -1.0)
 
 # ______________________________________________________________________
 
