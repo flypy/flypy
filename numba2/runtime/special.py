@@ -24,7 +24,7 @@ def typeof(obj):
 # ______________________________________________________________________
 # Implementations
 
-def implement_sizeof(builder, obj):
+def implement_sizeof(builder, argtypes, obj):
     return builder.ret(builder.sizeof(ptypes.Int64, obj))
 
 add_impl(sizeof, "sizeof", implement_sizeof, ptypes.Int64)

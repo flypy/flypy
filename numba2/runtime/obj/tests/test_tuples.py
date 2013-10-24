@@ -7,6 +7,7 @@ from numba2 import jit, typeof, int32, float64
 #from numba2.compiler.representation import build_ctypes_representation
 from numba2.runtime.obj.tupleobject import StaticTuple, EmptyTuple, NoneType
 from numba2.runtime.conversion import fromobject, toobject, toctypes
+from numba2.tests.support import CTypesStruct
 
 none = NoneType()
 
@@ -40,7 +41,6 @@ class TestSmallTuple(unittest.TestCase):
     def test_fromobject(self):
         "object -> tuple"
         obj = tonb((1, 2, 3))
-        print(obj)
         self.assertEqual(StaticTuple(1, StaticTuple(2, StaticTuple(3, EmptyTuple()))), obj)
 
     def test_toobject(self):
@@ -53,6 +53,7 @@ class TestSmallTuple(unittest.TestCase):
         obj = fromobject((1, 2, 3), ty)
         keepalive = []
         rep = toctypes(obj, ty, keepalive)
+        rep = CTypesStruct(rep)
 
         # print(rep) -> { tl:{ tl:{ tl:{ dummy:0 }, hd:3 }, hd:2 }, hd:1 }
         self.assertEqual(rep.hd, 1)
