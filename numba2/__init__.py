@@ -11,10 +11,8 @@ from .compiler import (annotate, overload, overloadable)
 from .typing import (overlay, parse, unify_simple as unify,
                      unify as unify_constraints, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
-from .types import (Mono, int8, int16, int32, int64,
-                    uint8, uint16, uint32, uint64,
-                    float32, float64)
-from .runtime import toobject, fromobject
+from .types import *
+from .runtime import toobject, fromobject, dummy_layout
 from .runtime.interfaces.interface import implements
 from .runtime.special import sizeof
 

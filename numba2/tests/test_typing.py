@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from numba2 import jit
+from numba2 import jit, int32, Type
 from numba2.typing import resolve
 
 def _resolve(t, bound):
@@ -31,6 +31,9 @@ class Float(object):
     def method(self):
         return Int(2)
 
+#===------------------------------------------------------------------===
+# Python tests
+#===------------------------------------------------------------------===
 
 class TestTyping(unittest.TestCase):
 
@@ -77,7 +80,33 @@ class TestTyping(unittest.TestCase):
         self.assertIsInstance(x, type(int32))
         self.assertEqual(int32, x)
 
+#===------------------------------------------------------------------===
+# jitted tests
+#===------------------------------------------------------------------===
+
+@jit('Type[int32] -> int32')
+def match(x):
+    return 2
+
+@jit('Type[float32] -> int32')
+def match(x):
+    return 3
+
+@jit
+def type_indexing():
+    return match(int32)
+
+#@jit
+#def type_return():
+#    return Float[int32]
+
+class TestTyping(unittest.TestCase):
+
+    def test_type_indexing(self):
+        self.assertEqual(type_indexing(), 2)
+
 
 if __name__ == '__main__':
     #TestTyping('test_typevar_resolution').debug()
+    #print(type_return())
     unittest.main()

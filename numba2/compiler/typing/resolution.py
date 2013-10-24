@@ -11,7 +11,7 @@ from blaze.error import UnificationError
 from numba2.environment import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
-from numba2.types import Type, ForeignFunction
+from numba2.types import Type, Constructor, ForeignFunction
 from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
@@ -39,7 +39,7 @@ def infer_call(func, func_type, argtypes):
 
     is_const = isinstance(func, Const)
     is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
-    is_class = isinstance(func_type, type(Type.type))
+    is_class = isinstance(func_type, (type(Type.type), type(Constructor.type)))
 
     if is_method(func_type) or is_numba_func:
         # -------------------------------------------------
