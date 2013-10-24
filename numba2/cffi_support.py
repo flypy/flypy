@@ -76,6 +76,7 @@ if ffi is None:
     type_map = None
 else:
     type_map = {
+        ffi.typeof('void') :                void,
         ffi.typeof('char') :                char,
         ffi.typeof('short') :               short,
         ffi.typeof('int') :                 int_,

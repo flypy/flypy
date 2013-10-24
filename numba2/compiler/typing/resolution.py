@@ -6,6 +6,7 @@ Type resolution and method resolution.
 
 from __future__ import print_function, division, absolute_import
 import inspect
+from blaze.error import UnificationError
 
 from numba2.environment import fresh_env
 from numba2 import promote, unify, typejoin
@@ -77,7 +78,7 @@ def infer_call(func, func_type, argtypes):
         # Higher-order function
 
         if isinstance(func_type, type(ForeignFunction.type)):
-            restype = func_type.parameters[0]
+            restype = func_type.parameters[-1]
         else:
             restype = func_type.restype
         assert restype
@@ -148,6 +149,11 @@ def resolve_restype(func, env):
     if restype is None:
         restype = inferred_restype
     elif inferred_restype != restype:
-        restype = unify(inferred_restype, restype)
+        try:
+            restype = unify(inferred_restype, restype)
+        except UnificationError, e:
+            raise TypeError(
+                "Annotated result type %s does not match inferred "
+                "type %s: %s" % (restype, inferred_restype, e))
 
     env['numba.typing.restype'] = restype

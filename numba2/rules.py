@@ -20,10 +20,12 @@ from numba2.typing import unify, free
 def typeof(pyval):
     """Python value -> Type"""
     from .runtime.type import Type
-    from numba2 import cffi_support, ctypes_support
+    from numba2 import cffi_support, ctypes_support, types
 
     if is_numba_type(pyval):
         return Type[pyval.type]
+    elif isinstance(pyval, types.Mono):
+        return Type[pyval]
     elif is_numba_type(type(pyval)):
         return infer_constant(pyval)
     elif cffi_support.is_cffi(pyval):

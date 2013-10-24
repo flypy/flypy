@@ -8,6 +8,7 @@ from pykit.utils import hashable
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
                              coercion_cost as coerce, unify, unify_simple, free)
+from blaze.error import UnificationError
 
 #===------------------------------------------------------------------===
 # Parsing
