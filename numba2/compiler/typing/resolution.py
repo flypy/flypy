@@ -35,57 +35,64 @@ def infer_call(func, func_type, argtypes):
             This is already typed
         3) Method. We need to insert 'self' in the cartesian product
     """
-    from numba2 import phase
-
     is_const = isinstance(func, Const)
     is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
     is_class = isinstance(func_type, (type(Type.type), type(Constructor.type)))
 
     if is_method(func_type) or is_numba_func:
-        # -------------------------------------------------
-        # Method call or numba function call
-
-        if is_method(func_type):
-            func = func_type.parameters[0]
-            argtypes = [func_type.parameters[1]] + list(argtypes)
-        else:
-            func = func.const
-
-        # Translate # to untyped IR and infer types
-        # TODO: Support recursion !
-
-        if len(func.overloads) == 1 and not func.opaque:
-            argtypes = fill_missing_argtypes(func.py_func, tuple(argtypes))
-
-        env = fresh_env(func, argtypes)
-        func, env = phase.typing(func, env)
-        return func, env["numba.typing.restype"]
-
+        return infer_function_call(func, func_type, argtypes)
     elif is_class:
-        # -------------------------------------------------
-        # Constructor application
-
-        classtype = func_type.parameters[0] # extract T from Type[T]
-        freevars = classtype.parameters
-        argtypes = [classtype] + list(argtypes)
-        if freevars:
-            classtype = infer_constructor_application(classtype, argtypes)
-
-        return func, classtype
-
+        return infer_class_call(func, func_type, argtypes)
     elif not isinstance(func, Function):
-        # -------------------------------------------------
-        # Higher-order function
-
-        if isinstance(func_type, type(ForeignFunction.type)):
-            restype = func_type.parameters[-1]
-        else:
-            restype = func_type.restype
-        assert restype
-        return func, restype
-
+        return infer_foreign_call(func, func_type, argtypes)
     else:
         raise NotImplementedError(func, func_type)
+
+def infer_function_call(func, func_type, argtypes):
+    """
+    Method call or numba function call.
+    """
+    from numba2 import phase
+
+    if is_method(func_type):
+        func = func_type.parameters[0]
+        argtypes = [func_type.parameters[1]] + list(argtypes)
+    else:
+        func = func.const
+
+    # TODO: Support recursion !
+
+    if len(func.overloads) == 1 and not func.opaque:
+        argtypes = fill_missing_argtypes(func.py_func, tuple(argtypes))
+
+    env = fresh_env(func, argtypes)
+    func, env = phase.typing(func, env)
+    return func, env["numba.typing.restype"]
+
+def infer_class_call(func, func_type, argtypes):
+    """
+    Constructor application.
+    """
+    classtype = func_type.parameters[0] # extract T from Type[T]
+    freevars = classtype.parameters
+    argtypes = [classtype] + list(argtypes)
+    if freevars:
+        classtype = infer_constructor_application(classtype, argtypes)
+
+    return func, classtype
+
+def infer_foreign_call(func, func_type, argtypes):
+    """
+    Higher-order or foreign function call.
+    """
+
+    if isinstance(func_type, type(ForeignFunction.type)):
+        restype = func_type.parameters[-1]
+    else:
+        restype = func_type.restype
+    assert restype
+    return func, restype
+
 
 def infer_constructor_application(classtype, argtypes):
     """

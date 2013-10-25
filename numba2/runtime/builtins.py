@@ -9,6 +9,8 @@ except ImportError:
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
 from .obj import Range, List, Type
+from .casting import cast
+from numba2.types import int32, float64
 
 # ____________________________________________________________
 
@@ -57,6 +59,16 @@ def print(value, sep=' ', end='\n'):
 
 # ____________________________________________________________
 
+@jit('a : numeric -> int32')
+def int(x):
+    return cast(x, int32)
+
+@jit('a : numeric -> float64')
+def float(x):
+    return cast(x, float64)
+
+# ____________________________________________________________
+
 # TODO: Implement generator fusion
 
 Py_ssize_t = 'int32' # TODO:
@@ -94,5 +106,7 @@ overlay(builtins.len, len)
 overlay(builtins.str, str)
 overlay(builtins.repr, repr)
 overlay(builtins.unicode, unicode)
+overlay(builtins.int, int)
+overlay(builtins.float, float)
 overlay(builtins.range, range)
 overlay(builtins.list, list)

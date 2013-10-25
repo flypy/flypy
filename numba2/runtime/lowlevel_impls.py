@@ -18,6 +18,12 @@ from pykit.utils.ctypes import from_ctypes_type
 lltype = representation.representation_type
 
 def add_impl(opaque_func, name, implementation, restype=None, restype_func=None):
+    """
+    Assign an implementation to an `opaque` function.
+
+    Sets up a pykit function and calls `implementation` to produce the
+    function body.
+    """
     def impl(py_func, argtypes):
         # TODO: do this better
         from numba2.compiler.backend.lltyping import ll_type
