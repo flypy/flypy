@@ -14,7 +14,7 @@ from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
 from .runtime import toobject, fromobject, dummy_layout, cast
 from .runtime.interfaces.interface import implements
-from .runtime.special import sizeof
+from .runtime.ffi import sizeof, malloc
 from .runtime import builtins as bltins
 
 from .passes import translate

@@ -25,6 +25,9 @@ def rewrite_constants(func, env):
         e.g. constant(None)  -> constant(NoneValue)
              constant("foo") -> constant(Bytes("foo"))
     """
+    if env['numba.state.opaque']:
+        return
+
     context = env['numba.typing.context']
 
     for op in func.ops:
