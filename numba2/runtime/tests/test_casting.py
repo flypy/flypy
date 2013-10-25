@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
+import ctypes
 import unittest
-from numba2 import jit, int32, float64, cast
+
+from numba2 import jit, int32, float64, cast, Pointer
 
 class TestCasting(unittest.TestCase):
 
@@ -21,13 +23,24 @@ class TestCasting(unittest.TestCase):
 
         self.assertEqual(f(2.0), 2)
 
-
     def test_builtin_float_cast(self):
         @jit
         def f(x):
             return float(x)
 
         self.assertEqual(f(2), 2.0)
+
+    def test_pointer_cast(self):
+        @jit
+        def f(x, dst_type):
+            return cast(x, dst_type)
+
+        p = ctypes.pointer(ctypes.c_double(5.0))
+        p = ctypes.cast(p, ctypes.c_void_p)
+        newp = f(p, Pointer[float64])
+
+        self.assertEqual(p.value, ctypes.cast(newp, ctypes.c_void_p).value)
+        self.assertEqual(newp[0], 5.0)
 
 
 if __name__ == '__main__':

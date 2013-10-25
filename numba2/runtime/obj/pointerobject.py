@@ -51,10 +51,6 @@ class Pointer(object):
     def fromobject(ptr, type):
         return Pointer(make_ctypes_ptr(ptr, type))
 
-    @staticmethod
-    def toobject(obj, type):
-        return obj.ptr
-
     @classmethod
     def toctypes(cls, val, ty):
         return make_ctypes_ptr(val.p, ty)
