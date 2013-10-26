@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import math
 import unittest
 
-from numba2 import jit, types, int32, float64, Type
+from numba2 import jit, types, int32, float64, Type, cast
 from numba2.runtime import ffi
 
 # ______________________________________________________________________
@@ -12,11 +12,9 @@ from numba2.runtime import ffi
 class TestFFI(unittest.TestCase):
 
     def test_malloc(self):
-        raise unittest.SkipTest
-
         @jit
         def f():
-            p = ffi.malloc(2, types.int32)
+            p = ffi.malloc(cast(2, types.int64), types.int32)
             p[0] = 4
             p[1] = 5
             return p
