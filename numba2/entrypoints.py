@@ -40,11 +40,11 @@ def _jit(f, *args, **kwds):
         return jit_func(f, *args, **kwds)
 
 
-def jit_func(f, signature=None, abstract=False, opaque=False, inline=False):
+def jit_func(f, signature=None, **kwds):
     """
     @jit('a -> List[a] -> List[a]')
     """
-    return wrap(f, signature, abstract=abstract, opaque=opaque, inline=inline)
+    return wrap(f, signature, **kwds)
 
 
 def jit_class(cls, signature=None, abstract=False, stackallocate=False):

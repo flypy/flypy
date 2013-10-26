@@ -104,7 +104,7 @@ class FunctionWrapper(object):
         return self
 
 
-def wrap(py_func, signature, inline=False, **kwds):
+def wrap(py_func, signature, inline=False, opaque=False, abstract=False, **kwds):
     """
     Wrap a function in a FunctionWrapper. Take care of overloading.
     """
@@ -121,7 +121,8 @@ def wrap(py_func, signature, inline=False, **kwds):
     dispatcher = overload(signature, func=func, inline=inline, **kwds)(py_func)
 
     if isinstance(py_func, types.FunctionType):
-        return FunctionWrapper(dispatcher, py_func, **kwds)
+        return FunctionWrapper(dispatcher, py_func,
+                               opaque=opaque, abstract=abstract)
     else:
         assert isinstance(py_func, FunctionWrapper), py_func
         return py_func

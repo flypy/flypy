@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from numba2 import jit, int32, Type
+from numba2 import jit, int32, Type, Constructor, Pointer
 from numba2.typing import resolve
 
 def _resolve(t, bound):
@@ -110,6 +110,14 @@ def indexed(type):
 def type_indexing():
     return indexed(P[int32])
 
+@jit #('Constructor[a] -> Type[a[int32]]') # This is not expressible at the type level yet!
+def type_indexing2(type):
+    return type[int32]
+
+@jit('Type[a] -> Type[Pointer[a]]')
+def type_indexing3(type):
+    return Pointer[type]
+
 # ______________________________________________________________________
 
 @jit
@@ -128,6 +136,8 @@ class TestTyping(unittest.TestCase):
 
     def test_type_indexing(self):
         self.assertEqual(type_indexing(), 4)
+        self.assertEqual(type_indexing2(Pointer), Pointer[int32])
+        self.assertEqual(type_indexing3(int32), Pointer[int32])
 
 
 if __name__ == '__main__':

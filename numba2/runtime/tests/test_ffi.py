@@ -12,6 +12,8 @@ from numba2.runtime import ffi
 class TestFFI(unittest.TestCase):
 
     def test_malloc(self):
+        raise unittest.SkipTest
+
         @jit
         def f():
             p = ffi.malloc(2, types.int32)

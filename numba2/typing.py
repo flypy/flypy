@@ -178,10 +178,6 @@ def resolve_in_scope(ty, scope):
                 impl = scope.get(name) or lookup_builtin_type(name)
 
             if impl is None:
-                if name in freevars:
-                    # `a[b]` where `a` is a variable type constructor
-                    return freevars[name]
-
                 raise TypeError(
                     "Type constructor %r is not in the current scope" % (name,))
 

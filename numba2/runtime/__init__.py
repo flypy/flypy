@@ -7,5 +7,4 @@ from . import primitives
 from . import obj
 from .obj import *
 from .conversion import toobject, fromobject, toctypes, ctype
-from .classes import dummy_layout
 from .casting import cast

@@ -86,6 +86,9 @@ def setup_phase(func, env):
     env["numba.state.copies"] = {}
     env["numba.state.phase"] = "setup"
 
+    if kwds.get("infer_restype"):
+        env["numba.typing.restype"] = kwds["infer_restype"](argtypes)
+
     return py_func, env
 
 @cached('numba.frontend')
