@@ -12,7 +12,7 @@ from .typing import (overlay, parse, unify_simple as unify,
                      unify as unify_constraints, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
-from .runtime import toobject, fromobject, cast
+from .runtime import toobject, fromobject, cast, NULL
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc
 from .runtime import builtins as bltins

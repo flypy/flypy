@@ -7,8 +7,13 @@ Pointer implementation.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-from ... import jit, typeof
-from numba2.runtime.conversion import ctype
+import numba2
+from numba2 import jit
+from ..conversion import ctype
+
+#===------------------------------------------------------------------===
+# Pointer
+#===------------------------------------------------------------------===
 
 @jit('Pointer[a]')
 class Pointer(object):
@@ -30,6 +35,20 @@ class Pointer(object):
     @jit('Pointer[a] -> a -> void', opaque=True)
     def store(self, value):
         self.p[0] = value
+
+    # __________________________________________________________________
+
+    @jit('a -> Pointer[b] -> bool')
+    def __eq__(self, other):
+        val1 = numba2.cast(self, numba2.int64)
+        val2 = numba2.cast(other, numba2.int64)
+        return val1 == val2
+
+    @jit('a -> NULL -> bool')
+    def __eq__(self, other):
+        val1 = numba2.cast(self, numba2.int64)
+        val2 = numba2.cast(0, numba2.int64)
+        return val1 == val2
 
     # __________________________________________________________________
 
@@ -60,6 +79,9 @@ class Pointer(object):
         [base] = ty.parameters
         return ctypes.POINTER(ctype(base))
 
+#===------------------------------------------------------------------===
+# Utils
+#===------------------------------------------------------------------===
 
 def make_ctypes_ptr(ptr, type):
     from numba2.cffi_support import is_cffi, ffi
@@ -76,8 +98,3 @@ def make_ctypes_ptr(ptr, type):
 
     return ptr
 
-
-# TODO: ...
-# @typeof.case(ctypes.c_long)
-# def typeof(pyval):
-#     return Int[32]

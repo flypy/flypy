@@ -12,6 +12,10 @@ from blaze.datashape import Function as FunctionType
 from ..conversion import ctype
 from .pointerobject import Pointer
 
+#===------------------------------------------------------------------===
+# Functions
+#===------------------------------------------------------------------===
+
 @jit(FunctionType())
 class Function(object):
     layout = []
@@ -21,8 +25,6 @@ class Function(object):
         restype = ctype(ty.restype)
         argtypes = [ctype(argtype) for argtype in ty.argtypes]
         return ctypes.POINTER(ctypes.CFUNCTYPE(restype, *argtypes))
-
-
 
 
 @jit('ForeignFunction[restype, ...]')
@@ -48,6 +50,10 @@ class ForeignFunction(object):
         value = value.p
         return Pointer.toctypes(Pointer(value), Pointer[type])
 
+#===------------------------------------------------------------------===
+# Void
+#===------------------------------------------------------------------===
+
 @jit
 class Void(object):
     layout = []
@@ -55,3 +61,23 @@ class Void(object):
     @classmethod
     def ctype(cls, ty):
         return None # Sigh, ctypes
+
+#===------------------------------------------------------------------===
+# NULL
+#===------------------------------------------------------------------===
+
+void = Void[()]
+_NULL = ctypes.c_void_p(0)
+
+@jit
+class NULL(object):
+    layout = []
+
+    @jit('a -> Pointer[b] -> bool')
+    def __eq__(self, other):
+        p = cast(other, Pointer[void])
+        return p == _NULL
+
+    #@jit('a -> b -> bool')
+    #def __eq__(self, other):
+    #    return False

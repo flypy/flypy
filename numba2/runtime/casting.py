@@ -38,6 +38,10 @@ def cast(x, type):
 def cast(x, type):
     return py_cast(x, type) # pure python
 
+@jit('Pointer[a] -> Type[int64] -> int64', opaque=True)
+def cast(x, type):
+    return py_cast(x, type) # pure python
+
 #===------------------------------------------------------------------===
 # Low-level implementation
 #===------------------------------------------------------------------===
@@ -46,7 +50,7 @@ def convert(builder, argtypes, value, type):
     valtype, typetype = argtypes # e.g. `int, Type[double]`
     type = typetype.parameters[0]
 
-    if type.impl == Pointer:
+    if type.impl == Pointer or (type.impl == Int and valtype.impl == Pointer):
         result = builder.ptrcast(lltype(type), value)
     else:
         result = builder.convert(lltype(type), value)

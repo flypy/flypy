@@ -11,5 +11,5 @@ from .stringobject import String
 from .rangeobject import Range
 from .noneobject import NoneType, NoneValue
 from .typeobject import Type, Constructor
-from .dummy import Void, Function, ForeignFunction
+from .dummy import Void, Function, ForeignFunction, NULL
 from .exceptions import *
