@@ -50,6 +50,16 @@ class TestTranslation(unittest.TestCase):
 
         self.assertEqual(f(5), 17)
 
+    def test_call(self):
+        @jit('int64 -> int64')
+        def g(x):
+            return x * 2
+
+        @jit('int32 -> a')
+        def f(x):
+            return g(x) + 2
+
+        self.assertEqual(f(3), 8)
 
 if __name__ == '__main__':
     #TestTranslation('test_call').debug()

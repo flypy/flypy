@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 from ..typing.resolution import infer_call, is_method, get_remaining_args
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function
+from pykit.ir import OpBuilder, Builder, Const, Function, Op
 
 #===------------------------------------------------------------------===
 # Call rewrites
@@ -83,9 +83,65 @@ def rewrite_optional_args(func, env):
 
 
 def allocate_const(func, env, op, value, type):
-    # TODO: Move this elsewhere
-    # TODO: Handle complex values (non-pykit constants)
     const = Const(value, types.Opaque)
     context = env['numba.typing.context']
     context[const] = type
     return const
+
+#------------------------------------------------------------------------
+# Coercions -> Conversions
+#------------------------------------------------------------------------
+
+def explicit_coercions(func, env):
+    """
+    Turn implicit coercions into explicit conversion operations.
+    """
+    context = env["numba.typing.context"]
+    envs = env["numba.state.envs"]
+
+    # Conversion cache, { (Op, dsttype) : convert Op }. A single value may
+    # otherwise be converted multiple times in different contexts
+    conversions = {}
+    b = Builder(func)
+
+    for op in func.ops:
+        if op.opcode != 'call':
+            continue
+
+        # -------------------------------------------------
+
+        f, args = op.args
+        # TODO: Signatures should always be in the context !
+        if f in context:
+            argtypes = context[f].parameters[:-1]
+        else:
+            argtypes = envs[f]["numba.typing.argtypes"]
+        replacements = {} # { arg : replacement_conversion }
+
+        # -------------------------------------------------
+
+        for arg, param_type in zip(args, argtypes):
+            isconst = isinstance(arg, Const)
+            arg_type = context[arg]
+
+            if arg_type != param_type:
+                # Argument type does not match parameter type, convert
+                conversion = conversions.get((arg, param_type))
+                if not conversion:
+                    # Create conversion and update typing context with new Op
+                    conversion = Op('convert', types.Opaque, [arg])
+                    context[conversion] = param_type
+
+                    if isconst:
+                        b.position_before(op)
+                    else:
+                        b.position_after(arg)
+                        conversions[arg, param_type] = conversion
+
+                    b.emit(conversion)
+
+                replacements[arg] = conversion
+
+        # -------------------------------------------------
+
+        op.replace_args(replacements)
