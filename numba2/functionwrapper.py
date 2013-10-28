@@ -104,11 +104,11 @@ class FunctionWrapper(object):
         return self
 
 
-def wrap(py_func, signature, inline=False, opaque=False, abstract=False, **kwds):
+def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False, **kwds):
     """
     Wrap a function in a FunctionWrapper. Take care of overloading.
     """
-    func = lookup_previous(py_func)
+    func = lookup_previous(py_func, [scope])
 
     if isinstance(func, FunctionWrapper):
         func = func.dispatcher

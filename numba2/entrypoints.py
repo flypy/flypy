@@ -5,6 +5,7 @@ Entry points for runtime code.
 """
 
 from __future__ import print_function, division, absolute_import
+import sys
 import types
 from functools import partial
 
@@ -12,7 +13,6 @@ from .functionwrapper import wrap
 from .typing import MetaType
 from .utils import applyable_decorator
 
-@applyable_decorator
 def jit(f, *args, **kwds):
     """
     @jit entry point:
@@ -29,7 +29,13 @@ def jit(f, *args, **kwds):
         @jit('Foo[a]')
         class Foo(object): pass
     """
-    return _jit(f, *args, **kwds)
+    kwds['scope'] = kwds.pop('scope', sys._getframe(1).f_locals)
+
+    if isinstance(f, (type, types.FunctionType, types.ClassType)):
+        return _jit(f, *args, **kwds)
+
+    arg = f
+    return lambda f: _jit(f, arg, *args, **kwds)
 
 
 def _jit(f, *args, **kwds):
@@ -44,10 +50,12 @@ def jit_func(f, signature=None, **kwds):
     """
     @jit('a -> List[a] -> List[a]')
     """
+    if 'scope' not in kwds:
+        kwds['scope'] = {} # TODO: retrieve scope for @ijit, @abstract, etc
     return wrap(f, signature, **kwds)
 
 
-def jit_class(cls, signature=None, abstract=False, stackallocate=False):
+def jit_class(cls, signature=None, abstract=False, stackallocate=False, scope=None):
     """
     @jit('Array[dtype, ndim]')
     """
@@ -85,3 +93,6 @@ def ijit(f, *args, **kwds):
 def sjit(cls, *args, **kwds):
     """@jit(stackallocate=True)"""
     return jit_class(cls, *args, stackallocate=True, **kwds)
+
+#ijit = partial(jit, inline=True)
+#sjit = partial(jit, stackallocate=True)
