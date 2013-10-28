@@ -164,12 +164,27 @@ def apply_and_resolve(phase, func, env, graph=None):
 # ______________________________________________________________________
 # Combined phases
 
+class CompileError(BaseException):
+    """Compile error"""
+
+def phasecompose(phase1, phase2):
+    def wrapper(func, env):
+        try:
+            return phase1(*phase2(func, env))
+        except Exception, e:
+            print("-----------------------------")
+            print("Exception occurred when compiling %s with argtypes %s" % (
+                                          func, env["numba.typing.argtypes"]))
+            raise #CompileError(str(e))
+
+    return wrapper
+
 setup = setup_phase
-translation = starcompose(translation_phase, setup)
-typing = starcompose(typing_phase, translation)
-opt = starcompose(optimization_phase, typing)
-lower = starcompose(lowering_phase, opt)
-codegen = starcompose(codegen_phase, lower)
+translation = phasecompose(translation_phase, setup)
+typing = phasecompose(typing_phase, translation)
+opt = phasecompose(optimization_phase, typing)
+lower = phasecompose(lowering_phase, opt)
+codegen = phasecompose(codegen_phase, lower)
 
 # ______________________________________________________________________
 # Naming
