@@ -14,75 +14,11 @@ import llvm.core
 
 from numba2 import jit, ijit, typeof
 from . import Void, Pointer
+from . import librt as lib
+from numba2.runtime import ffi
 
 import cffi
 
-#===------------------------------------------------------------------===
-# Setup
-#===------------------------------------------------------------------===
-
-dir = dirname(abspath(__file__))
-exts = (".so", ".dylib", ".dll")
-files = [x for x in os.listdir(dir)
-               if x.startswith("libcpy") and x.endswith(exts)]
-if not files:
-    raise OSError("No compiled library found, try running setup.py")
-
-[fname] = files
-
-#===------------------------------------------------------------------===
-# Declarations
-#===------------------------------------------------------------------===
-
-ffi = cffi.FFI()
-
-#typedef struct _object {
-#    Py_ssize_t ob_refcnt;
-#    void *ob_type;
-#} PyObject;
-
-ffi.cdef("""
-typedef long Py_ssize_t;
-typedef void PyObject;
-
-void Py_IncRef(PyObject *);
-void Py_DecRef(PyObject *);
-
-PyObject *getiter(PyObject *);
-PyObject *next(PyObject *);
-
-PyObject *getfield(PyObject *, PyObject *);
-PyObject *setfield(PyObject *, PyObject *, PyObject *);
-
-PyObject *getitem(PyObject *, PyObject *);
-PyObject *setitem(PyObject *, PyObject *);
-
-PyObject *add(PyObject *, PyObject *);
-PyObject *sub(PyObject *, PyObject *);
-PyObject *mul(PyObject *, PyObject *);
-PyObject *divide(PyObject *, PyObject *);
-PyObject *floordiv(PyObject *, PyObject *);
-PyObject *lshift(PyObject *, PyObject *);
-PyObject *rshift(PyObject *, PyObject *);
-PyObject *bitor(PyObject *, PyObject *);
-PyObject *bitand(PyObject *, PyObject *);
-
-PyObject *lt(PyObject *, PyObject *);
-PyObject *le(PyObject *, PyObject *);
-PyObject *gt(PyObject *, PyObject *);
-PyObject *ge(PyObject *, PyObject *);
-PyObject *eq(PyObject *, PyObject *);
-PyObject *ne(PyObject *, PyObject *);
-
-PyObject *uadd(PyObject *);
-PyObject *invert(PyObject *);
-PyObject *not_(PyObject *);
-PyObject *usub(PyObject *);
-
-int istrue(PyObject *);
-""")
-
-lib = ffi.dlopen(join(dir, fname))
 
 #PyObject_p = typeof(lib.add).parameters[0]
 PyObject_p = Pointer[Void[()]]
