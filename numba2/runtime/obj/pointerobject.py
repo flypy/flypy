@@ -24,7 +24,7 @@ class Pointer(object):
 
     # __________________________________________________________________
 
-    @jit('a -> int32 -> a', opaque=True)
+    @jit('a -> int64 -> a', opaque=True)
     def __add__(self, index):
         return self.p + index
 

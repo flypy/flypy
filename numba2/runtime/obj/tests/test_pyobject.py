@@ -20,8 +20,7 @@ def typeof(value):
 class TestObjects(unittest.TestCase):
 
     def test_add(self):
-        raise unittest.SkipTest
-        @jit #('Object[] -> Object[] -> Object[]')
+        @jit
         def f(a, b):
             return a + b
 

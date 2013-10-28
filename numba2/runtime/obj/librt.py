@@ -45,6 +45,9 @@ def declare(name, restype, argtypes):
 
 obj = ctypes.py_object
 
+Py_IncRef  = declare('Py_IncRef', None, [obj])
+Py_DecRef  = declare('Py_IncRef', None, [obj])
+
 getiter    = declare('getiter' , obj, [obj])
 next       = declare('next'    , obj, [obj])
 

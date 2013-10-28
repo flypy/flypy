@@ -25,6 +25,8 @@ class C(object):
     def method(self, other):
         return self.x * other.x
 
+# ______________________________________________________________________
+
 @jit
 def call_special(x):
     return C(x) + C(2)
@@ -36,6 +38,8 @@ def call_method(x):
 @jit
 def return_obj(x):
     return C(x)
+
+# ______________________________________________________________________
 
 @jit('Parameterized[a]')
 class Parameterized(object):
@@ -75,6 +79,23 @@ class TestParameterized(unittest.TestCase):
     def test_parameterized(self):
         self.assertEqual(call_parameterized(2.0), 2.0)
 
+
+class TestConstructors(unittest.TestCase):
+
+    def test_constructor_promotion(self):
+        @jit
+        class C(object):
+            layout = [('x', 'float64')]
+
+            @jit('a -> float64 -> void')
+            def __init__(self, x):
+                self.x = x
+
+        @jit
+        def f(x):
+            return C(x).x
+
+        self.assertEqual(f(10), 10.0)
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()

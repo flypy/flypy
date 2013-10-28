@@ -6,16 +6,10 @@ Implement objects.
 
 from __future__ import print_function, division, absolute_import
 
-import os
-import sys
-from os.path import abspath, dirname, join
-
-import llvm.core
-
 from numba2 import jit, ijit, typeof
 from . import Void, Pointer
 from . import librt as lib
-from numba2.runtime import ffi
+from numba2.runtime.ffi import ffi
 
 import cffi
 
@@ -82,7 +76,7 @@ class Object(object):
 
     @ijit("a -> a -> a")
     def __add__(self, other):
-        return wrap(lib.add(self, other))
+        return wrap(lib.add(self.obj, other.obj))
 
     @jit("a -> a -> a")
     def __sub__(self, other):
