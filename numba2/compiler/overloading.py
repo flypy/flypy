@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 from numba2.typing import resolve, to_blaze
 
 from blaze import overloading
-from blaze.kernel import lookup_previous
+from blaze.function import lookup_previous
 from blaze.overloading import overload, Dispatcher
 from blaze.util import flatargs
 
@@ -50,10 +50,7 @@ def best_match(func_wrapper, argtypes):
     bound = {} # TODO:
     overloaded = resolve_overloads(o, scope, bound)
     argtypes = [to_blaze(t) for t in argtypes]
-    #print('------------------')
-    #print(overloaded)
-    #print(argtypes)
-    #print('------------------')
+
     overload = overloading.best_match(overloaded, argtypes)
     signature = resolve(overload.resolved_sig, scope, bound)
     return (overload.func, signature, overload.kwds)

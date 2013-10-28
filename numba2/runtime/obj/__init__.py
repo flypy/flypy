@@ -7,7 +7,6 @@ from .intobject import Int
 from .floatobject import Float
 from .tupleobject import Tuple, StaticTuple, GenericTuple
 from .listobject import List
-from .stringobject import String
 from .rangeobject import Range
 from .noneobject import NoneType, NoneValue
 from .typeobject import Type, Constructor
@@ -15,3 +14,4 @@ from .structobject import struct_
 from .dummy import Void, Function, ForeignFunction, NULL
 from .exceptions import *
 from .object import Object
+from .stringobject import String

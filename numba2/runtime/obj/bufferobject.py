@@ -7,30 +7,48 @@ Buffer objects.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit, typeof
+from numba2.runtime import ffi
 from . import Pointer
 
 @jit('Buffer[base]')
 class Buffer(object):
-    layout = [('p', 'Pointer[base]')]
+    layout = [('p', 'Pointer[base]'), ('size', 'int64'),
+              #('free', 'Function[Pointer[void], void]')
+    ]
 
-    @jit('Buffer[a] -> Pointer[a] -> int32 -> Function[Pointer[a] -> void] -> void')
-    def __init__(self, p, size, free):
+    @jit('Buffer[a] -> Pointer[a] -> int64 -> void') # Function[Pointer[a], void]
+    def __init__(self, p, size): #, free):
         self.p = p
         self.size = size
-        self.free = free
+        #self.free = free
+
+    @jit('a -> a -> bool')
+    def __eq__(self, other):
+        if self.p == other.p:
+            return True
+        elif self.size != other.size:
+            return False
+        else:
+            return ffi.memcmp(self.p, other.p, self.size)
+
+    @jit('a -> b -> bool')
+    def __eq__(self, other):
+        return False
 
     @jit('a -> int64 -> base')
     def __getitem__(self, item):
         return self.p[item]
 
-    @jit
-    def __del__(self):
-        self.free(self.p)
+    #@jit
+    #def __del__(self):
+    #    self.free(self.p)
 
     @jit
     def resize(self):
         raise NotImplementedError
 
-@jit
-def newbuffer(size):
-    pass
+
+@jit('Type[a] -> int64 -> Buffer[a]')
+def newbuffer(basetype, size):
+    p = ffi.malloc(size, basetype)
+    return Buffer(p, size)

@@ -7,7 +7,7 @@ Implement casting (cast function).
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit
-from numba2.runtime import Int, Float, Type, Pointer
+from numba2.runtime.obj import Int, Float, Type, Pointer
 from numba2.runtime.lowlevel_impls import add_impl, lltype
 
 #===------------------------------------------------------------------===

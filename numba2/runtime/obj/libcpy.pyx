@@ -14,6 +14,9 @@ try:
 except ImportError:
     import builtin
 
+cdef extern from "Python.h":
+    char *PyString_AS_STRING(object)
+
 # ______________________________________________________________________
 # Iterators
 
@@ -92,22 +95,22 @@ cdef public usub(x):
 
 # Compare
 
-cdef public lt(x, y):
+cdef public bint lt(x, y):
     return x < y
 
-cdef public le(x, y):
+cdef public bint le(x, y):
     return x <= y
 
-cdef public gt(x, y):
+cdef public bint gt(x, y):
     return x > y
 
-cdef public ge(x, y):
+cdef public bint ge(x, y):
     return x >= y
 
-cdef public eq(x, y):
+cdef public bint eq(x, y):
     return x == y
 
-cdef public ne(x, y):
+cdef public bint ne(x, y):
     return x != y
 
 # ______________________________________________________________________
@@ -151,17 +154,21 @@ cdef public print_(values):
 
 # ______________________________________________________________________
 
-cdef public objfromvoidp(void *p):
+cdef public fromvoidp(void *p):
     return <object> p
 
 cdef public bint istrue(obj):
     return bool(obj)
 
-cdef public char * tostring(obj):
+cdef public tostring(obj):
     return str(obj)
 
-cdef public char * tostring(obj):
+cdef public torepr(obj):
     return repr(obj)
 
-cdef public stringlen(s):
-    return len(s)
+cdef public char * asstring(obj):
+    assert isinstance(obj, str)
+    return PyString_AS_STRING(obj)
+
+cdef public fromstring(char *s, Py_ssize_t length):
+    return s[:length]
