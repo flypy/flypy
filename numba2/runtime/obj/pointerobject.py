@@ -72,7 +72,9 @@ class Pointer(object):
 
     @classmethod
     def toctypes(cls, val, ty):
-        return make_ctypes_ptr(val.p, ty)
+        if isinstance(val, Pointer):
+            val = val.p
+        return make_ctypes_ptr(val, ty)
 
     @classmethod
     def ctype(cls, ty):

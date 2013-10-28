@@ -35,16 +35,10 @@ cdef public void setfield(obj, str attr, value):
 # ______________________________________________________________________
 # Indexing
 
-cdef public getindex(obj, indices):
+cdef public getitem(obj, indices):
     return obj[indices]
 
-cdef public void setindex(obj, indices, value):
-    obj[indices] = value
-
-cdef public getslice(obj, indices):
-    return obj[indices]
-
-cdef public void setslice(obj, indices, value):
+cdef public void setitem(obj, indices, value):
     obj[indices] = value
 
 cdef public slice slice(Py_ssize_t lower, Py_ssize_t upper, Py_ssize_t step):
@@ -64,7 +58,7 @@ cdef public sub(x, y):
 cdef public mul(x, y):
     return x * y
 
-cdef public div(x, y):
+cdef public divide(x, y):
     return x / y
 
 cdef public floordiv(x, y):
@@ -101,19 +95,19 @@ cdef public usub(x):
 cdef public lt(x, y):
     return x < y
 
-cdef public lte(x, y):
+cdef public le(x, y):
     return x <= y
 
 cdef public gt(x, y):
     return x > y
 
-cdef public gte(x, y):
+cdef public ge(x, y):
     return x >= y
 
 cdef public eq(x, y):
     return x == y
 
-cdef public noteq(x, y):
+cdef public ne(x, y):
     return x != y
 
 # ______________________________________________________________________
@@ -154,3 +148,20 @@ cdef public print_(values):
     for value in values[:-1]:
         print(value,)
     print(values[-1])
+
+# ______________________________________________________________________
+
+cdef public objfromvoidp(void *p):
+    return <object> p
+
+cdef public bint istrue(obj):
+    return bool(obj)
+
+cdef public char * tostring(obj):
+    return str(obj)
+
+cdef public char * tostring(obj):
+    return repr(obj)
+
+cdef public stringlen(s):
+    return len(s)

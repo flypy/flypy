@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 __all__ = [
     'Function', 'Mono', 'Bool', 'Int', 'Float', 'Type', 'Constructor',
-    'Pointer',
+    'Pointer', 'struct_', 'Object',
     'void', 'char', 'uchar', 'short', 'ushort',
     'int_', 'uint', 'long_', 'ulong', 'longlong', 'ulonglong',
     'size_t', 'npy_intp', 'bool_', 'string',
@@ -23,7 +23,8 @@ from blaze.datashape import free, TypeVar, TypeConstructor
 from blaze.datashape import Mono as Mono, Ellipsis as EllipsisT
 from .runtime import Type, Constructor
 from .runtime.obj import (Function, Pointer, Bool, Int, Float, Void, NoneType,
-                          Tuple, StaticTuple, String, ForeignFunction)
+                          Tuple, StaticTuple, String, ForeignFunction,
+                          struct_, Object)
 
 #===------------------------------------------------------------------===
 # Units

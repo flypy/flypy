@@ -51,8 +51,8 @@ def map_type(cffi_type):
         if kind == 'union':
             raise TypeError(cffi_type)
 
-        result = numba2.struct([(name, map_type(field.type))
-                                    for name, field in cffi_type.fields])
+        result = numba2.struct_([(name, map_type(field.type))
+                                     for name, field in cffi_type.fields])
     elif kind == 'function':
         restype = map_type(cffi_type.result)
         argtypes = tuple(map_type(arg) for arg in cffi_type.args)
