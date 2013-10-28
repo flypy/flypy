@@ -84,7 +84,7 @@ def from_ctypes_type(cty, ctypes_value=None):
     """
     if hashable(cty) and cty in ctypes_map:
         return ctypes_map[cty]
-    elif cty is ctypes.c_void_p:
+    elif cty is ctypes.c_void_p or cty is ctypes.py_object:
         return types.Pointer[types.void]
     elif is_ctypes_pointer_type(cty):
         return types.Pointer[from_ctypes_type(cty._type_)]
