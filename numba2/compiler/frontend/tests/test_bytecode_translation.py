@@ -142,5 +142,5 @@ class TestBytecodeTranslation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestBytecodeTranslation('test_for').debug()
-    #unittest.main()
+    #TestBytecodeTranslation('test_for').debug()
+    unittest.main()

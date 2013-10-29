@@ -12,7 +12,7 @@ from ... import jit, typeof
 def struct_(fields, name=None):
     if (not isinstance(fields, list) or not fields or not
             isinstance(fields[0], tuple) or not len(fields[0]) == 2):
-        raise TypeError("Excepted a list of two-tuples")
+        raise TypeError("Excepted a list of two-tuples, got %s" % (fields,))
 
     @jit('Struct[a, b]')
     class Struct(object):

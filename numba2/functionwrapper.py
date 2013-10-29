@@ -112,7 +112,7 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False, 
 
     if isinstance(func, FunctionWrapper):
         func = func.dispatcher
-    elif isinstance(func, types.FunctionType):
+    elif isinstance(func, types.FunctionType) and func != py_func:
         raise TypeError(
             "Function %s in current scope is not overloadable" % (func,))
     else:
