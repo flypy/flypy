@@ -8,6 +8,7 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 
 from numba2 import typing
+from numba2.tests.support import CTypesStruct
 
 #===------------------------------------------------------------------===
 # Object Conversion
@@ -76,6 +77,30 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
     valmemo[id(value)] = result
     return result
 
+def fromctypes(value, type, memo=None):
+    """
+    Construct a numba object from a ctypes representation.
+    """
+    if memo is None:
+        memo = {}
+    if id(value) in memo:
+        return memo[id(value)]
+
+    cls = type.impl
+    if hasattr(cls, 'fromctypes'):
+        result = cls.fromctypes(value, type)
+    else:
+        cls = type.impl
+        layout = type.resolved_layout
+        values = {}
+
+        val = CTypesStruct(value)
+        for name, type in resolved_layout.iteritems():
+            cval = getattr(val, name)
+            pyval = fromctypes(cval, type, memo)
+            values[name] = pyval
+
+        return cls(**values)
 
 def ctype(type, memo=None):
     """
