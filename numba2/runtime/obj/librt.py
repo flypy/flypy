@@ -10,6 +10,7 @@ import os
 from os.path import abspath, dirname, join
 
 from . import Void, Pointer
+from . import libcpy # initialize
 
 import ctypes
 #import cffi
@@ -26,7 +27,8 @@ if not files:
     raise OSError("No compiled library found, try running setup.py")
 
 [fname] = files
-lib = ctypes.CDLL(join(dir, fname))
+lib = ctypes.PyDLL(join(dir, fname))
+
 
 #===------------------------------------------------------------------===
 # Declarations
@@ -56,7 +58,7 @@ setfield   = declare('setfield', obj, [obj, obj])
 getitem    = declare('getitem' , obj, [obj, obj])
 setitem    = declare('setitem' , obj, [obj, obj])
 
-add        = declare('add'     , obj, [obj, obj])
+add        = declare('add'     , ctypes.c_void_p, [ctypes.c_void_p, ctypes.c_void_p])
 sub        = declare('sub'     , obj, [obj, obj])
 mul        = declare('mul'     , obj, [obj, obj])
 divide     = declare('divide'  , obj, [obj, obj])
@@ -79,6 +81,7 @@ not_       = declare('not_'    , obj, [obj])
 usub       = declare('usub'    , obj, [obj])
 
 fromvoidp       = declare('fromvoidp' , obj, [ctypes.c_void_p])
+address         = declare('address', ctypes.c_uint64, [ctypes.py_object])
 istrue          = declare('istrue'       , ctypes.c_int, [obj])
 tostring        = declare('tostring'     , obj, [obj])
 torepr          = declare('torepr'       , obj, [obj])

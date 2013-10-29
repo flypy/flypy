@@ -7,6 +7,7 @@ Implements a runtime using CPython.
 from __future__ import print_function, division, absolute_import
 
 from cpython cimport *
+from libc.stdint cimport uint64_t
 
 import functools
 try:
@@ -16,6 +17,8 @@ except ImportError:
 
 cdef extern from "Python.h":
     char *PyString_AS_STRING(object)
+
+    ctypedef unsigned long Py_uintptr_t
 
 # ______________________________________________________________________
 # Iterators
@@ -156,6 +159,9 @@ cdef public print_(values):
 
 cdef public fromvoidp(void *p):
     return <object> p
+
+cdef public address(PyObject *x):
+    return <Py_uintptr_t> x
 
 cdef public bint istrue(obj):
     return bool(obj)

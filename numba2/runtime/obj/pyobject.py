@@ -5,7 +5,9 @@ Implement objects.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
 
+import numba2
 from numba2 import jit, ijit, typeof
 from . import Void, Pointer
 from . import librt as lib
@@ -27,20 +29,20 @@ class Object(object):
     Implement objects using using Cython functions which call the CPython C-API.
     """
 
-    layout = [('obj', PyObject_p)]
+    layout = [('ptr', PyObject_p)]
 
     @ijit('a -> Pointer[void] -> void')
     def __init__(self, ptr):
-        self.obj = ptr
+        self.ptr = ptr
         self.incref()
 
     @jit
     def incref(self):
-        lib.Py_IncRef(self.obj)
+        lib.Py_IncRef(self.ptr)
 
     @jit
     def decref(self):
-        lib.Py_DecRef(self.obj)
+        lib.Py_DecRef(self.ptr)
 
     @jit
     def __del__(self):
@@ -50,11 +52,11 @@ class Object(object):
 
     @jit("a -> a")
     def __getiter__(self):
-        return wrap(lib.getiter(self))
+        return wrap(lib.getiter(self.ptr))
 
     @jit("a -> a")
     def __next__(self):
-        return wrap(lib.next(self))
+        return wrap(lib.next(self.ptr))
 
     #@jit("a -> a -> a")
     #def __getattr__(self, attr):
@@ -66,122 +68,122 @@ class Object(object):
 
     @jit("a -> a -> a")
     def __getitem__(self, idx):
-        return wrap(lib.getitem(self, idx))
+        return wrap(lib.getitem(self.ptr, idx.ptr))
 
     @jit("a -> a -> a")
     def __setitem__(self, idx, value):
-        check(lib.setitem(self, idx, value))
+        check(lib.setitem(self.ptr, idx.ptr, value.ptr))
 
     # ---------------------------------------
 
-    @ijit("a -> a -> a")
+    @ijit #("a -> a -> a")
     def __add__(self, other):
-        return wrap(lib.add(self.obj, other.obj))
+        return wrap(lib.add(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __sub__(self, other):
-        return wrap(lib.sub(self, other))
+        return wrap(lib.sub(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __mul__(self, other):
-        return wrap(lib.mul(self, other))
+        return wrap(lib.mul(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __div__(self, other):
-        return wrap(lib.divide(self, other))
+        return wrap(lib.divide(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __floordiv__(self, other):
-        return wrap(lib.floordiv(self, other))
+        return wrap(lib.floordiv(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __lshift__(self, other):
-        return wrap(lib.lshift(self, other))
+        return wrap(lib.lshift(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __rshift__(self, other):
-        return wrap(lib.rshift(self, other))
+        return wrap(lib.rshift(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __bitor__(self, other):
-        return wrap(lib.bitor(self, other))
+        return wrap(lib.bitor(self.ptr, other.ptr))
 
     @jit("a -> a -> a")
     def __bitand__(self, other):
-        return wrap(lib.bitand(self, other))
+        return wrap(lib.bitand(self.ptr, other.ptr))
 
     # ---------------------------------------
 
     @jit("a -> a -> bool")
     def __lt__(self, other):
-        return bool(wrap(lib.lt(self, other)))
+        return bool(wrap(lib.lt(self.ptr, other.ptr)))
 
     @jit("a -> a -> bool")
     def __le__(self, other):
-        return bool(wrap(lib.le(self, other)))
+        return bool(wrap(lib.le(self.ptr, other.ptr)))
 
     @jit("a -> a -> bool")
     def __gt__(self, other):
-        return bool(wrap(lib.gt(self, other)))
+        return bool(wrap(lib.gt(self.ptr, other.ptr)))
 
     @jit("a -> a -> bool")
     def __ge__(self, other):
-        return bool(wrap(lib.ge(self, other)))
+        return bool(wrap(lib.ge(self.ptr, other.ptr)))
 
     @jit("a -> a -> bool")
     def __eq__(self, other):
-        return bool(wrap(lib.eq(self, other)))
+        return bool(wrap(lib.eq(self.ptr, other.ptr)))
 
     @jit("a -> a -> bool")
     def __ne__(self, other):
-        return bool(wrap(lib.ne(self, other)))
+        return bool(wrap(lib.ne(self.ptr, other.ptr)))
 
     # ---------------------------------------
 
     @jit("a -> a")
     def __uadd__(self):
-        return wrap(lib.uadd(self))
+        return wrap(lib.uadd(self.ptr))
 
     @jit("a -> a")
     def __invert__(self):
-        return wrap(lib.invert(self))
+        return wrap(lib.invert(self.ptr))
 
     @jit("a -> a")
     def __not___(self):
-        return wrap(lib.not_(self))
+        return wrap(lib.not_(self.ptr))
 
     @jit("a -> a")
     def __usub__(self):
-        return wrap(lib.usub(self))
+        return wrap(lib.usub(self.ptr))
 
     # ---------------------------------------
 
     @jit('a -> bool')
     def __nonzero__(self):
-        result = wrap(lib.bool_(self))
+        result = wrap(lib.bool_(self.ptr))
         return cast(result, bool_)
 
-    @jit('a -> bool')
-    def __str__(self):
-        result = wrap(lib.tostring(self))
-        return cast(result, String)
-
-    @jit('a -> bool')
-    def __repr__(self):
-        result = wrap(lib.torepr(self))
-        return cast(result, String)
+    #@jit('a -> bool')
+    #def __str__(self):
+    #    result = wrap(lib.tostring(self))
+    #    return cast(result, String)
+    #
+    #@jit('a -> bool')
+    #def __repr__(self):
+    #    result = wrap(lib.torepr(self))
+    #    return cast(result, String)
 
     # ---------------------------------------
 
     @classmethod
     def fromobject(cls, obj, ty):
-        addr = ffi.cast('uintptr_t', id(obj))
-        p = ffi.cast('void *', addr)
+        addr = lib.address(obj)
+        p = ctypes.c_void_p(addr)
         return Object(p)
 
     @classmethod
     def toobject(cls, obj, ty):
-        return ffi.cast('object', obj.obj)
+        return lib.fromvoidp(obj.ptr)
 
 
 @ijit

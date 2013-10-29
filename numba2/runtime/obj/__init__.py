@@ -13,5 +13,5 @@ from .typeobject import Type, Constructor
 from .structobject import struct_
 from .dummy import Void, Function, ForeignFunction, NULL
 from .exceptions import *
-from .object import Object
+from .pyobject import Object
 from .stringobject import String

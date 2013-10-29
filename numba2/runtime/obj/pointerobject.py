@@ -78,6 +78,9 @@ class Pointer(object):
 
     @classmethod
     def fromctypes(cls, val, ty):
+        if isinstance(val, (int, long)):
+            cty = ctype(ty)
+            return cty(val)
         return val
 
     @classmethod
