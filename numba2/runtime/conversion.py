@@ -8,7 +8,6 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 
 from numba2 import typing
-from numba2.tests.support import CTypesStruct
 
 #===------------------------------------------------------------------===
 # Object Conversion
@@ -77,27 +76,36 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
     valmemo[id(value)] = result
     return result
 
-def fromctypes(value, type, memo=None):
+def fromctypes(value, ty, memo=None):
     """
     Construct a numba object from a ctypes representation.
     """
+    from numba2.ctypes_support import is_ctypes_pointer_type, CTypesStruct
+
     if memo is None:
         memo = {}
     if id(value) in memo:
         return memo[id(value)]
 
-    cls = type.impl
+    cls = ty.impl
     if hasattr(cls, 'fromctypes'):
-        result = cls.fromctypes(value, type)
+        result = cls.fromctypes(value, ty)
     else:
-        cls = type.impl
-        layout = type.resolved_layout
+        cls = ty.impl
+        layout = ty.resolved_layout
         values = {}
 
-        val = CTypesStruct(value)
-        for name, type in type.resolved_layout.iteritems():
-            cval = getattr(val, name)
-            pyval = fromctypes(cval, type, memo)
+        if is_ctypes_pointer_type(type(value)):
+            # TODO: stack jit
+            # Recover original names from the type
+            cty = ctype(ty)
+            value = ctypes.cast(value, cty)
+
+        for name, ty in ty.resolved_layout.iteritems():
+            if is_ctypes_pointer_type(type(value)):
+                value = value[0]
+            cval = getattr(value, name)
+            pyval = fromctypes(cval, ty, memo)
             values[name] = pyval
 
         result = cls(**values)

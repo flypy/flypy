@@ -24,6 +24,7 @@ class TestStrings(unittest.TestCase):
         self.assertEqual(f("blah"), "blah")
 
     def test_string_indexing(self):
+        raise unittest.SkipTest("returning objects")
         @jit
         def f(s1):
             return s1[3]
