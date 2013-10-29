@@ -100,7 +100,10 @@ def fromctypes(value, type, memo=None):
             pyval = fromctypes(cval, type, memo)
             values[name] = pyval
 
-        return cls(**values)
+        result = cls(**values)
+
+    memo[id(value)] = result
+    return result
 
 def ctype(type, memo=None):
     """

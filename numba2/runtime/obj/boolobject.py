@@ -17,6 +17,10 @@ class Bool(object):
         return cls.ctype(ty)(val)
 
     @classmethod
+    def fromctypes(cls, val, ty):
+        return val
+
+    @classmethod
     def ctype(cls, ty):
         return ctypes.c_bool
 

@@ -19,6 +19,10 @@ class Float(Number):
         return cls.ctype(ty)(val)
 
     @classmethod
+    def fromctypes(cls, val, ty):
+        return val
+
+    @classmethod
     def ctype(cls, ty):
         [nbits] = ty.parameters
         return {32: ctypes.c_float, 64: ctypes.c_double}[nbits]

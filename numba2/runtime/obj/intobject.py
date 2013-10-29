@@ -20,6 +20,10 @@ class Int(Number):
         return cls.ctype(ty)(val)
 
     @classmethod
+    def fromctypes(cls, val, ty):
+        return val
+
+    @classmethod
     def ctype(cls, ty):
         nbits, unsigned = ty.parameters
         return getattr(ctypes, 'c_%sint%d' % ('u' if unsigned else '', nbits))

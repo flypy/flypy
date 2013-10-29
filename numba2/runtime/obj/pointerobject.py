@@ -77,6 +77,10 @@ class Pointer(object):
         return make_ctypes_ptr(val, ty)
 
     @classmethod
+    def fromctypes(cls, val, ty):
+        return val
+
+    @classmethod
     def ctype(cls, ty):
         [base] = ty.parameters
         return ctypes.POINTER(ctype(base))
