@@ -105,43 +105,81 @@ def explicit_coercions(func, env):
     b = Builder(func)
 
     for op in func.ops:
-        if op.opcode != 'call':
-            continue
+        if op.opcode == 'call':
+            coerce_to_parameters(b, context, envs, op, conversions)
+        elif op.opcode == 'setfield':
+            coerce_to_field_setting(b, context, envs, op, conversions)
 
-        # -------------------------------------------------
+def coerce_to_parameters(b, context, envs, op, conversions):
+    """
+    Promote arguments to match parameter types.
+    """
+    # -------------------------------------------------
 
-        f, args = op.args
-        # TODO: Signatures should always be in the context !
-        if f in context:
-            argtypes = context[f].parameters[:-1]
+    f, args = op.args
+
+    # TODO: Signatures should always be in the context !
+    if f in context:
+        argtypes = context[f].parameters[:-1]
+    else:
+        argtypes = envs[f]["numba.typing.argtypes"]
+    replacements = {} # { arg : replacement_conversion }
+
+    # -------------------------------------------------
+    # Promote arguments to match parameter types
+
+    for arg, param_type in zip(args, argtypes):
+        arg_type = context[arg]
+
+        if arg_type != param_type:
+            # Argument type does not match parameter type, convert
+            conversion = convert(b, arg, param_type, op, context, conversions)
+            replacements[arg] = conversion
+
+    op.replace_args(replacements)
+
+
+def coerce_to_field_setting(b, context, envs, op, conversions):
+    """
+    Promote values for field setting.
+    """
+    obj, attr, value = op.args
+
+    obj_type = context[obj]
+    field_type = obj_type.resolved_layout[attr]
+    value_type = context[value]
+
+    if field_type != value_type:
+        newval = convert(b, value, field_type, op, context, conversions)
+        op.set_args([obj, attr, newval])
+
+def convert(b, arg, ty, op, context, conversions):
+    """
+    Create conversion and update typing context with new conversion Op.
+
+    Parameters
+    ==========
+    b: Builder
+    arg: Op
+        op to convert
+    ty: Type
+        Type to convert arg to
+    op: Op
+        insert conversion before this op
+    """
+    conversion = conversions.get((arg, ty))
+    if not conversion:
+        isconst = isinstance(arg, Const)
+
+        conversion = Op('convert', types.Opaque, [arg])
+        context[conversion] = ty
+
+        if isconst:
+            b.position_before(op)
         else:
-            argtypes = envs[f]["numba.typing.argtypes"]
-        replacements = {} # { arg : replacement_conversion }
+            b.position_after(arg)
+            conversions[arg, ty] = conversion
 
-        # -------------------------------------------------
+        b.emit(conversion)
 
-        for arg, param_type in zip(args, argtypes):
-            isconst = isinstance(arg, Const)
-            arg_type = context[arg]
-
-            if arg_type != param_type:
-                # Argument type does not match parameter type, convert
-                conversion = conversions.get((arg, param_type))
-                if not conversion:
-                    # Create conversion and update typing context with new Op
-                    conversion = Op('convert', types.Opaque, [arg])
-                    context[conversion] = param_type
-
-                    if isconst:
-                        b.position_before(op)
-                    else:
-                        b.position_after(arg)
-                        conversions[arg, param_type] = conversion
-
-                    b.emit(conversion)
-
-                replacements[arg] = conversion
-
-        # -------------------------------------------------
-
-        op.replace_args(replacements)
+    return conversion

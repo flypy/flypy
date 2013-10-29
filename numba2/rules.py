@@ -10,7 +10,7 @@ User-defined typing rules:
 
 from __future__ import print_function, division, absolute_import
 from . import pyoverload
-from numba2.typing import unify, free
+from numba2.typing import unify, free, to_blaze, resolve_type
 
 #===------------------------------------------------------------------===
 # User-defined typing rules
@@ -72,7 +72,8 @@ def infer_type_from_layout(classtype, concrete_layout):
     argnames, argtypes = zip(*concrete_layout)
 
     # Build constraint list for unification
-    constraints = [(argtype, classtype.resolved_layout[argname])
+    constraints = [(to_blaze(argtype),
+                    to_blaze(classtype.resolved_layout[argname]))
                        for argtype, argname in zip(argtypes, argnames)
                            if argname in cls.layout]
     # Add the constructor type with itself, this will flow in resolved variables
@@ -85,7 +86,7 @@ def infer_type_from_layout(classtype, concrete_layout):
         raise TypeError(
             "Result classtype stil has free variables: %s" % (result_type,))
 
-    return result_type
+    return resolve_type(result_type)
 
 
 def convert(value, type):

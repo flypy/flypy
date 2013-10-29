@@ -92,10 +92,18 @@ class TestConstructors(unittest.TestCase):
                 self.x = x
 
         @jit
-        def f(x):
-            return C(x).x
+        class D(object):
+            layout = [('x', 'float64')]
 
-        self.assertEqual(f(10), 10.0)
+            @jit('a -> int64 -> void')
+            def __init__(self, x):
+                self.x = x
+
+        @jit
+        def f(x):
+            return C(x).x * D(x).x # TODO: D(x).x <- promote setfield()
+
+        self.assertEqual(f(10), 100.0)
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()
