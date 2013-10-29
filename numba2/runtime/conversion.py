@@ -95,7 +95,7 @@ def fromctypes(value, type, memo=None):
         values = {}
 
         val = CTypesStruct(value)
-        for name, type in resolved_layout.iteritems():
+        for name, type in type.resolved_layout.iteritems():
             cval = getattr(val, name)
             pyval = fromctypes(cval, type, memo)
             values[name] = pyval

@@ -35,7 +35,7 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
-        from numba2.runtime import toctypes, fromobject, toobject
+        from numba2.runtime import toctypes, fromctypes, toobject, fromobject
 
         keepalive = [] # Keep this alive for the duration of the call
 
@@ -59,11 +59,12 @@ class FunctionWrapper(object):
         cfunc = ctypes.cast(cfunc, ctype)
 
         # Execute
-        result = cfunc(*args)
+        c_result = cfunc(*args)
 
         # Map ctypes result back to a python value
 
         # TODO: fromctypes
+        result = fromctypes(c_result, restype)
         return toobject(result, restype)
 
 

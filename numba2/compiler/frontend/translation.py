@@ -685,6 +685,14 @@ class Translate(object):
         self.pop()
         # self.insert('end_finally')
 
+    # ------- print ------- #
+
+    def op_PRINT_ITEM(self, inst):
+        self.call(print, [self.pop()])
+
+    def op_PRINT_NEWLINE(self, inst):
+        self.call(print, [const('\n')])
+
     # ------- Misc ------- #
 
     def op_STOP_CODE(self, inst):

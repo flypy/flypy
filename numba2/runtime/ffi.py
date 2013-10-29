@@ -33,6 +33,7 @@ ffi = cffi.FFI()
 ffi.cdef("""
 void *malloc(size_t size);
 int memcmp(void *s1, void *s2, size_t n);
+int printf(char *s, ...);
 """)
 libc = ffi.dlopen(None)
 

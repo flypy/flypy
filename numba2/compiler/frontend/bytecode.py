@@ -109,6 +109,8 @@ BYTECODES = [
     ('SETUP_WITH', 2),
     ('WITH_CLEANUP', 0),
     ('BUILD_SLICE', 2),
+    ('PRINT_ITEM', 0),
+    ('PRINT_NEWLINE', 0),
     ('STOP_CODE', 0),
 ] + BYTECODE_VERSION_SPECIFIC
 

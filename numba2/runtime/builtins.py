@@ -11,6 +11,7 @@ from .interfaces import Sequence, Iterable, Iterator
 from .obj import Range, List, Type
 from .casting import cast
 from numba2.types import int32, float64
+from . import ffi
 
 # ____________________________________________________________
 
@@ -55,7 +56,8 @@ def unicode(x):
 @ijit
 def print(value, sep=' ', end='\n'):
     # TODO: *args and **kwargs
-    raise NotImplementedError
+    s = str(value)
+    ffi.libc.printf(s.buf.p) # TODO: Properties
 
 # ____________________________________________________________
 
@@ -110,3 +112,4 @@ overlay(builtins.int, int)
 overlay(builtins.float, float)
 overlay(builtins.range, range)
 overlay(builtins.list, list)
+overlay(builtins.print, print)

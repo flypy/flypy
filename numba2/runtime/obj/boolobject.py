@@ -22,7 +22,7 @@ class Bool(object):
 
     @classmethod
     def toobject(cls, value, ty):
-        assert value in (0, 1, True, False), value
+        assert value in (0, 1, True, False) or isinstance(value, Bool), value
         return bool(value)
 
 

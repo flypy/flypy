@@ -62,6 +62,10 @@ class Void(object):
     def ctype(cls, ty):
         return None # Sigh, ctypes
 
+    @classmethod
+    def toctypes(cls, value, ty):
+        return None
+
 #===------------------------------------------------------------------===
 # NULL
 #===------------------------------------------------------------------===
