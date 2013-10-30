@@ -13,9 +13,6 @@ from distutils.core import setup, Extension
 
 import numpy
 
-# import numba
-import gen_type_conversion
-
 from Cython.Distutils import build_ext
 from Cython.Distutils.extension import Extension as CythonExtension
 
