@@ -7,7 +7,7 @@ List implementation.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit, typeof
-from .pointer import Pointer
+from .pointerobject import Pointer
 
 
 @jit('List[a]')

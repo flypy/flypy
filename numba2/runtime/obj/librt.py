@@ -29,7 +29,6 @@ if not files:
 [fname] = files
 lib = ctypes.PyDLL(join(dir, fname))
 
-
 #===------------------------------------------------------------------===
 # Declarations
 #===------------------------------------------------------------------===
@@ -39,16 +38,21 @@ lib = ctypes.PyDLL(join(dir, fname))
 #    void *ob_type;
 #} PyObject;
 
-def declare(name, restype, argtypes):
+def declare_in(lib, name, restype, argtypes):
     f = getattr(lib, name)
     f.restype = restype
     f.argtypes = argtypes
     return f
 
+
+def declare(name, restype, argtypes):
+    return declare_in(lib, name, restype, argtypes)
+
+
 obj = ctypes.py_object
 
-Py_IncRef  = declare('Py_IncRef', None, [obj])
-Py_DecRef  = declare('Py_IncRef', None, [obj])
+Py_IncRef  = declare_in(ctypes.pythonapi, 'Py_IncRef', None, [obj])
+Py_DecRef  = declare_in(ctypes.pythonapi, 'Py_DecRef', None, [obj])
 
 getiter    = declare('getiter' , obj, [obj])
 next       = declare('next'    , obj, [obj])
