@@ -15,7 +15,7 @@ from .compiler.optimizations import optimize, inliner, throwing
 from .compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                              rewrite_constructors, explicit_coercions,
                              rewrite_optional_args, rewrite_constants,
-                             convert_retval)
+                             convert_retval, rewrite_obj_return)
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
@@ -37,17 +37,20 @@ frontend = [
 ]
 
 typing = [
+    # numba.compiler.typing.*
     transition.single_copy,
     inference,
     resolve_context,
     resolve_restype,
     typecheck,
+    # numba.compiler.lower.*
     rewrite_calls,
     rewrite_raise_exc_type,
     rewrite_constructors,
     rewrite_optional_args,
     explicit_coercions,
     rewrite_constants,
+    rewrite_obj_return,
     convert_retval,
 ]
 

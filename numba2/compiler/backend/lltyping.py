@@ -9,6 +9,7 @@ from functools import partial
 
 from numba2 import types, errors
 from numba2 import representation
+from numba2.runtime import conversion
 
 from pykit.ir import FuncArg, Op, Const, Pointer, Struct
 from pykit import types as ptypes
@@ -67,8 +68,13 @@ def lltyping(func, env):
             op.replace(resolve(op))
             op.set_args(nestedmap(resolve, op.args))
 
-        func.type = ptypes.Function(ll_type(env['numba.typing.restype']),
-                                    [arg.type for arg in func.args])
+        restype = env['numba.typing.restype']
+        if conversion.stack_allocate(restype):
+            ll_restype = ptypes.Void
+        else:
+            ll_restype = ll_type(restype)
+
+        func.type = ptypes.Function(ll_restype, [arg.type for arg in func.args])
 
 
 run = lltyping

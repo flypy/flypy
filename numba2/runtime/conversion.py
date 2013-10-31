@@ -7,6 +7,7 @@ Convert between objects and numba representations.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
+import numba2 as nb
 from numba2 import typing
 
 #===------------------------------------------------------------------===
@@ -161,6 +162,7 @@ def ctype(type, memo=None):
 
     # -------------------------------------------------
     # Cache result
+
     memo[type] = result
     return result
 
@@ -170,7 +172,8 @@ def stack_allocate(type):
     Determine whether values of this type should be stack-allocated and partake
     directly as values under composition.
     """
-    return type.impl.stackallocate
+    return type.impl not in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void)
+    #return type.impl.stackallocate
 
 
 def make_coercers(type):

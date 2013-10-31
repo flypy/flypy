@@ -11,3 +11,4 @@ from .coercions import explicit_coercions
 from .constructors import rewrite_constructors, rewrite_raise_exc_type
 from .constants import rewrite_constants
 from .conversion import convert_retval
+from .objects import rewrite_obj_return

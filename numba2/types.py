@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 __all__ = [
     'Function', 'Mono', 'Bool', 'Int', 'Float', 'Type', 'Constructor',
-    'Pointer', 'struct_', 'Object',
+    'Pointer', 'Void', 'struct_', 'Object',
     'void', 'char', 'uchar', 'short', 'ushort',
     'int_', 'uint', 'long_', 'ulong', 'longlong', 'ulonglong',
     'size_t', 'npy_intp', 'bool_', 'string',
