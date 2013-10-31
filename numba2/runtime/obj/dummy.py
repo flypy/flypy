@@ -9,7 +9,7 @@ import ctypes
 
 from ... import jit
 from blaze.datashape import Function as FunctionType
-from ..conversion import ctype
+from ..conversion import ctype, stack_allocate
 from .pointerobject import Pointer
 
 #===------------------------------------------------------------------===
@@ -24,7 +24,12 @@ class Function(object):
     def ctype(cls, ty):
         restype = ctype(ty.restype)
         argtypes = [ctype(argtype) for argtype in ty.argtypes]
-        return ctypes.POINTER(ctypes.CFUNCTYPE(restype, *argtypes))
+
+        if stack_allocate(ty.restype):
+            argtypes.append(ctypes.POINTER(restype))
+            restype = None # void
+
+        return ctypes.POINTER(ctypes.PYFUNCTYPE(restype, *argtypes))
 
 
 @jit('ForeignFunction[restype, ...]')

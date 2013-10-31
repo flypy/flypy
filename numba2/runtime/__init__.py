@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 
 from . import special
 from . import primitives
-from .conversion import toobject, fromobject, toctypes, fromctypes, ctype
+from .conversion import (toobject, fromobject, toctypes, fromctypes, ctype,
+                         stack_allocate)
 from . import obj
 from .obj import *
 from .casting import cast

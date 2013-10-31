@@ -35,7 +35,9 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
-        from numba2.runtime import toctypes, fromctypes, toobject, fromobject, ctype
+        from numba2.runtime import (toctypes, fromctypes, toobject, fromobject,
+                                    ctype, stack_allocate)
+        from numba2.types import Function
 
         # Keep this alive for the duration of the call
         keepalive = list(args) + list(kwargs.values())
@@ -56,18 +58,26 @@ class FunctionWrapper(object):
 
         # We need this cast since the ctypes function constructed from LLVM
         # IR has different structs (which are structurally equivalent)
-        ctype = ctypes.PYFUNCTYPE(ctype(restype), *[type(arg) for arg in args])
-        cfunc = ctypes.cast(cfunc, ctype)
+        c_restype = ctype(restype)
+        if stack_allocate(restype):
+            c_result = c_restype() # dummy result value
+            args.append(ctypes.pointer(c_result))
+            c_restype = None # void
 
-        # Execute
-        #print("Executing...", args)
-        c_result = cfunc(*args)
+        c_signature = ctypes.PYFUNCTYPE(c_restype, *[type(arg) for arg in args])
+        cfunc = ctypes.cast(cfunc, c_signature)
+
+        # Handle calling convention
+        if stack_allocate(restype):
+            cfunc(*args)
+        else:
+            c_result = cfunc(*args)
+
         # Map ctypes result back to a python value
-
-        # TODO: fromctypes
         result = fromctypes(c_result, restype)
-        return toobject(result, restype)
+        result_obj = toobject(result, restype)
 
+        return result_obj
 
     def translate(self, argtypes):
         from . import phase, environment

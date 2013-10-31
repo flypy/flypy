@@ -43,13 +43,13 @@ def rewrite_obj_return(func, env):
             [val] = op.args
             builder.position_before(op)
             newval = builder.load(val)
-            builder.store(newval, out, result=op.result)
+            builder.store(newval, out)
             op.set_args([None])
 
             # Update context
             context[newval] = context[val]
 
-        elif op.opcode == 'call' and op.type != types.Void:
+        elif op.opcode == 'call' and op in context:
             ty = context[op]
             if conversion.stack_allocate(ty):
                 builder.position_before(op)
@@ -60,3 +60,5 @@ def rewrite_obj_return(func, env):
 
                 # Update context
                 context[retval] = Pointer[context[op]]
+
+    #print(func)
