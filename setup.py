@@ -25,10 +25,10 @@ import versioneer
 # Setup constants and arguments
 #------------------------------------------------------------------------
 
-versioneer.versionfile_source = 'numba/_version.py'
-versioneer.versionfile_build = 'numba/_version.py'
+versioneer.versionfile_source = 'numba2/_version.py'
+versioneer.versionfile_build = 'numba2/_version.py'
 versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = 'numba-'
+versioneer.parentdir_prefix = 'numba2-'
 
 cmdclass = versioneer.get_cmdclass()
 cmdclass['build_ext'] = build_ext
