@@ -26,6 +26,7 @@ _env = {
     'numba.codegen.cache':      Cache(),
 
     # General state
+    'numba.state.func_name':    None,
     'numba.state.py_func':      None,   # This value may be None
     'numba.state.func_globals': None,
     'numba.state.func_code':    None,

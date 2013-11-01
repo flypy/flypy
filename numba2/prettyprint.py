@@ -7,7 +7,7 @@ Pretty printing of numba IRs.
 from __future__ import print_function, division, absolute_import
 
 import os
-import sys
+import re
 import dis
 import types
 from functools import wraps, partial
@@ -61,11 +61,27 @@ def dump_optimized(func, env, fancy):
 def augment_pipeline(passes):
     return [partial(verbose, p) for p in passes]
 
+def debug_print(func, env):
+    """
+    Returns whether to enable debug printing, checks the '--filter' argument
+    to './bin/numba'
+    """
+    cmdopts = env['numba.cmdopts']
+    if cmdopts and cmdopts['filter']:
+        func_name = env["numba.state.func_name"]
+        return re.search(cmdopts['filter'], func_name)
+    return True
+
 def verbose(p, func, env):
+    if not debug_print(func, env):
+        return pipeline.apply_transform(p, func, env)
+
     argtypes = env['numba.typing.argtypes']
     title = "%s [ %s(%s) ]" % (_passname(p), _funcname(func),
                                ", ".join(map(str, argtypes)))
+
     print(title.center(60).center(90, "-"))
+
     if isinstance(func, types.FunctionType):
         dis.dis(func)
         func, env = pipeline.apply_transform(p, func, env)

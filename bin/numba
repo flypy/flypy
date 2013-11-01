@@ -32,6 +32,8 @@ def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--verify', action='store_true',
                         help='Verify IR at each stage')
+    parser.add_argument('--filter', help='Filter output for functions '
+                                         'matching the given regex')
     parser.add_argument('--annotate',  help='Annotate source',
                         action='store_true')
     parser.add_argument('--dump-llvm', action="store_true",
@@ -57,6 +59,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     cmdopts = {
         'dump': True,
+        'filter': args.filter,
         'annotate': args.annotate,
         'dump-llvm': args.dump_llvm,
         'dump-optimized': args.dump_optimized,

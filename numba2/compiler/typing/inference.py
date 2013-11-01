@@ -35,6 +35,7 @@ from numba2.errors import InferError
 from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar
 from numba2.functionwrapper import FunctionWrapper
+from numba2.prettyprint import debug_print
 from .resolution import infer_call
 from .. import opaque
 
@@ -108,7 +109,7 @@ def run(func, env):
     env['numba.typing.context'] = ctx.context
     env['numba.typing.constraints'] = ctx.constraints
 
-    if env['numba.script']:
+    if debug_print(func, env):
         print("Type context:".center(90))
         for op, typeset in ctx.context.iteritems():
             print("%s%15s = %s" % (" " * 30, op, typeset))

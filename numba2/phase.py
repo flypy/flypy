@@ -77,6 +77,7 @@ def setup_phase(func, env):
 
     # -------------------------------------------------
     # Update environment
+    env["numba.state.func_name"] = py_func.__name__
     env["numba.state.function_wrapper"] = func
     env["numba.state.opaque"] = func.opaque
     env["numba.typing.restype"] = signature.restype
