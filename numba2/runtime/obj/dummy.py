@@ -9,7 +9,7 @@ import ctypes
 
 from ... import jit
 from blaze.datashape import Function as FunctionType
-from ..conversion import ctype, stack_allocate
+from ..conversion import ctype, byref
 from .pointerobject import Pointer
 
 #===------------------------------------------------------------------===
@@ -25,7 +25,7 @@ class Function(object):
         restype = ctype(ty.restype)
         argtypes = [ctype(argtype) for argtype in ty.argtypes]
 
-        if stack_allocate(ty.restype):
+        if byref(ty.restype):
             argtypes.append(ctypes.POINTER(restype))
             restype = None # void
 

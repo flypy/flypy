@@ -166,15 +166,19 @@ def ctype(type, memo=None):
     memo[type] = result
     return result
 
+def c_primitive(type):
+    return type.impl in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void)
 
 def stack_allocate(type):
     """
     Determine whether values of this type should be stack-allocated and partake
     directly as values under composition.
     """
-    return type.impl not in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void)
+    return True
     #return type.impl.stackallocate
 
+def byref(type):
+    return stack_allocate(type) and not c_primitive(type)
 
 def make_coercers(type):
     """

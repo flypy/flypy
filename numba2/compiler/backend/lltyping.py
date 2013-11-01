@@ -29,24 +29,43 @@ def ll_type(x):
 
 
 def resolve_type(context, op):
-    if isinstance(op, (FuncArg, Const, Op)):
-        if not op.type.is_void:
-            if op not in context:
-                raise errors.CompileError("Type for %s was lost" % (op,))
-            type = context[op]
-            if type.__class__.__name__ == 'Method':
-                return op # TODO: Remove this
+    """
+    Resolve types for ops:
 
-            ltype = ll_type(type)
-            if isinstance(op, Const):
-                const = op.const
-                if isinstance(const, Struct) and not const.values:
-                    const = Struct(['dummy'], [Const(0, ptypes.Int32)])
-                if ltype.is_pointer and not isinstance(const, Pointer):
-                    const = Pointer(const, ltype)
-                op = Const(const, ltype)
-            else:
-                op.type = ltype
+        - map numba type to low-level representation type
+        - represent stack-allocated values through pointers
+    """
+    if isinstance(op, (FuncArg, Const, Op)):
+        if op.type.is_void:
+            return op
+
+        if op not in context:
+            raise errors.CompileError("Type for %s was lost" % (op,))
+
+        # Retrieve type
+        type = context[op]
+
+        # Remove dummy method lookups (TODO: methods as first-class citizens)
+        if type.__class__.__name__ == 'Method':
+            return op # TODO: Remove this
+
+        # Generate low-level representation type
+        ltype = ll_type(type)
+
+        if isinstance(op, Const):
+            const = op.const
+
+            # Represent dummy constant structs with at least one field for LLVM
+            if isinstance(const, Struct) and not const.values:
+                const = Struct(['dummy'], [Const(0, ptypes.Int32)])
+
+            # Also represent stack-allocated values through pointers
+            if ltype.is_pointer and not isinstance(const, Pointer):
+                const = Pointer(const, ltype)
+
+            op = Const(const, ltype)
+        else:
+            op.type = ltype
 
     return op
 
@@ -69,12 +88,14 @@ def lltyping(func, env):
             op.set_args(nestedmap(resolve, op.args))
 
         restype = env['numba.typing.restype']
-        if conversion.stack_allocate(restype):
+        if conversion.byref(restype):
             ll_restype = ptypes.Void
         else:
             ll_restype = ll_type(restype)
 
         func.type = ptypes.Function(ll_restype, [arg.type for arg in func.args])
+        #signature = env['numba.typing.signature']
+        #func.type = ll_type(signature).base
 
 
 run = lltyping

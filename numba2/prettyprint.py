@@ -70,7 +70,7 @@ def debug_print(func, env):
     if cmdopts and cmdopts['filter']:
         func_name = env["numba.state.func_name"]
         return re.search(cmdopts['filter'], func_name)
-    return True
+    return env['numba.script']
 
 def verbose(p, func, env):
     if not debug_print(func, env):

@@ -27,19 +27,19 @@ def rewrite_obj_return(func, env):
 
     context = env['numba.typing.context']
     restype = env['numba.typing.restype']
-
-    if not conversion.stack_allocate(restype):
-        return
-
     builder = Builder(func)
-    out = func.add_arg(func.temp("out"), opaque_t)
-    context[out] = Pointer[restype]
 
-    func.type = types.Function(types.Void, func.type.argtypes)
+    stack_alloc = conversion.byref(restype)
+
+    if stack_alloc:
+        out = func.add_arg(func.temp("out"), opaque_t)
+        context[out] = Pointer[restype]
+        func.type = types.Function(types.Void, func.type.argtypes)
 
     for op in func.ops:
-        if op.opcode == 'ret' and op.args[0] is not None:
-            # ret val -> store (load val) out ; ret void
+        if op.opcode == 'ret' and op.args[0] is not None and stack_alloc:
+            # ret val =>
+            #     store (load val) out ; ret void
             [val] = op.args
             builder.position_before(op)
             newval = builder.load(val)
@@ -49,16 +49,20 @@ def rewrite_obj_return(func, env):
             # Update context
             context[newval] = context[val]
 
-        elif op.opcode == 'call' and op in context:
+        elif op.opcode == 'call' and op.type != types.Void:
+            # result = call(f, ...) =>
+            #     alloca result ; call(f, ..., &result)
             ty = context[op]
-            if conversion.stack_allocate(ty):
+            if conversion.byref(ty):
+                f, args = op.args
+
                 builder.position_before(op)
                 retval = builder.alloca(opaque_t)
                 builder.position_after(op)
                 op.replace_uses(retval)
-                #op.replace_uses(builder.load(retval_p))
+
+                newargs = args + [retval]
+                op.set_args([f, newargs])
 
                 # Update context
                 context[retval] = Pointer[context[op]]
-
-    #print(func)
