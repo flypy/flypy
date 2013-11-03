@@ -11,7 +11,7 @@ from numba2 import jit, sjit, int32
 
 @jit
 class C(object):
-    layout = {'x': int32}
+    layout = [('x', int32)]
 
     @jit
     def __init__(self, x):
@@ -22,8 +22,20 @@ class C(object):
         return self.x * other.x
 
     @jit
+    def __mul__(self, other):
+        return C(self.method(other))
+
+    @jit
     def method(self, other):
         return self.x * other.x
+
+@jit('Composed[a]')
+class Composed(object):
+    layout = [('obj', 'a')]
+
+    @jit
+    def method(self):
+        return self.obj.method(self.obj)
 
 # ______________________________________________________________________
 
@@ -101,9 +113,43 @@ class TestConstructors(unittest.TestCase):
 
         @jit
         def f(x):
-            return C(x).x * D(x).x # TODO: D(x).x <- promote setfield()
+            return C(x).x * D(x).x
 
         self.assertEqual(f(10), 100.0)
+
+class TestComposition(unittest.TestCase):
+
+    def test_field_composition(self):
+        "Test setfield/getfield for 'inlined' fields"
+        @jit
+        def f(x):
+            c = Composed(C(x))
+            return c.method()
+
+        self.assertEqual(f(10), 100)
+
+    def test_field_return(self):
+        "Test returning an 'inlined' field"
+        @jit
+        def f(x):
+            c = Composed(C(x))
+            return c.obj
+
+        self.assertEqual(f(10).x, 10)
+
+    def test_field_apply(self):
+        "Test passing around an 'inlined' field"
+        @jit
+        def f(x):
+            c = Composed(C(x))
+            return g(c.obj)
+
+        @jit
+        def g(x):
+            return x * x
+
+        self.assertEqual(f(10).x, 100)
+
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()

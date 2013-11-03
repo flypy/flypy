@@ -66,7 +66,7 @@ lowering = [
     cfa,
     throwing.rewrite_local_exceptions,
     rewrite_lowlevel_constants,
-    lowering.lower_fields,
+    #lowering.lower_fields,
 ]
 
 backend_init = [

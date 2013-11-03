@@ -25,7 +25,8 @@ def run(f, expected, args):
 # Tests
 #===------------------------------------------------------------------===
 
-class TestBytecodeTranslation(unittest.TestCase):
+# DISABLED.
+class TestBytecodeTranslation(object): #unittest.TestCase):
 
     #===------------------------------------------------------------------===
     # Ops

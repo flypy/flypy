@@ -6,6 +6,9 @@ Handle calling conventions for objections.
 
 from __future__ import print_function, division, absolute_import
 
+import ctypes
+
+from numba2 import jit
 from numba2.types import Pointer
 from numba2.runtime import conversion
 
@@ -17,6 +20,23 @@ from pykit.ir import OpBuilder, Builder
 #===------------------------------------------------------------------===
 
 opaque_t = types.Pointer(types.Opaque)
+
+@jit('StackVar[a]')
+class StackVar(object):
+    """
+    Represent the loaded stack layout of a value.
+    """
+
+    layout = []
+
+    @classmethod
+    def ctype(cls, ty):
+        cty = conversion.ctype(ty.parameters[0])
+        # Get the base type if a pointer
+        if hasattr(cty, '_type_'):
+            return cty._type_
+        return cty
+
 
 def rewrite_obj_return(func, env):
     """
@@ -36,6 +56,10 @@ def rewrite_obj_return(func, env):
         context[out] = Pointer[restype]
         func.type = types.Function(types.Void, func.type.argtypes)
 
+    for arg in func.args:
+        arg.type = opaque_t
+    func.type = types.Function(func.type.restype, (opaque_t,) * len(func.args))
+
     for op in func.ops:
         if op.opcode == 'ret' and op.args[0] is not None and stack_alloc:
             # ret val =>
@@ -47,7 +71,7 @@ def rewrite_obj_return(func, env):
             op.set_args([None])
 
             # Update context
-            context[newval] = context[val]
+            context[newval] = StackVar[context[val]]
 
         elif op.opcode == 'call' and op.type != types.Void:
             # result = call(f, ...) =>
