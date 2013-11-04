@@ -57,8 +57,9 @@ def unicode(x):
 def print(value, sep=' ', end='\n'):
     # TODO: *args and **kwargs
     s = str(value)
-    #ffi.libc.printf(s.buf.p) # TODO: Properties
-    ffi.libc.puts(s.buf.p)
+    ffi.libc.printf(s.buf.p) # TODO: Properties
+    ffi.libc.printf(end.buf.p)
+    #ffi.libc.puts(s.buf.p)
 
 # ____________________________________________________________
 
