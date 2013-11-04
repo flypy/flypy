@@ -5,6 +5,7 @@ from .pointerobject import Pointer
 from .boolobject import Bool
 from .intobject import Int
 from .floatobject import Float
+from .complexobject import Complex
 from .tupleobject import Tuple, StaticTuple, GenericTuple
 from .listobject import List
 from .rangeobject import Range
