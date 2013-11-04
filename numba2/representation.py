@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from numba2.runtime.conversion import ctype
 
 from pykit import types as ptypes
-from pykit.utils.ctypes import from_ctypes_type
+from pykit.utils.ctypes_support import from_ctypes_type
 
 #===------------------------------------------------------------------===
 # Type Representation

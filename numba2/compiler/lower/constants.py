@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from numba2.runtime import fromobject, toctypes
 
-from pykit.utils.ctypes import from_ctypes_value
+from pykit.utils.ctypes_support import from_ctypes_value
 from pykit.ir import collect_constants, substitute_args
 
 #===------------------------------------------------------------------===

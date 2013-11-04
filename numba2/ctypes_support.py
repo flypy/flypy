@@ -10,7 +10,7 @@ import ctypes.util
 
 from numba2 import types
 from pykit.utils import hashable
-from pykit.utils.ctypes import is_ctypes_struct_type, is_ctypes_pointer_type
+from pykit.utils.ctypes_support import is_ctypes_struct_type, is_ctypes_pointer_type
 
 #===------------------------------------------------------------------===
 # CTypes Utils
