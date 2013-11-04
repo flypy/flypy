@@ -9,7 +9,11 @@ import ctypes
 
 import numba2
 from numba2 import jit
+from numba2.representation import lltype
 from ..conversion import ctype
+from ..lowlevel_impls import add_impl_cls
+
+from pykit import types as ptypes
 
 #===------------------------------------------------------------------===
 # Pointer
@@ -87,6 +91,32 @@ class Pointer(object):
     def ctype(cls, ty):
         [base] = ty.parameters
         return ctypes.POINTER(ctype(base))
+
+#===------------------------------------------------------------------===
+# Low-level Implementation
+#===------------------------------------------------------------------===
+
+def pointer_add(builder, argtypes, ptr, addend):
+    builder.ret(builder.ptradd(ptr, addend))
+
+def pointer_load(builder, argtypes, ptr):
+    builder.ret(builder.ptrload(ptr))
+
+def pointer_store(builder, argtypes, ptr, value):
+    builder.ptrstore(value, ptr)
+    builder.ret(None)
+
+# Determine low-level return types
+
+def _getitem_type(argtypes):
+    base = argtypes[0].parameters[0]
+    return lltype(base)
+
+# Implement
+
+add_impl_cls(Pointer, "__add__", pointer_add)
+add_impl_cls(Pointer, "deref", pointer_load, restype_func=_getitem_type)
+add_impl_cls(Pointer, "store", pointer_store, restype=ptypes.Void)
 
 #===------------------------------------------------------------------===
 # Utils

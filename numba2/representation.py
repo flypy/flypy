@@ -23,3 +23,5 @@ def representation_type(ty):
     if result_type.is_struct:
         result_type = ptypes.Pointer(result_type)
     return result_type
+
+lltype = representation_type

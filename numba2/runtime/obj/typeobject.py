@@ -5,7 +5,10 @@ Number interfaces.
 """
 
 from __future__ import print_function, division, absolute_import
+
 from numba2 import jit
+from numba2.representation import lltype
+from ..lowlevel_impls import add_impl_cls
 
 __all__ = ['Type']
 
@@ -45,3 +48,13 @@ class Constructor(object):
          opaque=True, infer_restype=index_type)
     def __getitem__(self, item):
         raise NotImplementedError
+
+#===------------------------------------------------------------------===
+# Low-level Implementation
+#===------------------------------------------------------------------===
+
+def firstarg(builder, argtypes, *args):
+    builder.ret(args[0])
+
+add_impl_cls(Constructor, "__getitem__", firstarg,
+             restype_func=lambda argtypes: lltype(argtypes[1]))
