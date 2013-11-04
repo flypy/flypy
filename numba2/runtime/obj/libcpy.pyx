@@ -160,7 +160,7 @@ cdef public print_(values):
 cdef public fromvoidp(void *p):
     return <object> p
 
-cdef public address(PyObject *x):
+cdef public Py_uintptr_t address(PyObject *x):
     return <Py_uintptr_t> x
 
 cdef public bint istrue(obj):
@@ -178,3 +178,8 @@ cdef public char * asstring(obj):
 
 cdef public fromstring(char *s, Py_ssize_t length):
     return s[:length]
+
+# ______________________________________________________________________
+
+cdef public void debug():
+    print("debug...")

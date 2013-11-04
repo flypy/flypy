@@ -10,8 +10,9 @@ class C(object):
     def __init__(self, value):
         self.value = value
 
-    def __add__(self, other):
-        return self.value + other.value
+    __add__ = lambda self, other: self.value + other.value
+    __mul__ = lambda self, other: self.value * other.value
+    __sub__ = lambda self, other: self.value - other.value
 
 @typeof.case(C)
 def typeof(value):
@@ -23,8 +24,19 @@ class TestObjects(unittest.TestCase):
         @jit
         def f(a, b):
             return a + b
-
         self.assertEqual(f(C(5), C(6)), 11)
+
+    def test_mul(self):
+        @jit
+        def f(a, b):
+            return a * b
+        self.assertEqual(f(C(5), C(6)), 30)
+
+    def test_sub(self):
+        @jit
+        def f(a, b):
+            return a - b
+        self.assertEqual(f(C(5), C(6)), -1)
 
 
 if __name__ == '__main__':

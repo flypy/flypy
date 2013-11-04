@@ -92,6 +92,7 @@ torepr          = declare('torepr'       , obj, [obj])
 asstring        = declare('asstring'     , ctypes.POINTER(ctypes.c_int8), [obj])
 fromstring      = declare('fromstring'   , obj, [ctypes.POINTER(ctypes.c_int8),
                                                  ctypes.c_ssize_t])
+debug           = declare('debug'        , None, [])
 
 # CFFI always releases the GIL...
 #ffi.cdef("""

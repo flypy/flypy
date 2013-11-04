@@ -36,7 +36,7 @@ class FunctionWrapper(object):
 
     def __call__(self, *args, **kwargs):
         from numba2.runtime import (toctypes, fromctypes, toobject, fromobject,
-                                    ctype, byref)
+                                    ctype, byref, stack_allocate)
         from numba2.types import Function
 
         # Keep this alive for the duration of the call
@@ -50,11 +50,15 @@ class FunctionWrapper(object):
         cfunc, restype = self.translate(argtypes)
 
         # Construct numba values
-        args = list(starmap(fromobject, zip(args, argtypes)))
+        arg_objs = list(starmap(fromobject, zip(args, argtypes)))
 
         # Map numba values to a ctypes representation
-        args = [toctypes(arg, argtype, keepalive)
-                    for arg, argtype in  zip(args, argtypes)]
+        args = []
+        for arg, argtype in zip(arg_objs, argtypes):
+            c_arg = toctypes(arg, argtype, keepalive)
+            if byref(argtype) and stack_allocate(argtype):
+                c_arg = ctypes.pointer(c_arg)
+            args.append(c_arg)
 
         # We need this cast since the ctypes function constructed from LLVM
         # IR has different structs (which are structurally equivalent)

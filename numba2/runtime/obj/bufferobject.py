@@ -6,7 +6,8 @@ Buffer objects.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, typeof
+import numba2
+from numba2 import jit
 from numba2.runtime import ffi
 from . import Pointer
 
@@ -38,6 +39,10 @@ class Buffer(object):
     @jit('a -> int64 -> base')
     def __getitem__(self, item):
         return self.p[item]
+
+    @jit('a -> int64')
+    def __len__(self):
+        return self.size
 
     #@jit
     #def __del__(self):

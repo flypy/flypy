@@ -16,6 +16,7 @@ from .runtime import toobject, fromobject, toctypes, fromctypes, cast, NULL, cty
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc
 from .runtime import builtins as bltins
+from .runtime.obj.librt import debug
 
 from .passes import translate
 from .errors import error, InferError, SpecializeError

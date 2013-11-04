@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 import ctypes
 
-from numba2 import jit
+from numba2 import jit, void
 from numba2.types import Pointer
 from numba2.runtime import conversion
 
@@ -47,6 +47,8 @@ def rewrite_obj_return(func, env):
 
     context = env['numba.typing.context']
     restype = env['numba.typing.restype']
+    envs =  env['numba.state.envs']
+
     builder = Builder(func)
 
     stack_alloc = conversion.byref(restype)
@@ -79,6 +81,8 @@ def rewrite_obj_return(func, env):
             ty = context[op]
             if conversion.byref(ty):
                 f, args = op.args
+                if envs[f]['numba.state.opaque']:
+                    continue
 
                 builder.position_before(op)
                 retval = builder.alloca(opaque_t)
@@ -89,4 +93,5 @@ def rewrite_obj_return(func, env):
                 op.set_args([f, newargs])
 
                 # Update context
-                context[retval] = Pointer[context[op]]
+                context[retval] = context[op]
+                context[op] = void

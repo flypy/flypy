@@ -5,8 +5,9 @@ Handle constants.
 """
 
 from __future__ import print_function, division, absolute_import
+import ctypes
 
-from numba2.runtime import fromobject, toctypes
+from numba2.runtime import fromobject, toctypes, byref
 
 from pykit.utils.ctypes_support import from_ctypes_value
 from pykit.ir import collect_constants, substitute_args
@@ -42,10 +43,14 @@ def rewrite_constants(func, env):
             numba_obj = fromobject(c.const, ty)
             # Numba -> ctypes
             ctype_obj = toctypes(numba_obj, ty, _keep_alive)
+            if byref(ty):
+                ctype_obj = ctypes.pointer(ctype_obj)
             # ctypes -> pykit
             new_const = from_ctypes_value(ctype_obj)
 
             context[new_const] = ty
             new_constants.append(new_const)
+
+            _keep_alive.extend([ctype_obj, c.const])
 
         substitute_args(op, constants, new_constants)

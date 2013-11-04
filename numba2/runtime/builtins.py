@@ -41,23 +41,24 @@ def len(x):
 
 # ____________________________________________________________
 
-@ijit
+@jit
 def str(x):
     return x.__str__()
 
-@ijit
+@jit
 def repr(x):
     return x.__repr__()
 
-@ijit
+@jit
 def unicode(x):
     return x.__unicode__()
 
-@ijit
+@jit
 def print(value, sep=' ', end='\n'):
     # TODO: *args and **kwargs
     s = str(value)
-    ffi.libc.printf(s.buf.p) # TODO: Properties
+    #ffi.libc.printf(s.buf.p) # TODO: Properties
+    ffi.libc.puts(s.buf.p)
 
 # ____________________________________________________________
 

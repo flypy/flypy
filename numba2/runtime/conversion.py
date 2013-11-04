@@ -167,7 +167,8 @@ def ctype(type, memo=None):
     return result
 
 def c_primitive(type):
-    return type.impl in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void)
+    return type.impl in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void,
+                         nb.Function, nb.ForeignFunction)
 
 def stack_allocate(type):
     """

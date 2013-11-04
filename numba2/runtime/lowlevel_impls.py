@@ -23,7 +23,7 @@ def add_impl(opaque_func, name, implementation, restype=None, restype_func=None)
         from numba2.compiler.backend.lltyping import ll_type
 
         ll_argtypes = [ll_type(x) for x in argtypes]
-        argnames = string.ascii_letters[:len(argtypes)]
+        argnames = list(string.ascii_letters[:len(argtypes)])
 
         # Determine return type
         if restype_func:

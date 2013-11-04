@@ -408,7 +408,8 @@ def infer_node(cache, ctx, node):
     if C == 'pointer':
         for neighbor in incoming:
             for type in ctx.context[neighbor]:
-                result = Pointer[type]
+                #result = Pointer[type]
+                result = type
                 changed |= result not in typeset
                 typeset.add(result)
 

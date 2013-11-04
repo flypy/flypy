@@ -34,19 +34,23 @@ class String(object):
     def __str__(self):
         return self
 
+    @jit('a -> int64')
+    def __len__(self):
+        return len(self.buf) - 1
+
     # __________________________________________________________________
 
     @staticmethod
     def fromobject(strobj, type):
         assert isinstance(strobj, str)
         p = lib.asstring(strobj)
-        buf = Buffer(Pointer(p), len(strobj))
+        buf = Buffer(Pointer(p), len(strobj) + 1)
         return String(buf)
 
     @staticmethod
     def toobject(obj, type):
         buf = obj.buf
-        return lib.fromstring(buf.p, buf.size)
+        return lib.fromstring(buf.p, len(obj))
 
     # __________________________________________________________________
 
