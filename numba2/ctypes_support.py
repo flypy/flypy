@@ -99,6 +99,7 @@ ctypes_map = {
     ctypes.c_float:  types.float32,
     ctypes.c_double: types.float64,
     None:            types.void,
+    ctypes.c_char_p: types.string,
 }
 
 def from_ctypes_type(cty, ctypes_value=None):
@@ -117,7 +118,7 @@ def from_ctypes_type(cty, ctypes_value=None):
         fields = [(name, from_ctypes_type(field_type))
                       for name, field_type in cty._fields_]
         fieldnames, fieldtypes = zip(*fields) or (('dummy',), (types.Int8,))
-        return types.struct_(fieldnames, fieldtypes)
+        return types.struct_(fields)
     elif is_ctypes_function_type(cty):
         # from_ctypes_type(cty._restype_) # <- this value is arbitrary,
         # it's always a c_int

@@ -38,6 +38,8 @@ def typeof(pyval):
         return ctypes_support.from_ctypes_type(type(pyval), pyval)
     elif ctypes_support.is_ctypes_value(pyval):
         return ctypes_support.from_ctypes_type(type(pyval))
+    elif ctypes_support.is_ctypes_struct_type(pyval):
+        return ctypes_support.from_ctypes_type(pyval)
 
     raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
 
