@@ -44,6 +44,9 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
     """
     from numba2.types import int8
 
+    if hasattr(type, 'type'):
+        type = type.type
+
     if valmemo is None:
         valmemo = {}
         typememo = {}
@@ -61,6 +64,9 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
         # Resolve types
         layout = type.resolved_layout
         types = [layout[name] for name, _ in cty._fields_] or [int8]
+
+        if hasattr(value, 'contents'):
+            value = value.contents
 
         # Resolve values
         values = [getattr(value, name) for name, _ in cty._fields_]
@@ -82,6 +88,9 @@ def fromctypes(value, ty, memo=None):
     Construct a numba object from a ctypes representation.
     """
     from numba2.ctypes_support import is_ctypes_pointer_type, CTypesStruct
+
+    if hasattr(ty, 'type'):
+        ty = ty.type
 
     if memo is None:
         memo = {}
@@ -121,6 +130,9 @@ def ctype(type, memo=None):
 
     # -------------------------------------------------
     # Setup cache
+
+    if hasattr(type, 'type'):
+        type = type.type
 
     if memo is None:
         memo = {}
