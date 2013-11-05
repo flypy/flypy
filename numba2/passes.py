@@ -21,7 +21,7 @@ from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 from pykit.analysis import cfa
 from pykit.transform import dce
 #from pykit.optimizations import local_exceptions
-from pykit.codegen.llvm import verify, optimize
+from pykit.codegen.llvm import verify, optimize, llvm_postpasses
 
 #===------------------------------------------------------------------===
 # Passes
@@ -76,6 +76,7 @@ backend_init = [
 
 backend_run = [
     llvm.codegen_run,
+    llvm_postpasses,
     llvm.codegen_link,
 ]
 

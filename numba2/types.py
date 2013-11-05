@@ -2,11 +2,12 @@
 from __future__ import print_function, division, absolute_import
 
 __all__ = [
-    'Function', 'Mono', 'Bool', 'Int', 'Float', 'Type', 'Constructor',
+    'Function', 'Mono', 'Bool', 'Int', 'Float', 'Complex',
+    'Type', 'Constructor',
     'Pointer', 'Void', 'struct_', 'Object', 'ForeignFunction',
     'void', 'char', 'uchar', 'short', 'ushort',
     'int_', 'uint', 'long_', 'ulong', 'longlong', 'ulonglong',
-    'size_t', 'npy_intp', 'bool_', 'string',
+    'size_t', 'npy_intp', 'bool_', 'string', 'float_', 'double',
     'float32', 'float64','int8', 'int16', 'int32', 'int64', 'uint8',
     'uint16', 'uint32', 'uint64', 'Py_ssize_t',
     #'complex64', 'complex128', 'complex256', 'struct', 'Py_uintptr_t'
@@ -21,8 +22,11 @@ import struct
 from blaze import dshape
 from blaze.datashape import free, TypeVar, TypeConstructor
 from blaze.datashape import Mono as Mono, Ellipsis as EllipsisT
+from blaze.datashape import (signed, unsigned, integral, floating, complexes,
+                             boolean, numeric, scalar)
 from .runtime import Type, Constructor
-from .runtime.obj import (Function, Pointer, Bool, Int, Float, Void, NoneType,
+from .runtime.obj import (Function, Pointer, Bool, Int, Float, Complex,
+                          Void, NoneType,
                           Tuple, StaticTuple, String, ForeignFunction,
                           struct_, Object)
 
@@ -43,6 +47,8 @@ uint32  = Int[32, True]
 uint64  = Int[64, True]
 float32 = Float[32]
 float64 = Float[64]
+complex64 = Complex[float32]
+complex128 = Complex[float64]
 
 def signed(itemsize):
     return {1: int8, 2: int16, 4: int32, 8: int64}[itemsize]
@@ -63,6 +69,7 @@ ulong     = unsigned(struct.calcsize('l'))
 ulonglong = unsigned(struct.calcsize('Q'))
 
 # TODO: use the right platform sizes
+float_       = float32
 double       = float64
 Py_ssize_t   = int64
 size_t       = uint64
