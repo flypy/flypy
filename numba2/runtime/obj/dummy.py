@@ -38,6 +38,9 @@ class ForeignFunction(object):
 
     @staticmethod
     def fromobject(value, type):
+        from numba2.cffi_support import is_cffi, ffi, is_cffi_func
+        #if is_cffi(value) and is_cffi_func(value):
+        #    value = ffi.addressof(value)
         return ForeignFunction(value)
 
     @staticmethod

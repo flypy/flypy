@@ -127,6 +127,10 @@ setup(
             sources=["numba2/runtime/obj/libcpy.pyx"],
             include_dirs=[numpy.get_include()],
             depends=[]),
+        Extension(
+            name="numba2.runtime.gc.boehmlib",
+            sources=["numba2/runtime/gc/boehmlib.pyx"],
+            libraries=["gc"]),
     ],
     cmdclass=cmdclass,
     **setup_args

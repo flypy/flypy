@@ -23,7 +23,7 @@ import cffi
 
 void = Void[()]
 
-__all__ = ['malloc', 'sizeof']
+__all__ = ['malloc', 'memcmp', 'sizeof']
 
 #===------------------------------------------------------------------===
 # Decls
