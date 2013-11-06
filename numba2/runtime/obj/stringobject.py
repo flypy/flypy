@@ -7,6 +7,7 @@ String implementation.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit, typeof
+from numba2.runtime.lib import libc
 from . import librt as lib
 from .bufferobject import Buffer
 from .pointerobject import Pointer
@@ -53,6 +54,11 @@ class String(object):
         return lib.fromstring(buf.p, len(obj))
 
     # __________________________________________________________________
+
+
+@jit #('Pointer[char] -> String[]') # TODO: Foo[] syntax
+def from_cstring(p):
+    return String(Buffer(p, libc.strlen(p)))
 
 
 @typeof.case(str)

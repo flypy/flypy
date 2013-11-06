@@ -99,7 +99,7 @@ ctypes_map = {
     ctypes.c_float:  types.float32,
     ctypes.c_double: types.float64,
     None:            types.void,
-    ctypes.c_char_p: types.string,
+    ctypes.c_char_p: types.Pointer[types.char],
 }
 
 def from_ctypes_type(cty, ctypes_value=None):
