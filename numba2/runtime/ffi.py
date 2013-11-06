@@ -13,30 +13,15 @@ from .obj import Type
 from .conversion import ctype
 from .casting import cast
 from .obj import Type, Pointer, Void
-
+from .lib import libc
 from .lowlevel_impls import add_impl
 
 from pykit import ir
 from pykit import types as ptypes
 
-import cffi
-
 void = Void[()]
 
 __all__ = ['malloc', 'memcmp', 'sizeof']
-
-#===------------------------------------------------------------------===
-# Decls
-#===------------------------------------------------------------------===
-
-ffi = cffi.FFI()
-ffi.cdef("""
-void *malloc(size_t size);
-int memcmp(void *s1, void *s2, size_t n);
-int printf(char *s, ...);
-int puts(char *s);
-""")
-libc = ffi.dlopen(None)
 
 #===------------------------------------------------------------------===
 # Implementations

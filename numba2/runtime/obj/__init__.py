@@ -15,4 +15,5 @@ from .structobject import struct_
 from .dummy import Void, Function, ForeignFunction, NULL
 from .exceptions import *
 from .pyobject import Object
-from .stringobject import String
+from .bufferobject import Buffer
+from .stringobject import String, from_cstring

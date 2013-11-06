@@ -11,7 +11,6 @@ import numba2
 from numba2 import jit, ijit, typeof
 from . import Void, Pointer
 from . import librt as lib
-from numba2.runtime.ffi import ffi
 
 import cffi
 
