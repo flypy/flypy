@@ -10,6 +10,7 @@ import ctypes
 
 from numba2 import jit, void
 from numba2.types import Pointer
+from numba2.compiler import is_numba_cc
 from numba2.runtime import conversion
 
 from pykit import types
@@ -81,7 +82,7 @@ def rewrite_obj_return(func, env):
             ty = context[op]
             if conversion.byref(ty):
                 f, args = op.args
-                if envs[f]['numba.state.opaque']:
+                if not is_numba_cc(f) or envs[f]['numba.state.opaque']:
                     continue
 
                 builder.position_before(op)
