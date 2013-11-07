@@ -24,13 +24,21 @@ def typemap():
     from . import types
 
     _blaze2numba = {
-        ds.void    : types.void,
-        ds.char    : types.char,
-        ds.bool_   : types.bool_,
-        ds.int32   : types.int32,
-        ds.int64   : types.int64,
-        ds.float32 : types.float32,
-        ds.float64 : types.float64,
+        ds.void     : types.void,
+        ds.char     : types.char,
+        ds.bool_    : types.bool_,
+        ds.int8     : types.int8,
+        ds.int16    : types.int16,
+        ds.int32    : types.int32,
+        ds.int64    : types.int64,
+        ds.uint8    : types.uint8,
+        ds.uint16   : types.uint16,
+        ds.uint32   : types.uint32,
+        ds.uint64   : types.uint64,
+        ds.float32  : types.float32,
+        ds.float64  : types.float64,
+        ds.complex64: types.complex64,
+        ds.complex128: types.complex128,
     }
     return _blaze2numba
 
