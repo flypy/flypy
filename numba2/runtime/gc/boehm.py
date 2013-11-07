@@ -27,6 +27,9 @@ ffi = cffi.FFI()
 ffi.cdef("""
 void boehm_collect();
 void *boehm_malloc(size_t nbytes);
+void boehm_disable();
+void boehm_enable();
+void boehm_register_finalizer(void *obj, void *dtor);
 """)
 
 gc = ffi.dlopen(lib)
@@ -58,6 +61,24 @@ def gc_alloc(items, type):
     p = gc.boehm_malloc(items * sizeof(type))
     return cast(p, Pointer[type])
 
+@jit('int64 -> Type[a] -> Pointer[a]')
+def gc_delalloc(items, type):
+    p = gc.boehm_malloc(items * sizeof(type))
+
+    return cast(p, Pointer[type])
+
 @jit
 def gc_collect():
     gc.boehm_collect()
+
+@jit
+def gc_disable():
+    gc.boehm_disable()
+
+@jit
+def gc_enable():
+    gc.boehm_enable()
+
+@jit('Pointer[void] -> Pointer[void] -> void')
+def gc_add_finalizer(obj, finalizer):
+    gc.boehm_register_finalizer(obj, finalizer)
