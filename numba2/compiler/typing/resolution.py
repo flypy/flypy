@@ -91,6 +91,16 @@ def infer_foreign_call(func, func_type, argtypes):
     else:
         restype = func_type.restype
     assert restype
+
+    expected_argtypes = func_type.parameters[:-1]
+
+    if len(argtypes) != len(expected_argtypes):
+        raise TypeError("Function %s requires %d argument(s), got %d" % (
+                                func, len(argtypes), len(expected_argtypes)))
+
+    # Make sure we have compatible types
+    unify(zip(argtypes, expected_argtypes))
+
     return func, restype
 
 
@@ -157,7 +167,7 @@ def resolve_restype(func, env):
         restype = inferred_restype
     elif inferred_restype != restype:
         try:
-            restype = unify(inferred_restype, restype)
+            [restype] = unify([(inferred_restype, restype)])
         except UnificationError, e:
             raise TypeError(
                 "Annotated result type %s does not match inferred "

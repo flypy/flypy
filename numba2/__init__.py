@@ -8,8 +8,7 @@ from pykit.utils.pattern import match as pyoverload
 
 from .entrypoints import jit, ijit, sjit, abstract
 from .compiler import (annotate, overload, overloadable)
-from .typing import (overlay, parse, unify_simple as unify,
-                     unify as unify_constraints, free, UnificationError)
+from .typing import (overlay, parse, unify, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
 from .runtime import toobject, fromobject, toctypes, fromctypes, cast, NULL, ctype

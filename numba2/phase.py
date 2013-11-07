@@ -173,9 +173,9 @@ def phasecompose(phase1, phase2):
         try:
             return phase1(*phase2(func, env))
         except Exception, e:
-            print("-----------------------------")
-            print("Exception occurred when compiling %s with argtypes %s" % (
-                                          func, env["numba.typing.argtypes"]))
+            #print("-----------------------------")
+            #print("Exception occurred when compiling %s with argtypes %s" % (
+            #                              func, env["numba.typing.argtypes"]))
             raise #CompileError(str(e))
 
     return wrapper

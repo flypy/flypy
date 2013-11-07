@@ -7,8 +7,8 @@ from pykit.utils import hashable
 
 from blaze import datashape as ds
 from blaze.datashape import (TypeVar, TypeConstructor, dshape,
-                             coercion_cost as coerce, unify, unify_simple, free,
-                             TypeSet)
+                             coercion_cost as coerce, unify as blaze_unify,
+                             free, TypeSet)
 from blaze.error import UnificationError
 
 #===------------------------------------------------------------------===
@@ -51,6 +51,24 @@ def resolve_type(t):
 def to_blaze(t):
     replacements = dict((v, k) for k, v in typemap().iteritems())
     return ds.tmap(lambda x: replacements.get(x, x), t)
+
+def unify(constraints, concrete=True):
+    """
+    Unify a set of constraints. If `concrete` is set to True, the result
+    may not have any remaining free variables.
+    """
+    cs = [(to_blaze(left), to_blaze(right)) for left, right in constraints]
+    result, remaining_constraints = blaze_unify(cs)
+
+    if concrete:
+        #if remaining:
+        #    raise TypeError("Result is not concrete after unification")
+        for result_type in result:
+            if free(result_type):
+                raise TypeError(
+                    "Result type stil has free variables: %s" % (result_type,))
+
+    return [resolve_type(t) for t in result]
 
 #===------------------------------------------------------------------===
 # Runtime

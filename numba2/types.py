@@ -29,6 +29,7 @@ from .runtime.obj import (Function, Pointer, Bool, Int, Float, Complex,
                           Void, NoneType,
                           Tuple, StaticTuple, String, ForeignFunction,
                           struct_, Object)
+#from .compiler.typing.inference import Method
 
 #===------------------------------------------------------------------===
 # Units

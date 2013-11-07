@@ -25,23 +25,6 @@ class TypeChecker(object):
             raise TypeError(
                 "Object of type '%s' has no attribute %r" % (obj_type, attr))
 
-    def op_call(self, op):
-        f, args = op.args
-        ty = self.context[f]
-
-        assert ty.impl in (Function, ForeignFunction)
-        argtypes = ty.parameters[:-1]
-        #restype  = ty.parameters[-1]
-
-        if len(args) != len(argtypes):
-            raise TypeError("Function %s requires %d argument(s), got %d" % (
-                                                f, len(argtypes), len(args)))
-        for argtype, arg in zip(argtypes, args):
-            got_argtype = self.context[arg]
-            if argtype != got_argtype:
-                raise TypeError("Expected argument of type %s, got %s" % (
-                                                        argtype, got_argtype))
-
 #===------------------------------------------------------------------===
 # Entry point
 #===------------------------------------------------------------------===

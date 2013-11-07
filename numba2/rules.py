@@ -74,21 +74,14 @@ def infer_type_from_layout(classtype, concrete_layout):
     argnames, argtypes = zip(*concrete_layout)
 
     # Build constraint list for unification
-    constraints = [(to_blaze(argtype),
-                    to_blaze(classtype.resolved_layout[argname]))
+    constraints = [(argtype, classtype.resolved_layout[argname])
                        for argtype, argname in zip(argtypes, argnames)
                            if argname in cls.layout]
     # Add the constructor type with itself, this will flow in resolved variables
     # from the arguments
     constraints.append((classtype, classtype))
-    result, remaining = unify(constraints)
-
-    result_type = result[-1]
-    if free(result_type):
-        raise TypeError(
-            "Result classtype stil has free variables: %s" % (result_type,))
-
-    return resolve_type(result_type)
+    result = unify(constraints)
+    return result[-1]
 
 
 def convert(value, type):
