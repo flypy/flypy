@@ -7,7 +7,7 @@ Number interfaces.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit
-from numba2.representation import lltype
+from numba2.compiler import lltype
 from ..lowlevel_impls import add_impl_cls
 
 __all__ = ['Type']
@@ -44,7 +44,7 @@ class Type(object):
 class Constructor(object):
     layout = [] #('ctor', 'a')]
 
-    @jit('Constructor[a] -> Type[b] -> void',
+    @jit('Constructor[a] -> Type[b] -> c',
          opaque=True, infer_restype=index_type)
     def __getitem__(self, item):
         raise NotImplementedError

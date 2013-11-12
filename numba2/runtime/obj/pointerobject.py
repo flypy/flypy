@@ -9,8 +9,8 @@ import ctypes
 
 import numba2
 from numba2 import jit
-from numba2.representation import lltype
-from ..conversion import ctype
+from numba2.compiler import representation_type
+from numba2.conversion import ctype
 from ..lowlevel_impls import add_impl_cls
 
 from pykit import types as ptypes
@@ -110,7 +110,7 @@ def pointer_store(builder, argtypes, ptr, value):
 
 def _getitem_type(argtypes):
     base = argtypes[0].parameters[0]
-    return lltype(base)
+    return representation_type(base)
 
 # Implement
 

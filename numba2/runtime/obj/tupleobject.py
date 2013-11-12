@@ -7,7 +7,7 @@ tuple implementation.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit, sjit, abstract, typeof
-from ..conversion import fromobject, toobject
+from numba2.conversion import fromobject, toobject
 from .noneobject import NoneType
 
 STATIC_THRESHOLD = 5

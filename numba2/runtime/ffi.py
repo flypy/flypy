@@ -9,8 +9,8 @@ import ctypes
 
 from numba2 import jit
 from numba2 import jit, overlay
+from numba2.conversion import ctype
 from .obj import Type
-from .conversion import ctype
 from .casting import cast
 from .obj import Type, Pointer, Void
 from .lib import libc

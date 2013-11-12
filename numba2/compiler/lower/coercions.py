@@ -6,8 +6,6 @@ Type coercions.
 
 from __future__ import print_function, division, absolute_import
 
-from ..typing.resolution import infer_call, is_method, get_remaining_args
-
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, Function, Op
 

@@ -11,11 +11,13 @@ from .compiler import (annotate, overload, overloadable)
 from .typing import (overlay, parse, unify, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
-from .runtime import toobject, fromobject, toctypes, fromctypes, cast, NULL, ctype
+from .conversion import toobject, fromobject, toctypes, fromctypes, ctype
+from .runtime import cast, NULL
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc
 from .runtime import builtins as bltins
 from .runtime.obj.librt import debug
+from .runtime.special import addressof
 
 from .passes import translate
 from .errors import error, InferError, SpecializeError

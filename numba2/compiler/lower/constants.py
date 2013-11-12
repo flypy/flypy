@@ -7,7 +7,8 @@ Handle constants.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-from numba2.runtime import fromobject, toctypes, byref
+from numba2.representation import byref
+from numba2.conversion import fromobject, toctypes
 
 from pykit.utils.ctypes_support import from_ctypes_value
 from pykit.ir import collect_constants, substitute_args

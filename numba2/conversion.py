@@ -9,6 +9,7 @@ import ctypes
 
 import numba2 as nb
 from numba2 import typing
+from .representation import stack_allocate, byref, c_primitive
 
 #===------------------------------------------------------------------===
 # Object Conversion
@@ -65,6 +66,7 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
         layout = type.resolved_layout
         types = [layout[name] for name, _ in cty._fields_] or [int8]
 
+        # Dereference pointer to aggregate
         if hasattr(value, 'contents'):
             value = value.contents
 
@@ -178,20 +180,6 @@ def ctype(type, memo=None):
     memo[type] = result
     return result
 
-def c_primitive(type):
-    return type.impl in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void,
-                         nb.Function, nb.ForeignFunction)
-
-def stack_allocate(type):
-    """
-    Determine whether values of this type should be stack-allocated and partake
-    directly as values under composition.
-    """
-    return True
-    #return type.impl.stackallocate
-
-def byref(type):
-    return stack_allocate(type) and not c_primitive(type)
 
 def make_coercers(type):
     """

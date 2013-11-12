@@ -117,7 +117,7 @@ def from_ctypes_type(cty, ctypes_value=None):
     elif is_ctypes_struct_type(cty):
         fields = [(name, from_ctypes_type(field_type))
                       for name, field_type in cty._fields_]
-        fieldnames, fieldtypes = zip(*fields) or (('dummy',), (types.Int8,))
+        fields = fields or [('dummy', types.int8)]
         return types.struct_(fields)
     elif is_ctypes_function_type(cty):
         # from_ctypes_type(cty._restype_) # <- this value is arbitrary,
