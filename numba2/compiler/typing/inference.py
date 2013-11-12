@@ -443,17 +443,20 @@ def infer_node(cache, ctx, node):
 
         # Iterate over cartesian product, processing only unpreviously
         # processed combinations
-        for func_type in func_types:
+        for func_type in set(func_types):
             for arg_types in product(*arg_typess):
                 key = (node, func_type, tuple(arg_types))
                 if key not in processed:
                     processed.add(key)
-                    _, result = infer_call(func, func_type, arg_types)
+                    _, signature, result = infer_call(func, func_type, arg_types)
                     if isinstance(result, TypeVar):
                         raise TypeError("Expected a concrete type result, "
                                         "not a type variable! (%s)" % (func,))
                     changed |= result not in typeset
                     typeset.add(result)
+                    if None in func_types:
+                        func_types.remove(None)
+                        func_types.add(signature)
 
     return changed
 
