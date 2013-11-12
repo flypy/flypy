@@ -38,4 +38,5 @@ cdef public void boehm_register_finalizer(void *obj, void *dtor):
     cdef GC_finalization_proc old_finalizer
     cdef void *old_client_data
 
-    GC_register_finalizer(obj, <GC_finalization_proc>dtor, NULL, &old_finalizer, &old_client_data)
+    GC_register_finalizer(obj, <GC_finalization_proc> dtor, NULL,
+                          &old_finalizer, &old_client_data)

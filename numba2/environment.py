@@ -37,6 +37,9 @@ _env = {
     'numba.state.crnt_func':    None,
     'numba.state.options':      None,
 
+    # GC
+    'numba.gc.impl':            "boehm",
+
     # Global state
     'numba.state.envs':         {},     # All cached environments
 

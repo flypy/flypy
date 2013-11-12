@@ -7,8 +7,10 @@ Garbage collection using the Boehm collector.
 from __future__ import print_function, division, absolute_import
 import os
 
-from numba2 import jit, typeof
-from numba2.runtime import sizeof, cast, Pointer, Type
+import numba2
+from numba2 import jit
+from numba2.types import Pointer, void
+from numba2.runtime import sizeof, cast, Type
 from . import boehmlib
 
 import cffi
@@ -79,6 +81,7 @@ def gc_disable():
 def gc_enable():
     gc.boehm_enable()
 
-@jit('Pointer[void] -> Pointer[void] -> void')
+@jit('Pointer[a] -> Pointer[void] -> void')
 def gc_add_finalizer(obj, finalizer):
-    gc.boehm_register_finalizer(obj, finalizer)
+    p = numba2.cast(obj, Pointer[void])
+    gc.boehm_register_finalizer(p, finalizer)

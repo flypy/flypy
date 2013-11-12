@@ -6,9 +6,11 @@ Handle constructors.
 
 from __future__ import print_function, division, absolute_import
 
+from numba2 import is_numba_type, int64
 from numba2.environment import fresh_env
-from numba2 import is_numba_type, typing
+from numba2.representation import stack_allocate
 from numba2.runtime.obj import Type
+from numba2.runtime import gc
 
 from pykit import types as ptypes
 from pykit.ir import Builder, OpBuilder, Const
@@ -60,10 +62,47 @@ def rewrite_constructors(func, env):
                 e = fresh_env(f, argtypes)
                 __init__, _ = phase.typing(f, e)
 
-                alloc = b.alloca(ptypes.Pointer(ptypes.Opaque))
+                alloc = allocate_object(b, type, env)
                 call = b.call(ptypes.Void, __init__, [alloc] + args)
 
                 op.replace_uses(alloc)
                 op.replace([alloc, call])
 
                 context[alloc] = type
+
+
+def allocate_object(builder, type, env):
+    """
+    Allocate object of type `type`.
+    """
+    if stack_allocate(type):
+        return builder.alloca(ptypes.Pointer(ptypes.Opaque))
+    else:
+        return heap_allocate(builder, type, env)
+
+
+def heap_allocate(builder, type, env):
+    """
+    Heap allocate an object of type `type`
+    """
+    from numba2 import phase
+
+    # TODO: implement untyped pykit builder !
+
+    # Put object on the heap: call gc.gc_alloc(nitems, type)
+    gcmod = gc.gc_impl(env["numba.gc.impl"])
+    context = env['numba.typing.context']
+
+    # Build arguments for gc_alloc
+    n = Const(1, ptypes.Opaque)
+    ty = Const(type, ptypes.Opaque)
+
+    # Update type context with new constants
+    context[n] = int64
+    context[ty] = Type[type]
+
+    # Type the gc_alloc function (TODO: (indirect) allocation of a
+    # new object would recurse infinitely)
+    f, _ = phase.apply_phase(phase.typing, gcmod.gc_alloc,
+                             (int64, Type[type]))
+    return builder.call(ptypes.Opaque, f, [n, ty])

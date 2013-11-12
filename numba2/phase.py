@@ -12,6 +12,7 @@ from .pipeline import run_pipeline
 from .passes import (frontend, typing, optimizations, lowering, backend_init,
                      backend_run, backend_finalize)
 from .compiler.overloading import best_match
+from .environment import fresh_env
 
 from pykit.analysis import callgraph
 
@@ -197,3 +198,10 @@ phases = {
     "opt":          opt,
     "codegen":      codegen,
 }
+
+# ______________________________________________________________________
+# Apply
+
+def apply_phase(phase, nb_func, argtypes):
+    env = fresh_env(nb_func, argtypes)
+    return phase(nb_func, env)
