@@ -53,6 +53,7 @@ _env = {
     # Flags
     'numba.verify':         True,
     'numba.optimize':       True,
+    'numba.target':         'cpu',
 
     # Codegen
     "codegen.llvm.opt":     None,

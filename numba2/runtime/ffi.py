@@ -32,6 +32,10 @@ def malloc(items, type):
     p = libc.malloc(items * sizeof(type))
     return cast(p, Pointer[type])
 
+@jit('Pointer[a] -> void')
+def free(p):
+    libc.free(p)
+
 @jit('Pointer[a] -> Pointer[b] -> int64 -> bool')
 def memcmp(a, b, size):
     p1 = cast(a, Pointer[void])

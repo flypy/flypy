@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from numba2 import jit, sjit, int32
+from numba2 import jit, sjit, int32, void, Pointer
+from numba2.runtime import ffi
 
 #===------------------------------------------------------------------===
 # Test code
@@ -167,6 +168,28 @@ class TestMutability(unittest.TestCase):
 
         self.assertEqual(f(), (6, 6))
 
+
+class TestDestruction(unittest.TestCase):
+
+    def test_del(self):
+        @jit
+        class MemoryHog(object):
+            layout = [('p', 'Pointer[void]')]
+
+            @jit
+            def __init__(self):
+                self.p = ffi.malloc(20, Pointer[void])
+
+            @jit
+            def __del__(self):
+                ffi.free(self.p)
+
+        @jit
+        def f(n):
+            for i in range(n):
+                obj = MemoryHog()
+
+        f(10000000)
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()

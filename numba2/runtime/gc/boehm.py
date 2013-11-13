@@ -81,7 +81,6 @@ def gc_disable():
 def gc_enable():
     gc.boehm_enable()
 
-@jit('Pointer[a] -> Pointer[void] -> void')
+@jit('Pointer[void] -> Pointer[void] -> void')
 def gc_add_finalizer(obj, finalizer):
-    p = numba2.cast(obj, Pointer[void])
-    gc.boehm_register_finalizer(p, finalizer)
+    gc.boehm_register_finalizer(obj, finalizer)

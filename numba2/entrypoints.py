@@ -92,6 +92,9 @@ def ijit(f, *args, **kwds):
 @applyable_decorator
 def sjit(cls, *args, **kwds):
     """@jit(stackallocate=True)"""
+    if hasattr(cls, '__del__'):
+        raise TypeError(
+            "Cannot stack-allocate instances with __del__: %s" % (cls,))
     return jit_class(cls, *args, stackallocate=True, **kwds)
 
 #ijit = partial(jit, inline=True)

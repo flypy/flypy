@@ -15,6 +15,7 @@ import cffi
 ffi = cffi.FFI()
 ffi.cdef("""
 void *malloc(size_t size);
+void free(void *ptr);
 int memcmp(void *s1, void *s2, size_t n);
 int printf(char *s, ...);
 int puts(char *s);
