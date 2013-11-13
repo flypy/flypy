@@ -58,10 +58,10 @@ gc = ffi.dlopen(lib)
 # Implementations
 #===------------------------------------------------------------------===
 
-@jit('int64 -> Type[a] -> Pointer[a]')
+@jit('int64 -> Type[a] -> Pointer[void]')
 def gc_alloc(items, type):
     p = gc.boehm_malloc(items * sizeof(type))
-    return cast(p, Pointer[type])
+    return p #cast(p, Pointer[type])
 
 @jit('int64 -> Type[a] -> Pointer[a]')
 def gc_delalloc(items, type):

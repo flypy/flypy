@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 
 import numba2
-from numba2 import jit
+from numba2 import sjit, jit
 from numba2.compiler import representation_type
 from numba2.conversion import ctype
 from ..lowlevel_impls import add_impl_cls
@@ -19,7 +19,7 @@ from pykit import types as ptypes
 # Pointer
 #===------------------------------------------------------------------===
 
-@jit('Pointer[a]')
+@sjit('Pointer[a]')
 class Pointer(object):
     layout = [] # [('p', 'Pointer[a]')]
 

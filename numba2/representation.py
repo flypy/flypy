@@ -21,7 +21,7 @@ def stack_allocate(type):
     Determine whether values of this type should be stack-allocated and partake
     directly as values under composition.
     """
-    return True #type.impl.stackallocate
+    return type.impl.stackallocate
 
 def byref(type):
     return stack_allocate(type) and not c_primitive(type)

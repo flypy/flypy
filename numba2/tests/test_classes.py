@@ -151,6 +151,23 @@ class TestComposition(unittest.TestCase):
         self.assertEqual(f(10).x, 100)
 
 
+class TestMutability(unittest.TestCase):
+
+    def test_mutable_obj(self):
+        @jit
+        def f():
+            obj = C(4)
+            obj2 = g(obj)
+            return obj.x, obj2.x
+
+        @jit
+        def g(obj):
+            obj.x = 6
+            return obj
+
+        self.assertEqual(f(), (6, 6))
+
+
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()
     unittest.main()

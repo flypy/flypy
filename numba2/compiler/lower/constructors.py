@@ -7,9 +7,9 @@ Handle constructors.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import is_numba_type, int64
+from numba2.types import Type, Pointer, void
 from numba2.environment import fresh_env
 from numba2.representation import stack_allocate
-from numba2.runtime.obj import Type
 from numba2.runtime import gc
 
 from pykit import types as ptypes
@@ -62,13 +62,13 @@ def rewrite_constructors(func, env):
                 e = fresh_env(f, argtypes)
                 __init__, _ = phase.typing(f, e)
 
-                alloc = allocate_object(b, type, env)
-                call = b.call(ptypes.Void, __init__, [alloc] + args)
+                stmts, obj = allocate_object(b, type, env)
+                call = b.call(ptypes.Void, __init__, [obj] + args)
 
-                op.replace_uses(alloc)
-                op.replace([alloc, call])
+                op.replace_uses(obj)
+                op.replace(stmts + [call])
 
-                context[alloc] = type
+                context[obj] = type
 
 
 def allocate_object(builder, type, env):
@@ -76,9 +76,11 @@ def allocate_object(builder, type, env):
     Allocate object of type `type`.
     """
     if stack_allocate(type):
-        return builder.alloca(ptypes.Pointer(ptypes.Opaque))
+        obj = builder.alloca(ptypes.Pointer(ptypes.Opaque))
+        return [obj], obj
     else:
-        return heap_allocate(builder, type, env)
+        stmts = heap_allocate(builder, type, env)
+        return stmts, stmts[-1]
 
 
 def heap_allocate(builder, type, env):
@@ -97,12 +99,16 @@ def heap_allocate(builder, type, env):
     n = Const(1, ptypes.Opaque)
     ty = Const(type, ptypes.Opaque)
 
-    # Update type context with new constants
-    context[n] = int64
-    context[ty] = Type[type]
-
     # Type the gc_alloc function (TODO: (indirect) allocation of a
     # new object would recurse infinitely)
     f, _ = phase.apply_phase(phase.typing, gcmod.gc_alloc,
                              (int64, Type[type]))
-    return builder.call(ptypes.Opaque, f, [n, ty])
+    p = builder.call(ptypes.Opaque, f, [n, ty])
+    obj = builder.convert(ptypes.Opaque, p)
+
+    # Update type context with new constants
+    context[n] = int64
+    context[ty] = Type[type]
+    context[p] = Pointer[void]
+
+    return [p, obj]
