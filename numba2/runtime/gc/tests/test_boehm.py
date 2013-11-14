@@ -7,6 +7,13 @@ from numba2.runtime.gc import boehm as gc
 
 class TestBoehm(unittest.TestCase):
 
+    def test_boehm_direct(self):
+        """Test direct usage of boehm
+        """
+        ptr = gc.gc_alloc(1000, Pointer[float64])
+        # Make sure we have a valid pointer returned from gc.gc_alloc
+        self.assertTrue(ptr.value != 0, str(ptr))
+
     def test_boehm(self):
         @jit
         def f(n):

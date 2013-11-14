@@ -26,7 +26,7 @@ cdef public void boehm_collect():
     GC_gcollect()
 
 cdef public void *boehm_malloc(size_t nbytes):
-    GC_MALLOC(nbytes)
+    return GC_MALLOC(nbytes)
 
 cdef public void boehm_disable():
     GC_disable()
