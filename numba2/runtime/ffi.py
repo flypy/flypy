@@ -7,9 +7,8 @@ Foreign function interface functionality.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-from numba2 import jit
+import numba2
 from numba2 import jit, overlay
-from numba2.conversion import ctype
 from .obj import Type
 from .casting import cast
 from .obj import Type, Pointer, Void
@@ -58,8 +57,7 @@ def implement_sizeof(builder, argtypes, obj):
     [argtype] = argtypes
     if argtype.impl == Type:
         [argtype] = argtype.parameters # Unpack 'a' from 'Type[a]'
-        cty = ctype(argtype)
-        size = ctypes.sizeof(cty)
+        size = numba2.sizeof_type(argtype)
         result = ir.Const(size, ptypes.Int64)
     else:
         result = builder.sizeof(ptypes.Int64, obj)
