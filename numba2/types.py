@@ -9,10 +9,10 @@ __all__ = [
     'int_', 'uint', 'long_', 'ulong', 'longlong', 'ulonglong',
     'size_t', 'npy_intp', 'bool_', 'string', 'float_', 'double',
     'float32', 'float64','int8', 'int16', 'int32', 'int64', 'uint8',
-    'uint16', 'uint32', 'uint64', 'Py_ssize_t', 'sizeof_type',
-    #'complex64', 'complex128', 'complex256', 'struct', 'Py_uintptr_t'
+    'uint16', 'uint32', 'uint64', 'Py_ssize_t', 'object_',
+    'complex64', 'complex128', 'struct', 'Py_uintptr_t',
+    'sizeof_type',
 ]
-
 
 #===------------------------------------------------------------------===
 # Types
@@ -72,6 +72,8 @@ uint      = unsigned(struct.calcsize('i'))
 ulong     = unsigned(struct.calcsize('l'))
 ulonglong = unsigned(struct.calcsize('Q'))
 
+# ------------------ aliases ------------------ #
+
 # TODO: use the right platform sizes
 float_       = float32
 double       = float64
@@ -79,6 +81,8 @@ Py_ssize_t   = int64
 size_t       = uint64
 Py_uintptr_t = uint64
 npy_intp     = Py_ssize_t
+
+object_      = Object[()]
 
 #===------------------------------------------------------------------===
 # sizeof

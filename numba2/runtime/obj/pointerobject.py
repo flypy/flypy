@@ -137,3 +137,5 @@ def make_ctypes_ptr(ptr, type):
 
     return ptr
 
+def address(ptr):
+    return ctypes.cast(ptr, ctypes.c_void_p).value

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from .pointerobject import Pointer
+from .pointerobject import Pointer, address
 from .boolobject import Bool
 from .intobject import Int
 from .floatobject import Float

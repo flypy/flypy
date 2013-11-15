@@ -8,8 +8,10 @@ from __future__ import print_function, division, absolute_import
 
 import numba2
 from numba2 import jit, sjit, typeof
+from numba2.support import numpy_support
 from numba2.conversion import fromobject, toobject
-from . import Type, Pointer, Object, Buffer
+from . import Type, Pointer, Object, Buffer, StaticTuple, libcpy, address
+from .bufferobject import fromseq
 from .tupleobject import head, tail
 
 import numpy as np
@@ -28,20 +30,29 @@ class Array(object):
         ('data', 'Pointer[a]'),
         ('shape', 'Buffer[int64]'),
         ('strides', 'Buffer[int64]'),
-        ('keep_alive', 'Object'),
+        #('keep_alive', 'Object'),
     ]
 
     # ---------------------------------------
 
-    @jit('Array[a, n] -> b -> a')
+    @jit('Array[a, n] -> StaticTuple[a, b] -> a')
     def __getitem__(self, indices):
-        #ptr = self.data
-        #for i, index in unroll(enumerate(indices)):
-        #    ptr += index * self.shape[i]
         ptr = _array_getptr(self.data, indices, self.shape, self.strides,
                             len(indices))
-        p = numba2.cast(ptr, Pointer[numba2.float64]) # TODO: Cast to Pointer[a] !
-        return p[0]
+        return ptr[0]
+
+    @jit('Array[a, n] -> b : integral -> a')
+    def __getitem__(self, item):
+        return self[(item,)]
+
+    @jit #('Array[a, n] -> Iterable[a]')
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    @jit('a -> int64')
+    def __len__(self):
+        return self.shape[0]
 
     # ---------------------------------------
 
@@ -52,10 +63,10 @@ class Array(object):
         else:
             raise NotImplementedError("Array.fromobject(%s, %s)" % (ndarray, ty))
 
-    #@classmethod
-    #def toobject(cls, obj, ty):
-    #    raise NotImplementedError("Array -> NumPy")
-
+    @classmethod
+    def toobject(cls, obj, ty):
+        dtype, n = ty.parameters
+        return tonumpy(obj, obj.shape, dtype)
 
 #===------------------------------------------------------------------===
 # Indexing
@@ -96,10 +107,6 @@ def _array_getptr(p, indices, shape, strides, dim):
 
 def fromnumpy(ndarray):
     """Build an Array from a numpy ndarray"""
-    # Type we use for shape/strides. We use Buffer since we can't spell
-    # "a tuple of size n" very well yet
-    shapetype = Buffer[numba2.int64]
-
     # Compute steps
     itemsize = ndarray.dtype.itemsize
     steps = tuple(stride // itemsize for stride in ndarray.strides)
@@ -114,18 +121,37 @@ def fromnumpy(ndarray):
 
     # Build array object
     data = fromobject(ndarray.ctypes.data, Pointer[numba2.int8])
-    shape = fromobject(ndarray.shape, shapetype)
-    strides = fromobject(steps, shapetype)
-    keepalive = fromobject(ndarray, Object)
 
-    return Array(data, shape, strides, keepalive)
+    # Type we use for shape/strides. We use Buffer since we can't spell
+    # "a tuple of size n" very well yet
+    shape = fromseq(ndarray.shape, numba2.int64)
+    strides = fromseq(steps, numba2.int64)
+    #keepalive = fromobject(ndarray, Object[()])
+
+    return Array(data, shape, strides) #, keepalive)
+
+def tonumpy(arr, shape, dtype):
+    """Build an Array from a numpy ndarray"""
+    size = np.prod(shape)
+    total_size = size * numba2.sizeof_type(dtype)
+    np_dtype = numpy_support.to_dtype(dtype)
+
+    # Build NumPy array
+    data = toobject(arr.data, Pointer[dtype])
+    ndarray = libcpy.dummy_array(address(data), total_size)
+
+    # Cast and reshape
+    result = ndarray.view(np_dtype).reshape(shape)
+
+    return result
 
 @typeof.case(np.ndarray)
 def typeof(array):
     # if array.flags['C_CONTIGUOUS']:
     #     return ContigArray[typeof(array.dtype)]
     # else:
-    return Array[typeof(array.dtype), array.ndim]
+    dtype = numpy_support.from_dtype(array.dtype)
+    return Array[dtype, array.ndim]
 
 #@pyoverload(np.ndarray, Array)
 #def convert(ndarray):
