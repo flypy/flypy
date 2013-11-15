@@ -56,11 +56,11 @@ class Pointer(object):
 
     # __________________________________________________________________
 
-    @jit('Pointer[a] -> int32 -> a')
+    @jit('Pointer[a] -> int64 -> a')
     def __getitem__(self, index):
         return (self + index).deref()
 
-    @jit('Pointer[a] -> int32 -> a -> void')
+    @jit('Pointer[a] -> int64 -> a -> void')
     def __setitem__(self, idx, value):
         (self + idx).store(value)
 

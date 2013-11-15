@@ -17,3 +17,4 @@ from .exceptions import *
 from .pyobject import Object
 from .bufferobject import Buffer
 from .stringobject import String, from_cstring
+from .arrayobject import Array
