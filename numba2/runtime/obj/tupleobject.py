@@ -141,6 +141,24 @@ class EmptyTuple(object):
         return isinstance(other, EmptyTuple)
 
 
+@jit('StaticTuple[a, b] -> a')
+def head(t):
+    return t.hd
+
+@jit('StaticTuple[a, b] -> b')
+def tail(t):
+    return t.tl
+
+# TODO: Exceptions
+
+@jit('a -> b')
+def head(t):
+    return 0xdeadbeef
+
+@jit('a -> b')
+def tail(t):
+    return EmptyTuple()
+
 @typeof.case(tuple)
 def typeof(pyval):
     valtypes = tuple(map(typeof, pyval))
