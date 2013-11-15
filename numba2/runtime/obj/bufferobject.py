@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 import numba2
 from numba2 import jit
 from numba2.runtime import ffi
-from . import Pointer
+from . import Type, Pointer
 
 @jit('Buffer[base]')
 class Buffer(object):
@@ -40,6 +40,10 @@ class Buffer(object):
     def __getitem__(self, item):
         return self.p[item]
 
+    @jit('a -> int64 -> base -> void')
+    def __setitem__(self, item, value):
+        self.p[item] = value
+
     @jit('a -> int64')
     def __len__(self):
         return self.size
@@ -53,7 +57,19 @@ class Buffer(object):
         raise NotImplementedError
 
 
+#===------------------------------------------------------------------===
+# Buffer creation
+#===------------------------------------------------------------------===
+
 @jit('Type[a] -> int64 -> Buffer[a]')
 def newbuffer(basetype, size):
     p = ffi.malloc(size, basetype)
     return Buffer(p, size)
+
+# @jit('Sequence[a] -> Type[a] -> Buffer[a]') # TODO: <--
+def fromseq(seq, basetype):
+    n = len(seq)
+    buf = newbuffer(basetype, n)
+    for i, item in enumerate(seq):
+        buf[i] = item
+    return buf
