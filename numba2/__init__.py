@@ -18,6 +18,7 @@ from .runtime.ffi import sizeof, malloc
 from .runtime import builtins as bltins
 from .runtime.obj.librt import debug
 from .runtime.special import addressof
+from .runtime import mathlib
 
 from .passes import translate
 from .errors import error, InferError, SpecializeError
