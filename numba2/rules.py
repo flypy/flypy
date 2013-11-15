@@ -20,7 +20,7 @@ from numba2.typing import unify, free, to_blaze, resolve_type
 def typeof(pyval):
     """Python value -> Type"""
     from .runtime.obj import Type, Constructor
-    from numba2 import cffi_support, ctypes_support, types
+    from numba2 import cffi_support, ctypes_support, types, extern_support
 
     if is_numba_type(pyval):
         if pyval.type.parameters:
@@ -40,6 +40,8 @@ def typeof(pyval):
         return ctypes_support.from_ctypes_type(type(pyval))
     elif ctypes_support.is_ctypes_struct_type(pyval):
         return ctypes_support.from_ctypes_type(pyval)
+    elif extern_support.is_extern_symbol(pyval):
+        return extern_support.from_extern_symbol(pyval)
 
     raise NotImplementedError("typeof(%s, %s)" % (pyval, type(pyval)))
 

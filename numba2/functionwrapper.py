@@ -105,6 +105,11 @@ class FunctionWrapper(object):
 
         return cfunc, env["numba.typing.restype"]
 
+    def get_llvm_func(self, argtypes):
+        """Get the LLVM function object for the argtypes.
+        """
+        return self.llvm_funcs[tuple(argtypes)]
+
     @property
     def signatures(self):
         return [signature for func, signature, _ in self.overloads]

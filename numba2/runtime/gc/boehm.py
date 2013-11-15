@@ -12,6 +12,7 @@ from numba2 import jit
 from numba2.types import Pointer, void
 from numba2.runtime import sizeof, cast, Type
 from . import boehmlib
+from numba2.extern_support import externlib
 
 import cffi
 
@@ -34,7 +35,15 @@ void boehm_enable();
 void boehm_register_finalizer(void *obj, void *dtor);
 """)
 
-gc = ffi.dlopen(lib)
+gclib = ffi.dlopen(lib)
+gc = externlib("numba.runtime.gc", gclib, '''
+boehm_collect
+boehm_malloc
+boehm_disable
+boehm_enable
+boehm_register_finalizer
+''')
+
 
 # We can't take the address of these :(
 

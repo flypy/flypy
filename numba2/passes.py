@@ -15,7 +15,8 @@ from .compiler.optimizations import optimize, inliner, throwing
 from .compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                              rewrite_constructors, explicit_coercions,
                              rewrite_optional_args, rewrite_constants,
-                             convert_retval, rewrite_obj_return, allocator)
+                             convert_retval, rewrite_obj_return, allocator,
+                             rewrite_externs)
 from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
@@ -50,6 +51,7 @@ typing = [
     allocator,
     rewrite_optional_args,
     explicit_coercions,
+    rewrite_externs,
     rewrite_constants,
     rewrite_obj_return,
     convert_retval,

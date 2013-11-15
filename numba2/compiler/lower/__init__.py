@@ -13,3 +13,4 @@ from .constants import rewrite_constants
 from .conversion import convert_retval
 from .objects import rewrite_obj_return
 from .allocation import allocator
+from .externs import rewrite_externs
