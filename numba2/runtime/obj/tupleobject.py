@@ -17,7 +17,7 @@ class Tuple(object):
     pass
 
 
-@jit('GenericTuple[T]')
+@sjit('GenericTuple[T]')
 class GenericTuple(object):
     layout = [('items', 'List[T]')]
 
@@ -38,7 +38,7 @@ class GenericTuple(object):
         return Tuple(self.items + other.items)
 
 
-@jit('StaticTuple[a, b]')
+@sjit('StaticTuple[a, b]')
 class StaticTuple(object):
     layout = [('hd', 'a'), ('tl', 'b')]
 
@@ -120,7 +120,7 @@ class StaticTuple(object):
         return (hd,) + toobject(value.tl, tail)
 
 
-@jit
+@sjit
 class EmptyTuple(object):
     layout = []
 
