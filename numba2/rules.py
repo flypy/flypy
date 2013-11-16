@@ -12,6 +12,8 @@ from __future__ import print_function, division, absolute_import
 from . import pyoverload
 from numba2.typing import unify, free, to_blaze, resolve_type
 
+from blaze import datashape as ds
+
 #===------------------------------------------------------------------===
 # User-defined typing rules
 #===------------------------------------------------------------------===
@@ -94,7 +96,9 @@ def promote(type1, type2):
     if type1 == type2:
         return type1
     else:
-        raise TypeError("Cannot promote %s and %s" % (type1, type2))
+        t1, t2 = to_blaze(type1), to_blaze(type2)
+        result = ds.promote(t1, t2)
+        return resolve_type(result)
 
 
 def typejoin(type1, type2):

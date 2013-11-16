@@ -7,7 +7,7 @@ Type coercions.
 from __future__ import print_function, division, absolute_import
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function, Op
+from pykit.ir import OpBuilder, Builder, Const, Function, Op, ops
 
 #------------------------------------------------------------------------
 # Coercions -> Conversions
@@ -17,6 +17,9 @@ def explicit_coercions(func, env):
     """
     Turn implicit coercions into explicit conversion operations.
     """
+    if env['numba.state.opaque']:
+        return # TODO: @no_opaque decorator...
+
     context = env["numba.typing.context"]
     envs = env["numba.state.envs"]
 
@@ -24,21 +27,29 @@ def explicit_coercions(func, env):
     # otherwise be converted multiple times in different contexts
     conversions = {}
     b = Builder(func)
-    coercer = Coercion(b, context, envs, conversions)
+    coercer = Coercion(func, b, context, envs, conversions, env)
 
     for op in func.ops:
         if op.opcode == 'call':
             coercer.coerce_to_parameters(op)
         elif op.opcode == 'setfield':
             coercer.coerce_to_field_setting(op)
+        elif op.opcode == 'phi':
+            coercer.coerce_to_phi(op)
+        elif op.opcode == 'ret':
+            coercer.coerce_to_restype(op)
+
+        # TODO: return, phi
 
 class Coercion(object):
 
-    def __init__(self, builder, context, envs, conversions):
+    def __init__(self, f, builder, context, envs, conversions, env):
+        self.f = f
         self.builder = builder
         self.context = context
         self.envs = envs
         self.conversions = conversions
+        self.env = env
 
     def coerce_to_parameters(self, op):
         """
@@ -53,21 +64,12 @@ class Coercion(object):
             argtypes = self.context[f].parameters[:-1]
         else:
             argtypes = self.envs[f]["numba.typing.argtypes"]
-        replacements = {} # { arg : replacement_conversion }
 
         # -------------------------------------------------
         # Promote arguments to match parameter types
 
-        for arg, param_type in zip(args, argtypes):
-            arg_type = self.context[arg]
-
-            if arg_type != param_type:
-                # Argument type does not match parameter type, convert
-                conversion = self.convert(arg, param_type, op)
-                replacements[arg] = conversion
-
-        op.replace_args(replacements)
-
+        newargs = self.promote_args(args, argtypes, op)
+        op.set_args([f, newargs])
 
     def coerce_to_field_setting(self, op):
         """
@@ -82,6 +84,48 @@ class Coercion(object):
         if field_type != value_type:
             newval = self.convert(value, field_type, op)
             op.set_args([obj, attr, newval])
+
+    def coerce_to_restype(self, op):
+        """
+        Coerce return value to return type.
+        """
+        restype = self.env['numba.typing.restype']
+        [retval] = op.args
+        if retval is not None and self.context[retval] != restype:
+            retval = self.convert(retval, restype, op)
+            op.set_args([retval])
+
+    def coerce_to_phi(self, op):
+        """
+        Coerce incoming phi values to the type of the `phi` node.
+        """
+        blocks, vals = map(list, op.args) # copy blocks, vals
+        ty = self.context[op]
+
+        # Promote constants in previous blocks
+        for i, (pred, val) in enumerate(zip(blocks, vals)):
+            if isinstance(val, Const) and self.context[val] != ty:
+                self.builder.position_before(pred.tail)
+                newval = self.builder.convert(types.Opaque, val)
+                self.context[newval] = ty
+                vals[i] = newval
+
+        newargs = self.promote_args(vals, [ty] * len(vals), op)
+        op.set_args([blocks, newargs])
+
+    def promote_args(self, args, argtypes, op):
+        """
+        Promote values from `args` to types listed by `argtypes`, and place
+        them before `op` in the function.
+        """
+        newargs = []
+        for arg, param_type in zip(args, argtypes):
+            if self.context[arg] != param_type:
+                # Argument type does not match parameter type, convert
+                arg = self.convert(arg, param_type, op)
+            newargs.append(arg)
+
+        return newargs
 
     def convert(self, arg, ty, op):
         """

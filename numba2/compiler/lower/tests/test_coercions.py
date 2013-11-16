@@ -13,6 +13,18 @@ class TestCoercions(unittest.TestCase):
 
     def test_coerce_phi(self):
         @jit
+        def f(x, y):
+            if x > 2:
+                r = x
+            else:
+                r = y
+            return r
+
+        self.assertEqual(f(8, 9.0), 8.0)
+        self.assertEqual(f(1, 2.0), 2.0)
+
+    def test_coerce_phi_const(self):
+        @jit
         def f(x):
             if x > 2:
                 y = 3
@@ -20,8 +32,8 @@ class TestCoercions(unittest.TestCase):
                 y = 2.0
             return y
 
-        #self.assertEqual(f(8), 3.0)
-        #self.assertEqual(f(1), 2.0)
+        self.assertEqual(f(8), 3.0)
+        self.assertEqual(f(1), 2.0)
 
     def test_coerce_application(self):
         @jit('int64 -> float32 -> a')
@@ -33,7 +45,7 @@ class TestCoercions(unittest.TestCase):
             x = 1
             return g(x, x) # convert single constant '1' to int64 and float32
 
-        #self.assertEqual(f(), 2.0)
+        self.assertEqual(f(), 2.0)
 
     def test_coerce_setfield(self):
         @jit
@@ -51,7 +63,7 @@ class TestCoercions(unittest.TestCase):
         def f(x):
             return x
 
-        #self.assertEqual(f(2), 2.0)
+        self.assertEqual(f(2), 2.0)
 
 
 if __name__ == '__main__':
