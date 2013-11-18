@@ -12,7 +12,7 @@ def rewrite_externs(func, env):
     """
     if env['numba.state.opaque']:
         return
-
+    target = env['numba.target']
     # For each operation
     for op in func.ops:
         # Only for call operation
@@ -22,10 +22,16 @@ def rewrite_externs(func, env):
             new_constants = []
             for c in constants:
                 extern = c.const
+
                 if extern_support.is_extern_symbol(extern):
                     # Make a declare-only function
                     argtypes = extern.type.argtypes
                     restype = extern.type.restype
+
+                    if target == "cpu":
+                        # Install external symbol for CPU target
+                        extern.install()
+
                     functype = ptypes.Function(lltype(restype),
                                                [lltype(t) for t in argtypes])
                     # Note: Global value should really be part inserted into
@@ -39,3 +45,4 @@ def rewrite_externs(func, env):
                 new_constants.append(replacment)
             # Replace
             ir.substitute_args(op, constants, new_constants)
+

@@ -7,26 +7,44 @@ are resolved by LLVM JIT by mapping runtime addresses for to external symbols.
 """
 
 from __future__ import print_function, division, absolute_import
-from numba2 import typeof, cffi_support, types
 from pykit.utils import dylib_support
 
 class ExternalSymbol(object):
     """Represent an external symbol
     """
 
-    def __init__(self, name, typ):
+    def __init__(self, name, ffiobj):
         self.name = name
-        self.type = typ
-        self.mapping = {}
+        self.ffiobj = ffiobj
+        self._type = None
+        self._ptr = None
 
-    def add_mapping(self, target, pointer):
-        self.mapping[target] = pointer
+    @property
+    def type(self):
+        if self._type is None:
+            # This indirection is necessary to make the import works
+            from numba2 import typeof, types
+            foreignfunc = typeof(self.ffiobj)
+            functy = types.Function[foreignfunc.parameters]
+            self._type = functy
+        return self._type
 
-    def get_mapping(self, target):
-        return self.mapping[target]
+    @property
+    def pointer(self):
+        if self._ptr is None:
+            # This indirection is necessary to make the import works
+            from numba2 import cffi_support
+            self._ptr = cffi_support.get_pointer(self.ffiobj)
+        return self._ptr
+
 
     def __repr__(self):
         return "ExternalSymbol(%s, %s)" % (self.name, self.type)
+
+    def install(self):
+        if not dylib_support.has(self.name):
+            dylib_support.install(self.name, self.pointer)
+
 
 
 class ExternalLibrary(object):
@@ -48,14 +66,7 @@ def extern(name, value):
     """Creates an ExternalSymbol object and bind CFFI value to the default
     target "cpu".
     """
-    # Adapt a ForeignFunction to a Function type
-    foreignfunc = typeof(value)
-    functy = types.Function[foreignfunc.parameters]
-    # Build external symbol
-    es = ExternalSymbol(name, functy)
-    address = cffi_support.get_pointer(value)
-    es.add_mapping("cpu", address)
-    dylib_support.install(name, address)
+    es = ExternalSymbol(name, value)
     return es
 
 
