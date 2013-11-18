@@ -126,7 +126,8 @@ class EmptyTuple(object):
 
     @jit
     def __getitem__(self, item):
-        raise IndexError
+        return 0
+        #raise IndexError
 
     @jit
     def __iter__(self):
