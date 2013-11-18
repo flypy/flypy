@@ -7,6 +7,7 @@ C library bindings.
 from __future__ import print_function, division, absolute_import
 
 import cffi
+from numba2.extern_support import externlib
 
 #===------------------------------------------------------------------===
 # Decls
@@ -22,4 +23,12 @@ int puts(char *s);
 size_t strlen(char *s);
 """)
 
-libc = ffi.dlopen(None)
+libclib = ffi.dlopen(None)
+libc = externlib(".numba.runtime.c", libclib, '''
+malloc
+free
+memcmp
+printf
+puts
+strlen
+''')
