@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 from numba2 import jit, typeof
-from .pointerobject import Pointer
-from .structobject import struct_
-from numba2.runtime.obj import String, Buffer, from_cstring
+from numba2.runtime.obj import Pointer
+from numba2.runtime.obj import struct_
+from numba2.runtime.obj import String
+from numba2.runtime.obj import from_cstring
 from ctypes import CDLL, Structure, POINTER, c_longlong, c_uint, c_int, \
     c_ubyte, c_char_p, byref, pointer, cast
 
@@ -104,7 +105,7 @@ class Decimal(object):
     @staticmethod
     def fromctypes(value, x):
         result = Decimal.__new__(Decimal)
-        result.mpd = cast(value.mpd, POINTER(mpd_t))
+        result.mpd = cast(value.contents.mpd, POINTER(mpd_t))
         return result
 
 
