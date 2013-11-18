@@ -137,9 +137,13 @@ class EmptyTuple(object):
     def next(self):
         raise StopIteration
 
-    @jit
+    @jit('a -> b -> bool')
     def __eq__(self, other):
         return isinstance(other, EmptyTuple)
+
+    @jit('a -> int64')
+    def __len__(self):
+        return 0
 
 
 @jit('StaticTuple[a, b] -> a')

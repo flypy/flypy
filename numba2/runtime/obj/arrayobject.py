@@ -12,7 +12,7 @@ from numba2.support import numpy_support
 from numba2.conversion import fromobject, toobject
 from . import Type, Pointer, Object, Buffer, StaticTuple, libcpy, address
 from .bufferobject import fromseq
-from .tupleobject import head, tail
+from .tupleobject import head, tail, EmptyTuple
 
 import numpy as np
 
@@ -41,7 +41,7 @@ class Array(object):
                             len(indices))
         return ptr[0]
 
-    @jit('Array[a, n] -> b : integral -> a')
+    @jit('Array[a, n] -> int64 -> a')
     def __getitem__(self, item):
         return self[(item,)]
 
@@ -80,26 +80,28 @@ class DimIndexer(object):
 
     layout = [('p', 'Pointer[a]'), ('extent', 'int64'), ('stride', 'int64')]
 
-    @jit('DimIndexer[a] -> a')
+    @jit('DimIndexer[a] -> int64 -> Pointer[a]')
     def advance(self, item):
         return self.p + item * self.stride
 
 # TODO: Indexers for bounds checking and wraparound
 
 
-@jit('Pointer[int8] -> a -> a -> a -> int64 -> Pointer[int8]')
+@jit('Pointer[t] -> a -> b -> b -> int64 -> Pointer[t]')
 def _array_getptr(p, indices, shape, strides, dim):
     """
     Navigate data pointer `p` to point to the item according to the `indices`
     and `strides`.
     """
-    if dim == len(shape):
-        return p
-
     # TODO: Pass in indexer class, e.g. WrapAroundIndexer, BoundsCheckIndexer, etc
     indexer = DimIndexer(p, strides[dim], shape[dim])
     result = indexer.advance(head(indices))
     return _array_getptr(result, tail(indices), shape, strides, dim + 1)
+
+@jit('Pointer[t] -> EmptyTuple[] -> b -> b -> int64 -> Pointer[t]')
+def _array_getptr(p, indices, shape, strides, dim):
+    return p
+
 
 #===------------------------------------------------------------------===
 # Conversion
