@@ -36,7 +36,7 @@ void boehm_register_finalizer(void *obj, void *dtor);
 """)
 
 gclib = ffi.dlopen(lib)
-gc = externlib("numba.runtime.gc", gclib, '''
+gc = externlib(".numba.runtime.gc", gclib, '''
 boehm_collect
 boehm_malloc
 boehm_disable
