@@ -64,16 +64,24 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
 
         # Resolve types
         layout = type.resolved_layout
-        types = [layout[name] for name, _ in cty._fields_] or [int8]
+        if not layout:
+            types = [int8]
+        else:
+            types = [layout[name] for name, _ in cty._fields_]
 
         # Dereference pointer to aggregate
         if hasattr(value, 'contents'):
             value = value.contents
 
         # Resolve values
-        values = [getattr(value, name) for name, _ in cty._fields_]
-        values = [toctypes(v, t, keepalive, valmemo, typememo)
-                      for v, t in zip(values, types)]
+        values = []
+        for (name, _), ty in zip(cty._fields_, types):
+            if hasattr(value, name):
+                val = getattr(value, name)
+            else:
+                assert name == 'dummy', name
+                val = 0
+            values.append(toctypes(val, ty, keepalive, valmemo, typememo))
 
         # Construct value from ctypes struct
         result = cty(*values)
@@ -154,7 +162,8 @@ def ctype(type, memo=None):
         names, types = zip(*type.resolved_layout.items()) or [(), ()]
         types = [ctype(ty, memo) for ty in types]
         if not types:
-            types = [ctypes.c_int32]
+            names = ['dummy']
+            types = [ctypes.c_int8]
 
         # -------------------------------------------------
         # Build struct

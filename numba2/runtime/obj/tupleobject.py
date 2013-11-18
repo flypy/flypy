@@ -17,7 +17,7 @@ class Tuple(object):
     pass
 
 
-@jit('GenericTuple[T]')
+@sjit('GenericTuple[T]')
 class GenericTuple(object):
     layout = [('items', 'List[T]')]
 
@@ -38,7 +38,7 @@ class GenericTuple(object):
         return Tuple(self.items + other.items)
 
 
-@jit('StaticTuple[a, b]')
+@sjit('StaticTuple[a, b]')
 class StaticTuple(object):
     layout = [('hd', 'a'), ('tl', 'b')]
 
@@ -120,13 +120,14 @@ class StaticTuple(object):
         return (hd,) + toobject(value.tl, tail)
 
 
-@jit
+@sjit
 class EmptyTuple(object):
     layout = []
 
     @jit
     def __getitem__(self, item):
-        raise IndexError
+        return 0
+        #raise IndexError
 
     @jit
     def __iter__(self):
@@ -136,9 +137,13 @@ class EmptyTuple(object):
     def next(self):
         raise StopIteration
 
-    @jit
+    @jit('a -> b -> bool')
     def __eq__(self, other):
         return isinstance(other, EmptyTuple)
+
+    @jit('a -> int64')
+    def __len__(self):
+        return 0
 
 
 @jit('StaticTuple[a, b] -> a')

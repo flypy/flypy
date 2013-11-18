@@ -175,6 +175,7 @@ def resolve_restype(func, env):
         except UnificationError, e:
             raise TypeError(
                 "Annotated result type %s does not match inferred "
-                "type %s: %s" % (restype, inferred_restype, e))
+                "type %s for function %r: %s" % (
+                    restype, inferred_restype, func.name, e))
 
     env['numba.typing.restype'] = restype
