@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from .pointerobject import Pointer
+from .pointerobject import Pointer, address
 from .boolobject import Bool
 from .intobject import Int
 from .floatobject import Float
@@ -17,3 +17,4 @@ from .exceptions import *
 from .pyobject import Object
 from .bufferobject import Buffer
 from .stringobject import String, from_cstring
+from .arrayobject import Array

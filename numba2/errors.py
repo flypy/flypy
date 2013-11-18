@@ -8,6 +8,7 @@ from __future__ import print_function, division, absolute_import
 from contextlib import contextmanager
 import sys
 
+from blaze.error import UnificationError
 
 class error(Exception):
     """Superclass of all numba exceptions"""

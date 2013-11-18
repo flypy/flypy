@@ -8,9 +8,9 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 
 import numba2
-from numba2 import jit
-from numba2.representation import lltype
-from ..conversion import ctype
+from numba2 import sjit, jit
+from numba2.compiler import representation_type
+from numba2.conversion import ctype
 from ..lowlevel_impls import add_impl_cls
 
 from pykit import types as ptypes
@@ -19,7 +19,7 @@ from pykit import types as ptypes
 # Pointer
 #===------------------------------------------------------------------===
 
-@jit('Pointer[a]')
+@sjit('Pointer[a]')
 class Pointer(object):
     layout = [] # [('p', 'Pointer[a]')]
 
@@ -56,11 +56,11 @@ class Pointer(object):
 
     # __________________________________________________________________
 
-    @jit('Pointer[a] -> int32 -> a')
+    @jit('Pointer[a] -> int64 -> a')
     def __getitem__(self, index):
         return (self + index).deref()
 
-    @jit('Pointer[a] -> int32 -> a -> void')
+    @jit('Pointer[a] -> int64 -> a -> void')
     def __setitem__(self, idx, value):
         (self + idx).store(value)
 
@@ -110,7 +110,7 @@ def pointer_store(builder, argtypes, ptr, value):
 
 def _getitem_type(argtypes):
     base = argtypes[0].parameters[0]
-    return lltype(base)
+    return representation_type(base)
 
 # Implement
 
@@ -137,3 +137,5 @@ def make_ctypes_ptr(ptr, type):
 
     return ptr
 
+def address(ptr):
+    return ctypes.cast(ptr, ctypes.c_void_p).value

@@ -257,6 +257,10 @@ class Translate(object):
             func = const(func)
         return self.push_insert('call', func, list(args))
 
+    def call_pop(self, func, args=()):
+        self.call(func, args)
+        return self.pop()
+
     def binary_op(self, op):
         rhs = self.pop()
         lhs = self.pop()
@@ -434,9 +438,11 @@ class Translate(object):
              self.push(const(tuple(item.const for item in ordered)))
         elif len(ordered) < tupleobject.STATIC_THRESHOLD:
             # Build static tuple
-            result = self.call(tupleobject.EmptyTuple)
+            result = self.call_pop(tupleobject.EmptyTuple)
             for item in items:
-                result = self.call(tupleobject.StaticTuple, args=(item, result))
+                result = self.call_pop(tupleobject.StaticTuple,
+                                       args=(item, result))
+            self.push(result)
         else:
             raise NotImplementedError("Generic tuples")
 

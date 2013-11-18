@@ -8,10 +8,9 @@ from __future__ import print_function, division, absolute_import
 
 import ctypes
 
-from numba2 import jit, void
+from numba2 import jit, void, representation, conversion
 from numba2.types import Pointer
 from numba2.compiler import is_numba_cc
-from numba2.runtime import conversion
 
 from pykit import types
 from pykit.ir import OpBuilder, Builder
@@ -52,7 +51,7 @@ def rewrite_obj_return(func, env):
 
     builder = Builder(func)
 
-    stack_alloc = conversion.byref(restype)
+    stack_alloc = representation.byref(restype)
 
     if stack_alloc:
         out = func.add_arg(func.temp("out"), opaque_t)

@@ -6,6 +6,7 @@ Type checking after type inference.
 
 from __future__ import print_function, division, absolute_import
 
+from numba2.types import Function, ForeignFunction
 from pykit.ir import visit
 
 #===------------------------------------------------------------------===

@@ -37,6 +37,9 @@ _env = {
     'numba.state.crnt_func':    None,
     'numba.state.options':      None,
 
+    # GC
+    'numba.gc.impl':            "boehm",
+
     # Global state
     'numba.state.envs':         {},     # All cached environments
 
@@ -50,6 +53,7 @@ _env = {
     # Flags
     'numba.verify':         True,
     'numba.optimize':       True,
+    'numba.target':         'cpu',
 
     # Codegen
     "codegen.llvm.opt":     None,

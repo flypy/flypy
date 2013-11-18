@@ -11,11 +11,11 @@ from blaze.error import UnificationError
 from numba2.environment import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
-from numba2.types import Type, Constructor, ForeignFunction
+from numba2.types import Type, Constructor, ForeignFunction, Function
 from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
-from pykit.ir import Const, Function
+from pykit import ir
 
 #===------------------------------------------------------------------===
 # Function call typing
@@ -35,7 +35,7 @@ def infer_call(func, func_type, argtypes):
             This is already typed
         3) Method. We need to insert 'self' in the cartesian product
     """
-    is_const = isinstance(func, Const)
+    is_const = isinstance(func, ir.Const)
     is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
     is_class = isinstance(func_type, (type(Type.type), type(Constructor.type)))
 
@@ -43,7 +43,7 @@ def infer_call(func, func_type, argtypes):
         return infer_function_call(func, func_type, argtypes)
     elif is_class:
         return infer_class_call(func, func_type, argtypes)
-    elif not isinstance(func, Function):
+    elif not isinstance(func, ir.Function):
         return infer_foreign_call(func, func_type, argtypes)
     else:
         raise NotImplementedError(func, func_type)
@@ -67,7 +67,10 @@ def infer_function_call(func, func_type, argtypes):
 
     env = fresh_env(func, argtypes)
     func, env = phase.typing(func, env)
-    return func, env["numba.typing.restype"]
+    # env["numba.typing.restype"]
+    if func_type is None:
+        func_type = env["numba.typing.signature"]
+    return func, func_type, env["numba.typing.restype"]
 
 def infer_class_call(func, func_type, argtypes):
     """
@@ -79,7 +82,8 @@ def infer_class_call(func, func_type, argtypes):
     if freevars:
         classtype = infer_constructor_application(classtype, argtypes)
 
-    return func, classtype
+    # TODO: Return a Constructor?
+    return func, Function[tuple(argtypes) + (classtype,)], classtype
 
 def infer_foreign_call(func, func_type, argtypes):
     """
@@ -91,7 +95,17 @@ def infer_foreign_call(func, func_type, argtypes):
     else:
         restype = func_type.restype
     assert restype
-    return func, restype
+
+    expected_argtypes = func_type.parameters[:-1]
+
+    if len(argtypes) != len(expected_argtypes):
+        raise TypeError("Function %s requires %d argument(s), got %d" % (
+                                func, len(argtypes), len(expected_argtypes)))
+
+    # Make sure we have compatible types
+    unify(zip(argtypes, expected_argtypes))
+
+    return func, Function[expected_argtypes + (restype,)], restype
 
 
 def infer_constructor_application(classtype, argtypes):
@@ -157,10 +171,11 @@ def resolve_restype(func, env):
         restype = inferred_restype
     elif inferred_restype != restype:
         try:
-            restype = unify(inferred_restype, restype)
+            [restype] = unify([(inferred_restype, restype)])
         except UnificationError, e:
             raise TypeError(
                 "Annotated result type %s does not match inferred "
-                "type %s: %s" % (restype, inferred_restype, e))
+                "type %s for function %r: %s" % (
+                    restype, inferred_restype, func.name, e))
 
     env['numba.typing.restype'] = restype

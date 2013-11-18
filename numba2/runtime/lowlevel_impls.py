@@ -20,9 +20,9 @@ def add_impl(opaque_func, name, implementation, restype=None, restype_func=None)
     """
     def impl(py_func, argtypes):
         # TODO: do this better
-        from numba2.compiler.backend.lltyping import ll_type
+        from numba2.compiler import representation_type
 
-        ll_argtypes = [ll_type(x) for x in argtypes]
+        ll_argtypes = [representation_type(x) for x in argtypes]
         argnames = list(string.ascii_letters[:len(argtypes)])
 
         # Determine return type

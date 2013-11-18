@@ -7,10 +7,12 @@ Dummy type implementations.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-from ... import jit
-from blaze.datashape import Function as FunctionType
-from ..conversion import ctype, byref
+from numba2 import jit
+from numba2.representation import byref
+from numba2.conversion import ctype
 from .pointerobject import Pointer
+
+from blaze.datashape import Function as FunctionType
 
 #===------------------------------------------------------------------===
 # Functions

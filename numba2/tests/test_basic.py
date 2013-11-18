@@ -61,6 +61,18 @@ class TestTranslation(unittest.TestCase):
 
         self.assertEqual(f(3), 8)
 
+    def test_tuple_passing(self):
+        @jit
+        def f():
+            return g(1, 2, (1, 2, 3), 4, 5)
+
+        @jit
+        def g(a, b, t, c, d):
+            return a + b + t[1] + c + d
+
+        self.assertEqual(f(), 14)
+
+
 if __name__ == '__main__':
     #TestTranslation('test_call').debug()
     unittest.main()

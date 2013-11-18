@@ -16,7 +16,7 @@ except ImportError:
 
 from numba2 import jit, overlay
 from numba2.types import Complex
-from numba2.representation import lltype
+from numba2.compiler import lltype
 from numba2.runtime.lowlevel_impls import add_impl
 from numba2.typing import TypeSet
 

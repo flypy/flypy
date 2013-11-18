@@ -6,11 +6,12 @@ Handle constructors.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.environment import fresh_env
-from numba2 import is_numba_type, typing
-from numba2.runtime.obj import Type
+from numba2 import is_numba_type
+from numba2.compiler.utils import Caller
+from numba2.types import Type, void
 
 from pykit import types as ptypes
+from pykit import ir
 from pykit.ir import Builder, OpBuilder, Const
 
 def rewrite_raise_exc_type(func, env):
@@ -40,12 +41,18 @@ def rewrite_constructors(func, env):
     Rewrite constructor application to object allocation followed by
     cls.__init__:
 
-        call(C, x, y) -> call(C.__init__, x, y)
+    Rewrite C(x, y) to:
+
+        obj = allocate()
+        C.__init__(obj, x, y)
+        register_finalizer(obj.__del__)
+
     """
     from numba2 import phase
 
     context = env['numba.typing.context']
     b = OpBuilder()
+    caller = Caller(b, context)
 
     for op in func.ops:
         if op.opcode == 'call':
@@ -54,16 +61,18 @@ def rewrite_constructors(func, env):
                 cls = cls.const
                 f = cls.__init__
                 type = context[op]
-                argtypes = [type] + [context[arg] for arg in op.args[1]]
 
+                # Allocate object
+                obj = ir.Op(
+                    'allocate_obj', ptypes.Pointer(ptypes.Void), args=[])
+                register_finalizer = ir.Op(
+                    'register_finalizer', ptypes.Void, args=[obj])
+                context[register_finalizer] = void
+                context[obj] = type
+
+                # Initialize object (call __init__)
                 # TODO: implement this on Type.__call__ when we support *args
-                e = fresh_env(f, argtypes)
-                __init__, _ = phase.typing(f, e)
+                initialize = caller.call(phase.typing, f, [obj] + op.args[1])
 
-                alloc = b.alloca(ptypes.Pointer(ptypes.Opaque))
-                call = b.call(ptypes.Void, __init__, [alloc] + args)
-
-                op.replace_uses(alloc)
-                op.replace([alloc, call])
-
-                context[alloc] = type
+                op.replace_uses(obj)
+                op.replace([obj, initialize, register_finalizer])

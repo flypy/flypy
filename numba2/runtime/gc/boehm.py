@@ -7,8 +7,10 @@ Garbage collection using the Boehm collector.
 from __future__ import print_function, division, absolute_import
 import os
 
-from numba2 import jit, typeof
-from numba2.runtime import sizeof, cast, Pointer, Type
+import numba2
+from numba2 import jit
+from numba2.types import Pointer, void
+from numba2.runtime import sizeof, cast, Type
 from . import boehmlib
 
 import cffi
@@ -27,6 +29,9 @@ ffi = cffi.FFI()
 ffi.cdef("""
 void boehm_collect();
 void *boehm_malloc(size_t nbytes);
+void boehm_disable();
+void boehm_enable();
+void boehm_register_finalizer(void *obj, void *dtor);
 """)
 
 gc = ffi.dlopen(lib)
@@ -53,11 +58,29 @@ gc = ffi.dlopen(lib)
 # Implementations
 #===------------------------------------------------------------------===
 
-@jit('int64 -> Type[a] -> Pointer[a]')
+@jit('int64 -> Type[a] -> Pointer[void]')
 def gc_alloc(items, type):
     p = gc.boehm_malloc(items * sizeof(type))
+    return p #cast(p, Pointer[type])
+
+@jit('int64 -> Type[a] -> Pointer[a]')
+def gc_delalloc(items, type):
+    p = gc.boehm_malloc(items * sizeof(type))
+
     return cast(p, Pointer[type])
 
 @jit
 def gc_collect():
     gc.boehm_collect()
+
+@jit
+def gc_disable():
+    gc.boehm_disable()
+
+@jit
+def gc_enable():
+    gc.boehm_enable()
+
+@jit('Pointer[void] -> Pointer[void] -> void')
+def gc_add_finalizer(obj, finalizer):
+    gc.boehm_register_finalizer(obj, finalizer)

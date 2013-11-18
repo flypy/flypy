@@ -7,9 +7,7 @@ Preparation for codegen.
 from __future__ import print_function, division, absolute_import
 from functools import partial
 
-from numba2 import types, errors
-from numba2 import representation
-from numba2.runtime import conversion
+from numba2 import types, errors, conversion, compiler
 
 from pykit.ir import FuncArg, Op, Const, Pointer, Struct
 from pykit import types as ptypes
@@ -20,13 +18,6 @@ from pykit.utils import nestedmap
 #===------------------------------------------------------------------===
 
 dummy_type = [('dummy',), (types.int32,)]
-
-def ll_type(x):
-    """
-    Get the low-level representation type for a high-level (user-defined) type.
-    """
-    return representation.representation_type(x)
-
 
 def resolve_type(context, op):
     """
@@ -50,7 +41,7 @@ def resolve_type(context, op):
             return op # TODO: Remove this
 
         # Generate low-level representation type
-        ltype = ll_type(type)
+        ltype = compiler.representation_type(type)
 
         if isinstance(op, Const):
             const = op.const
@@ -91,7 +82,7 @@ def lltyping(func, env):
         if conversion.byref(restype):
             ll_restype = ptypes.Void
         else:
-            ll_restype = ll_type(restype)
+            ll_restype = compiler.representation_type(restype)
 
         func.type = ptypes.Function(ll_restype, [arg.type for arg in func.args])
         #signature = env['numba.typing.signature']

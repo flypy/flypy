@@ -7,7 +7,10 @@ Implements a runtime using CPython.
 from __future__ import print_function, division, absolute_import
 
 from cpython cimport *
-from libc.stdint cimport uint64_t
+from libc.stdint cimport uint64_t, int64_t
+cimport numpy as npy
+
+npy.import_array()
 
 import functools
 try:
@@ -178,6 +181,14 @@ cdef public char * asstring(obj):
 
 cdef public fromstring(char *s, Py_ssize_t length):
     return s[:length]
+
+# ______________________________________________________________________
+
+# NumPy
+
+def dummy_array(Py_uintptr_t data, npy.npy_intp size):
+    """Create a dummy int8 array from the given data and size"""
+    return npy.PyArray_SimpleNewFromData(1, &size, npy.NPY_INT8, <void *> data)
 
 # ______________________________________________________________________
 

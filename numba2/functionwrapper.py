@@ -35,8 +35,10 @@ class FunctionWrapper(object):
         self.implementor = None
 
     def __call__(self, *args, **kwargs):
-        from numba2.runtime import (toctypes, fromctypes, toobject, fromobject,
-                                    ctype, byref, stack_allocate)
+        from numba2.representation import byref, stack_allocate
+        from numba2.conversion import (
+            toctypes, fromctypes, toobject, fromobject, ctype)
+        from numba2.ctypes_support import CTypesStruct
         from numba2.types import Function
 
         # Keep this alive for the duration of the call

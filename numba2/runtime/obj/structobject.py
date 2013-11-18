@@ -5,14 +5,15 @@ Struct object implementation.
 """
 
 from __future__ import print_function, division, absolute_import
-import ctypes
 
-from ... import jit, typeof
+from ... import jit
 
-def struct_(fields, name=None):
+def struct_(fields, name=None, packed=False):
     if (not isinstance(fields, list) or not fields or not
             isinstance(fields[0], tuple) or not len(fields[0]) == 2):
         raise TypeError("Excepted a list of two-tuples, got %s" % (fields,))
+
+    assert not packed
 
     @jit('Struct[a, b]')
     class Struct(object):
