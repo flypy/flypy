@@ -69,6 +69,10 @@ class Coercion(object):
         # Promote arguments to match parameter types
 
         newargs = self.promote_args(args, argtypes, op)
+
+        # Append any extrananeous arguments for varargs...
+        newargs.extend(args[len(newargs):])
+
         op.set_args([f, newargs])
 
     def coerce_to_field_setting(self, op):
