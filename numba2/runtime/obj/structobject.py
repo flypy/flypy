@@ -6,7 +6,7 @@ Struct object implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from ... import jit
+from ... import sjit
 
 def struct_(fields, name=None, packed=False):
     if (not isinstance(fields, list) or not fields or not
@@ -15,7 +15,7 @@ def struct_(fields, name=None, packed=False):
 
     assert not packed
 
-    @jit('Struct[a, b]')
+    @sjit('Struct[a, b]')
     class Struct(object):
         layout = list(fields)
 
