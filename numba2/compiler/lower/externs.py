@@ -33,7 +33,8 @@ def rewrite_externs(func, env):
                         extern.install()
 
                     functype = ptypes.Function(lltype(restype),
-                                               [lltype(t) for t in argtypes])
+                                               [lltype(t) for t in argtypes],
+                                               extern.type.varargs)
                     # Note: Global value should really be part inserted into
                     # a module.  But there are no module support at this point.
                     replacment = ir.GlobalValue(extern.name, functype,

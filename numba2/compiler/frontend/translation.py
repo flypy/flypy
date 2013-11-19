@@ -96,7 +96,8 @@ class Translate(object):
         """Initialize pykit untypes structures"""
 
         # Setup Function
-        sig = types.Function(types.Opaque, [types.Opaque] * len(self.argnames))
+        sig = types.Function(types.Opaque, [types.Opaque] * len(self.argnames),
+                             False)
         self.dst = Function(func_name(self.func), self.argnames, sig)
 
         # Setup Builder

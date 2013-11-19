@@ -31,7 +31,7 @@ def add_impl(opaque_func, name, implementation, restype=None, restype_func=None)
         else:
             result_type = restype or ll_argtypes[0]
 
-        type = ptypes.Function(result_type, tuple(ll_argtypes))
+        type = ptypes.Function(result_type, tuple(ll_argtypes), False)
         func = ir.Function(name, argnames, type)
         func.new_block("entry")
         b = ir.Builder(func)

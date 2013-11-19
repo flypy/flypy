@@ -56,11 +56,12 @@ def rewrite_obj_return(func, env):
     if stack_alloc:
         out = func.add_arg(func.temp("out"), opaque_t)
         context[out] = Pointer[restype]
-        func.type = types.Function(types.Void, func.type.argtypes)
+        func.type = types.Function(types.Void, func.type.argtypes, False)
 
     for arg in func.args:
         arg.type = opaque_t
-    func.type = types.Function(func.type.restype, (opaque_t,) * len(func.args))
+    func.type = types.Function(func.type.restype, (opaque_t,) * len(func.args),
+                               False)
 
     for op in func.ops:
         if op.opcode == 'ret' and op.args[0] is not None and stack_alloc:

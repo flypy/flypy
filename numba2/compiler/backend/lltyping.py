@@ -84,7 +84,8 @@ def lltyping(func, env):
         else:
             ll_restype = compiler.representation_type(restype)
 
-        func.type = ptypes.Function(ll_restype, [arg.type for arg in func.args])
+        func.type = ptypes.Function(ll_restype, [arg.type for arg in func.args],
+                                    False)
         #signature = env['numba.typing.signature']
         #func.type = ll_type(signature).base
 
