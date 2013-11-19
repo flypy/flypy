@@ -25,12 +25,12 @@ def allocator(func, env):
     gcmod = gc.gc_impl(env["numba.gc.impl"])
 
     for op in func.ops:
+        newop = None
         if op.opcode == 'allocate_obj':
             stmts, newop = allocate_object(caller, b, context[op], env)
         elif op.opcode == 'register_finalizer':
-            newop = register_finalizer(caller, b, context,
-                                       context[op], gcmod, op.args[0])
-            stmts = [newop]
+            stmts = register_finalizer(caller, b, context,
+                                       context[op.args[0]], gcmod, op.args[0])
         else:
             continue
 
@@ -106,8 +106,12 @@ def register_finalizer(caller, builder, context, type, gcmod, obj):
         ptr = ir.Pointer(pointerval, ptypes.Pointer(ptypes.Void))
         context[ptr] = Pointer[void]
 
+        # Cast object to void *
+        obj_p = builder.convert(ptypes.Opaque, obj)
+        context[obj_p] = Pointer[void]
+
         # Call gc_add_finalizer with (obj, ptr)
-        result = caller.call(phase.typing, gcmod.gc_add_finalizer, [obj, ptr])
+        result = caller.call(phase.typing, gcmod.gc_add_finalizer, [obj_p, ptr])
         context[result] = void
 
-        return result
+        return [obj_p, result]
