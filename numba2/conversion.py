@@ -15,6 +15,8 @@ from .representation import stack_allocate, byref, c_primitive
 # Object Conversion
 #===------------------------------------------------------------------===
 
+ctypes_type_memo = {}
+
 def fromobject(value, type):
     """
     Convert a Python value to a numba representation according to `type`
@@ -50,7 +52,7 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
 
     if valmemo is None:
         valmemo = {}
-        typememo = {}
+        typememo = ctypes_type_memo
     if id(value) in valmemo:
         return valmemo[id(value)]
 
@@ -145,7 +147,7 @@ def ctype(type, memo=None):
         type = type.type
 
     if memo is None:
-        memo = {}
+        memo = ctypes_type_memo
     if type in memo:
         return memo[type]
 
