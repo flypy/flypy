@@ -60,6 +60,12 @@ class ForeignFunction(object):
         value = value.p
         return Pointer.toctypes(Pointer(value), Pointer[type])
 
+# Set the 'varargs' property on the type of function types. This is
+# somewhat of a gross hack, and clearly displays limitations in our
+# type system
+Function[None].varargs = False
+ForeignFunction[None].varargs = False
+
 #===------------------------------------------------------------------===
 # Void
 #===------------------------------------------------------------------===
