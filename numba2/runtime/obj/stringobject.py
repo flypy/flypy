@@ -60,6 +60,10 @@ class String(object):
 def from_cstring(p):
     return String(Buffer(p, libc.strlen(p)))
 
+@jit('String[] -> Pointer[char]')
+def as_cstring(s):
+    return s.buf.pointer()
+
 @typeof.case(str)
 def typeof(pyval):
     return String[()]

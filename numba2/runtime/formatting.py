@@ -34,7 +34,7 @@ def int_format(x):
 
 @jit('a -> int64 -> void') # 'Int[a, False] -> void'
 def _int_format(buf, x):
-    fmt = "%lld".buf.pointer()
+    fmt = numba2.runtime.as_cstring("%lld")
     numba2.libc.snprintf(buf.pointer(), len(buf), fmt, x)
 
 # TODO: unsigned!
