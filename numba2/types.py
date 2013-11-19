@@ -85,9 +85,23 @@ npy_intp     = Py_ssize_t
 object_      = Object[()]
 
 #===------------------------------------------------------------------===
-# sizeof
+# Utils
 #===------------------------------------------------------------------===
 
-def sizeof_type(argtype):
-    cty = ctype(argtype)
+def sizeof_type(ty):
+    """Compute the size of instances of a given type="""
+    cty = ctype(ty)
     return ctypes.sizeof(cty)
+
+def typematch(ty, impl):
+    """
+    See whether type instance `ty` is a type for value instances of `impl`.
+
+        >>> @jit('Foo[a, b]')
+        ... class Foo(object):
+        ...     pass
+        ...
+        >>> typematch(Foo[int32, 2], Foo)
+        True
+    """
+    return isinstance(ty, type(impl.type))
