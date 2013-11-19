@@ -85,7 +85,7 @@ class _Decimal(object):
     def __del__(self):
         
         print('__del__')
-        mpd_del_func(self.mpd)
+        #mpd_del_func(self.mpd)
 
     @jit
     def __repr__(self):

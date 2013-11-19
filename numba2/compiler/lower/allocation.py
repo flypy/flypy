@@ -28,17 +28,14 @@ def allocator(func, env):
         newop = None
         if op.opcode == 'allocate_obj':
             stmts, newop = allocate_object(caller, b, context[op], env)
+            newop.result = op.result
         elif op.opcode == 'register_finalizer':
             stmts = register_finalizer(caller, b, context,
                                        context[op.args[0]], gcmod, op.args[0])
         else:
             continue
 
-        if newop is None:
-            op.delete()
-        elif newop is not None:
-            newop.result = op.result
-            op.replace(stmts)
+        op.replace(stmts)
 
 
 def allocate_object(caller, builder, type, env):
