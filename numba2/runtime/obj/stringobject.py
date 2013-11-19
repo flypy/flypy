@@ -24,12 +24,13 @@ class String(object):
     def __eq__(self, other):
         return False
 
-    @jit('a -> int64 -> a')
-    def __getitem__(self, idx):
-        #c = self.buf[idx]
-        p = self.buf.p + idx
-        # TODO: Keep original string alive!
-        return String(Buffer(p, 1))
+    # TODO: Fix the below
+    #@jit('a -> int64 -> a')
+    #def __getitem__(self, idx):
+    #    #c = self.buf[idx]
+    #    p = self.buf.p + idx
+    #    # TODO: Keep original string alive!
+    #    return String(Buffer(p, 1)) # <- this is not \0 terminated
 
     @jit('a -> a')
     def __str__(self):

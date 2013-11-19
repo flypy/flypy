@@ -26,7 +26,7 @@ def ll_format(buf, format, *args):
 
 @jit #('a -> String[]')
 def int_format(x):
-    ndigits = int(math.ceil(math.log(x)))
+    ndigits = int(math.ceil(math.log10(x)))
     buf = numba2.newbuffer(numba2.char, ndigits + 1)
     _int_format(buf, x)
     buf[ndigits + 1] = 0
