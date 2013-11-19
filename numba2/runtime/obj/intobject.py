@@ -8,12 +8,21 @@ int/long implementation.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-from numba2 import sjit, typeof
+from numba2 import jit, sjit, typeof
+from numba2.runtime import formatting
 from ..interfaces import Number
 
 @sjit('Int[nbits, unsigned]')
 class Int(Number):
     layout = [('x', 'Int[nbits, unsigned]')]
+
+    @jit #('a -> String[]')
+    def __str__(self):
+        return formatting.int_format(self)
+
+    __repr__ = __str__
+
+    # --------------------
 
     @classmethod
     def toctypes(cls, val, ty):

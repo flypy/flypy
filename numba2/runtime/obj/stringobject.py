@@ -56,10 +56,9 @@ class String(object):
     # __________________________________________________________________
 
 
-@jit #('Pointer[char] -> String[]') # TODO: Foo[] syntax
+@jit('Pointer[char] -> String[]')
 def from_cstring(p):
     return String(Buffer(p, libc.strlen(p)))
-
 
 @typeof.case(str)
 def typeof(pyval):

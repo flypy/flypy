@@ -14,10 +14,14 @@ from .types import *
 from .conversion import toobject, fromobject, toctypes, fromctypes, ctype
 from .runtime import cast, NULL
 from .runtime.interfaces.interface import implements
-from .runtime.ffi import sizeof, malloc
+from .runtime.ffi import sizeof, malloc, libc
 from .runtime import builtins as bltins
 from .runtime.obj.librt import debug
 from .runtime.special import addressof
+from .runtime import Int, Float, String, Buffer, newbuffer, Object, ffi
+
+# Trigger extraneous definitions
+from .runtime import formatting
 from .runtime import mathlib
 
 from .passes import translate
