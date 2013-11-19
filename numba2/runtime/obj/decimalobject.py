@@ -56,6 +56,9 @@ dll.mpd_mul.restype = None
 dll.mpd_div.argtypes = [POINTER(mpd_t), POINTER(mpd_t), POINTER(mpd_t), POINTER(mpd_context)]
 dll.mpd_div.restype = None
 
+dll.mpd_compare.argtypes = [POINTER(mpd_t), POINTER(mpd_t), POINTER(mpd_t), POINTER(mpd_context)]
+dll.mpd_compare.restype = c_int
+
 mpd_new_func = dll.mpd_new
 mpd_del_func = dll.mpd_del
 mpd_set_string_func = dll.mpd_set_string
@@ -64,6 +67,7 @@ mpd_add_func = dll.mpd_add
 mpd_sub_func = dll.mpd_sub
 mpd_mul_func = dll.mpd_mul
 mpd_div_func = dll.mpd_div
+mpd_cmp_func = dll.mpd_compare
 
 
 context = mpd_context()
@@ -78,14 +82,14 @@ class _Decimal(object):
     @jit
     def __init__(self, mpd):
         
-        print('__init__')
+        #print('__init__')
         self.mpd = mpd
 
     @jit
     def __del__(self):
         
-        print('__del__')
-        #mpd_del_func(self.mpd)
+        #print('__del__')
+        mpd_del_func(self.mpd)
 
     @jit
     def __repr__(self):
@@ -103,6 +107,37 @@ class _Decimal(object):
         mpd_result = mpd_new_func()
         mpd_add_func(mpd_result, self.mpd, right.mpd, context_ref)
         return _Decimal(mpd_result)
+
+    @jit
+    def __sub__(self, right):
+        
+        mpd_result = mpd_new_func()
+        mpd_sub_func(mpd_result, self.mpd, right.mpd, context_ref)
+        return _Decimal(mpd_result)
+
+    @jit
+    def __mul__(self, right):
+        mpd_result = mpd_new_func()
+        mpd_mul_func(mpd_result, self.mpd, right.mpd, context_ref)
+        return _Decimal(mpd_result)
+
+    @jit
+    def __lt__(self, right):
+        mpd_temp = mpd_new_func()
+        result = mpd_cmp_func(mpd_temp, self.mpd, right.mpd, context_ref)
+        mpd_del_func(mpd_temp)
+        if result == -1:
+            return True
+        return False
+
+    @jit
+    def __gt__(self, right):
+        mpd_temp = mpd_new_func()
+        result = mpd_cmp_func(mpd_temp, self.mpd, right.mpd, context_ref)
+        mpd_del_func(mpd_temp)
+        if result == 1:
+            return True
+        return False
 
 
 @jit

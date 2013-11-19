@@ -65,6 +65,10 @@ def print(value, sep=' ', end='\n'):
     ffi.libc.printf(end.buf.p)
     #ffi.libc.puts(s.buf.p)
 
+@jit
+def clock():
+    return ffi.libc.clock()
+
 # ____________________________________________________________
 # Conversion
 
