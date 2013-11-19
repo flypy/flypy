@@ -449,7 +449,7 @@ class Translate(object):
     def op_LOAD_ATTR(self, inst):
         attr = self.names[inst.arg]
         obj = self.pop()
-        if isinstance(obj, Const):
+        if isinstance(obj, Const) and hasattr(obj.const, attr):
             val = getattr(obj.const, attr)
             self.push(const(val))
         else:

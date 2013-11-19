@@ -57,6 +57,7 @@ def map_type(cffi_type):
         restype = map_type(cffi_type.result)
         argtypes = tuple(map_type(arg) for arg in cffi_type.args)
         result = ForeignFunction[argtypes + (restype,)]
+        result.varargs = cffi_type.ellipsis
     elif kind == 'pointer':
         return Pointer[map_type(cffi_type.item)]
     elif cffi_type not in type_map:

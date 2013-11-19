@@ -99,8 +99,9 @@ def infer_foreign_call(func, func_type, argtypes):
     expected_argtypes = func_type.parameters[:-1]
 
     if len(argtypes) != len(expected_argtypes):
-        raise TypeError("Function %s requires %d argument(s), got %d" % (
-                                func, len(argtypes), len(expected_argtypes)))
+        if not (func_type.varargs and len(argtypes) >= len(expected_argtypes)):
+            raise TypeError("Function %s requires %d argument(s), got %d" % (
+                                func, len(expected_argtypes), len(argtypes)))
 
     # Make sure we have compatible types
     unify(zip(argtypes, expected_argtypes))

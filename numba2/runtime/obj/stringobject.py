@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof
 from numba2.runtime.lib import libc
-from . import librt as lib
+from ..lib import librt as lib
 from .bufferobject import Buffer
 from .pointerobject import Pointer
 
@@ -56,10 +56,9 @@ class String(object):
     # __________________________________________________________________
 
 
-@jit #('Pointer[char] -> String[]') # TODO: Foo[] syntax
+@jit('Pointer[char] -> String[]')
 def from_cstring(p):
     return String(Buffer(p, libc.strlen(p)))
-
 
 @typeof.case(str)
 def typeof(pyval):

@@ -52,10 +52,15 @@ class Buffer(object):
     #def __del__(self):
     #    self.free(self.p)
 
+    # ----------------------------------
+
     @jit
     def resize(self):
         raise NotImplementedError
 
+    @jit('Buffer[a] -> Pointer[a]')
+    def pointer(self): # TODO: Properties
+        return self.p
 
 #===------------------------------------------------------------------===
 # Buffer creation
