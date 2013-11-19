@@ -16,7 +16,7 @@ from .runtime import cast, NULL
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc, libc
 from .runtime import builtins as bltins
-from .runtime.obj.librt import debug
+from .runtime.lib.librt import debug
 from .runtime.special import addressof
 from .runtime import Int, Float, String, Buffer, newbuffer, Object, ffi
 

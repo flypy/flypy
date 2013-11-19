@@ -30,6 +30,7 @@ malloc
 free
 memcmp
 printf
+snprintf
 puts
 strlen
 ''')

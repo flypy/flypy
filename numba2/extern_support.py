@@ -26,6 +26,7 @@ class ExternalSymbol(object):
             from numba2 import typeof, types
             foreignfunc = typeof(self.ffiobj)
             functy = types.Function[foreignfunc.parameters]
+            functy.varargs = foreignfunc.varargs
             self._type = functy
         return self._type
 
