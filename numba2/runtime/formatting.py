@@ -25,15 +25,16 @@ def ll_format(buf, format, *args):
 #===------------------------------------------------------------------===
 
 @jit #('a -> String[]')
-def int_format(self):
-    ndigits = int(math.ceil(math.log(self)))
-    buf = numba2.newbuffer(numba2.char, ndigits)
-    _int_format(buf, numba2.cast(self, numba2.longlong))
+def int_format(x):
+    ndigits = int(math.ceil(math.log(x)))
+    buf = numba2.newbuffer(numba2.char, ndigits + 1)
+    _int_format(buf, x)
+    buf[ndigits + 1] = 0
     return numba2.String(buf)
 
-@jit('a -> b : integral -> void') # 'Int[a, False] -> void'
+@jit('a -> int64 -> void') # 'Int[a, False] -> void'
 def _int_format(buf, x):
-    fmt = "%ll".buf.pointer()
+    fmt = "%lld".buf.pointer()
     numba2.libc.snprintf(buf.pointer(), len(buf), fmt, x)
 
 # TODO: unsigned!
