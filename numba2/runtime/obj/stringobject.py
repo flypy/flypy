@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof
 from numba2.runtime.lib import libc
-from . import librt as lib
+from ..lib import librt as lib
 from .bufferobject import Buffer
 from .pointerobject import Pointer
 

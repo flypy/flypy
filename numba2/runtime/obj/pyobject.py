@@ -10,7 +10,7 @@ import ctypes
 import numba2
 from numba2 import jit, ijit, typeof
 from . import Void, Pointer
-from . import librt as lib
+from ..lib import librt as lib
 
 import cffi
 

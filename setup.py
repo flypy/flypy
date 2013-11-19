@@ -123,8 +123,8 @@ setup(
     },
     ext_modules=[
         Extension(
-            name="numba2.runtime.obj.libcpy",
-            sources=["numba2/runtime/obj/libcpy.pyx"],
+            name="numba2.runtime.lib.libcpy",
+            sources=["numba2/runtime/lib/libcpy.pyx"],
             include_dirs=[numpy.get_include()],
             depends=[]),
         Extension(

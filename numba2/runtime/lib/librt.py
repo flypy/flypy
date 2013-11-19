@@ -9,7 +9,6 @@ from __future__ import print_function, division, absolute_import
 import os
 from os.path import abspath, dirname, join
 
-from . import Void, Pointer
 from . import libcpy # initialize
 
 import ctypes
@@ -141,4 +140,4 @@ debug           = declare('debug'        , None, [])
 #lib = ffi.dlopen(join(dir, fname))
 
 #PyObject_p = typeof(lib.add).parameters[0]
-PyObject_p = Pointer[Void[()]]
+#PyObject_p = Pointer[Void[()]]
