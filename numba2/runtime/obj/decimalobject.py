@@ -70,19 +70,21 @@ context = mpd_context()
 context_ref = pointer(context)
 dll.mpd_init(byref(context))
 
+
 @jit
-class Decimal(object):
+class _Decimal(object):
     layout = [('mpd', Pointer[typeof(mpd_t)])]
     
     @jit
-    def __init__(self, value):
+    def __init__(self, mpd):
         
-        self.mpd = mpd_new_func()
-        mpd_set_string_func(self.mpd, value.buf.p, context_ref)
+        print('__init__')
+        self.mpd = mpd
 
     @jit
     def __del__(self):
         
+        print('__del__')
         mpd_del_func(self.mpd)
 
     @jit
@@ -100,12 +102,13 @@ class Decimal(object):
         
         mpd_result = mpd_new_func()
         mpd_add_func(mpd_result, self.mpd, right.mpd, context_ref)
-        return Decimal(from_cstring(mpd_to_sci_func(mpd_result, 0)))
-
-    @staticmethod
-    def fromctypes(value, x):
-        result = Decimal.__new__(Decimal)
-        result.mpd = cast(value.contents.mpd, POINTER(mpd_t))
-        return result
+        return _Decimal(mpd_result)
 
 
+@jit
+def decimal(value):
+    new_mpd = mpd_new_func()
+    d = _Decimal(new_mpd)
+    mpd_set_string_func(d.mpd, value.buf.p, context_ref)
+    return d
+    
