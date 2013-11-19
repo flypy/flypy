@@ -35,7 +35,10 @@ def allocator(func, env):
         else:
             continue
 
-        op.replace(stmts)
+        if stmts:
+            op.replace(stmts)
+        else:
+            op.delete()
 
 
 def allocate_object(caller, builder, type, env):
