@@ -25,10 +25,10 @@ import numpy as np
 # TODO: Move to `typesets` module
 #fcomplex = TypeSet(*types.floating | types.complexes, name='fcomplex')
 
-ufloating = 'a : floating -> a'
-ucomplex  = 'Complex[a] -> Complex[a]'
-bfloating = 'a : floating -> a -> a'
-bcomplex  = 'Complex[a] -> Complex[a] -> Complex[a]'
+ufloating = ['float32 -> float32', 'float64 -> float64'] # a : floating -> a
+ucomplex  = ['Complex[a] -> Complex[a]']
+bfloating = ['a : floating -> a -> a']
+bcomplex  = ['Complex[a] -> Complex[a] -> Complex[a]']
 
 #----------------------------------------------------------------------------
 # Symbols
@@ -96,7 +96,7 @@ def declare(name, signatures, mathname=None):
 
     for signature in signatures:
         @jit(signature, opaque=True)
-        def func(*args):
+        def mathfunc(*args):
             return getattr(math, name)(*args) # pure python
 
     def impl(builder, argtypes, *args):
@@ -104,48 +104,49 @@ def declare(name, signatures, mathname=None):
         lty = lltype(ty)
         return builder.ret(builder.call_math(lty, mathname, list(args)))
 
+    add_impl(mathfunc, "numba_" + name, impl)
 
-    add_impl(func, "numba_" + name, impl)
+    for f, _, _ in mathfunc.overloads:
+        f.__name__ = name
 
-    func.__name__ = name
-    return func
+    return mathfunc
 
 #===------------------------------------------------------------------===
 # Math
 #===------------------------------------------------------------------===
 
-asin       = declare('asin'    , [ufloating, ucomplex])
-cos        = declare('cos'     , [ufloating, ucomplex])
-log2       = declare('log2'    , [ufloating, ucomplex])
-log        = declare('log'     , [ufloating, ucomplex])
-atan       = declare('atan'    , [ufloating, ucomplex])
-tanh       = declare('tanh'    , [ufloating, ucomplex])
-exp2       = declare('exp2'    , [ufloating, ucomplex])
-atanh      = declare('atanh'   , [ufloating, ucomplex])
-log1p      = declare('log1p'   , [ufloating, ucomplex])
-asinh      = declare('asinh'   , [ufloating, ucomplex])
-sqrt       = declare('sqrt'    , [ufloating, ucomplex])
-cosh       = declare('cosh'    , [ufloating, ucomplex])
-sinh       = declare('sinh'    , [ufloating, ucomplex])
-acosh      = declare('acosh'   , [ufloating, ucomplex])
-expm1      = declare('expm1'   , [ufloating, ucomplex])
-exp        = declare('exp'     , [ufloating, ucomplex])
-acos       = declare('acos'    , [ufloating, ucomplex])
-log10      = declare('log10'   , [ufloating, ucomplex])
-sin        = declare('sin'     , [ufloating, ucomplex])
-tan        = declare('tan'     , [ufloating, ucomplex])
+asin       = declare('asin'    , ufloating + ucomplex)
+cos        = declare('cos'     , ufloating + ucomplex)
+log2       = declare('log2'    , ufloating + ucomplex)
+log        = declare('log'     , ufloating + ucomplex)
+atan       = declare('atan'    , ufloating + ucomplex)
+tanh       = declare('tanh'    , ufloating + ucomplex)
+exp2       = declare('exp2'    , ufloating + ucomplex)
+atanh      = declare('atanh'   , ufloating + ucomplex)
+log1p      = declare('log1p'   , ufloating + ucomplex)
+asinh      = declare('asinh'   , ufloating + ucomplex)
+sqrt       = declare('sqrt'    , ufloating + ucomplex)
+cosh       = declare('cosh'    , ufloating + ucomplex)
+sinh       = declare('sinh'    , ufloating + ucomplex)
+acosh      = declare('acosh'   , ufloating + ucomplex)
+expm1      = declare('expm1'   , ufloating + ucomplex)
+exp        = declare('exp'     , ufloating + ucomplex)
+acos       = declare('acos'    , ufloating + ucomplex)
+log10      = declare('log10'   , ufloating + ucomplex)
+sin        = declare('sin'     , ufloating + ucomplex)
+tan        = declare('tan'     , ufloating + ucomplex)
 
-abs        = declare('abs'     , ['int32 -> int32', ufloating, ucomplex])
-rint       = declare('rint'    , [ufloating, ucomplex])
-ceil       = declare('ceil'    , [ufloating, ucomplex])
-trunc      = declare('trunc'   , [ufloating, ucomplex])
-floor      = declare('floor'   , [ufloating, ucomplex])
+abs        = declare('abs'     , ['int32 -> int32'] + ufloating, ucomplex)
+rint       = declare('rint'    , ufloating + ucomplex)
+ceil       = declare('ceil'    , ufloating + ucomplex)
+trunc      = declare('trunc'   , ufloating + ucomplex)
+floor      = declare('floor'   , ufloating + ucomplex)
 
-pow             = declare('pow'          , [ufloating, ucomplex])
-hypot           = declare('hypot'        , [ufloating])
-atan2           = declare('atan2'        , [ufloating])
-logaddexp       = declare('logaddexp'    , [ufloating])
-logaddexp2      = declare('logaddexp2'   , [ufloating])
+pow             = declare('pow'          , ufloating + ucomplex)
+hypot           = declare('hypot'        , ufloating)
+atan2           = declare('atan2'        , ufloating)
+logaddexp       = declare('logaddexp'    , ufloating)
+logaddexp2      = declare('logaddexp2'   , ufloating)
 
 #===------------------------------------------------------------------===
 # Overlays

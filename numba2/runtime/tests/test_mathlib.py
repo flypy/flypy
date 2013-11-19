@@ -20,15 +20,15 @@ class TestMathLib(unittest.TestCase):
             return mathlib.asin(x)
 
         self.assertAlmostEqual(f(0.9), math.asin(0.9))
+        #self.assertAlmostEqual(f(0.9+05.j), cmath.asin(0.9+0.5j))
 
-    def test_complex_asin(self):
-        raise unittest.SkipTest("Implement complex math")
-
+    def test_sin(self):
         @jit
         def f(x):
-            return mathlib.asin(x)
+            return mathlib.sin(x)
 
-        self.assertAlmostEqual(f(0.9+05.j), cmath.asin(0.9+0.5j))
+        self.assertAlmostEqual(f(0.9), math.sin(0.9))
+        self.assertAlmostEqual(f(2), math.sin(2))
 
     def test_overlay(self):
         @jit
