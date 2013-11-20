@@ -18,5 +18,14 @@ from numba2 import jit
 
 @jit
 def sprintf(buf, fmt, x):
+    """
+    Print `x` to `buf` according to `format`.
+
+    Returns the number of characters written.
+    """
     fmt = numba2.runtime.as_cstring(fmt)
-    numba2.libc.snprintf(buf.pointer(), len(buf), fmt, x)
+    n = len(buf)
+    result = numba2.libc.snprintf(buf.pointer(), n, fmt, x)
+    #if result >= n:
+    #    raise ValueError("Unable to print to buffer:")
+    return result
