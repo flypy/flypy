@@ -103,8 +103,13 @@ def infer_foreign_call(func, func_type, argtypes):
             raise TypeError("Function %s requires %d argument(s), got %d" % (
                                 func, len(expected_argtypes), len(argtypes)))
 
-    # Make sure we have compatible types
-    unify(zip(argtypes, expected_argtypes))
+    try:
+        # Make sure we have compatible types
+        unify(zip(argtypes, expected_argtypes))
+    except UnificationError:
+        raise TypeError(
+            "Mismatching signature for function %s with argument types %s" % (
+                func, ", ".join(map(str, argtypes))))
 
     return func, Function[expected_argtypes + (restype,)], restype
 
