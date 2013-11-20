@@ -16,6 +16,7 @@ from numba2.extern_support import externlib
 ffi = cffi.FFI()
 ffi.cdef("""
 void *malloc(size_t size);
+void *realloc(void *ptr, size_t size);
 void free(void *ptr);
 int memcmp(void *s1, void *s2, size_t n);
 int printf(char *s, ...);
@@ -27,6 +28,7 @@ size_t strlen(char *s);
 libclib = ffi.dlopen(None)
 libc = externlib(".numba.runtime.c", libclib, '''
 malloc
+realloc
 free
 memcmp
 printf

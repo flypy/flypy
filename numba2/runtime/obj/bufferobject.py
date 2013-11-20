@@ -54,9 +54,10 @@ class Buffer(object):
 
     # ----------------------------------
 
-    @jit
-    def resize(self):
-        raise NotImplementedError
+    @jit('a -> int64 -> void')
+    def resize(self, n):
+        ffi.realloc(self.p, n)
+        self.size = n
 
     @jit('Buffer[a] -> Pointer[a]')
     def pointer(self): # TODO: Properties

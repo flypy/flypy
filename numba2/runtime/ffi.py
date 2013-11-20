@@ -28,8 +28,13 @@ __all__ = ['malloc', 'memcmp', 'sizeof']
 
 @jit('int64 -> Type[a] -> Pointer[a]')
 def malloc(items, type):
-    p = libc.malloc(items * sizeof(type))
+    p = libc.malloc(items * sizeof(type)) # TODO: errcheck
     return cast(p, Pointer[type])
+
+@jit('Pointer[a] -> int64 -> void')
+def realloc(p, n):
+    p = cast(p, Pointer[void])
+    libc.realloc(p, n) # TODO: errcheck
 
 @jit('Pointer[a] -> void')
 def free(p):
