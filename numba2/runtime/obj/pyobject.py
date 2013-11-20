@@ -159,18 +159,30 @@ class Object(object):
 
     @jit('a -> bool')
     def __nonzero__(self):
-        result = wrap(lib.bool_(self.ptr))
-        return cast(result, bool_)
+        return lib.istrue(self.ptr)
 
-    #@jit('a -> bool')
-    #def __str__(self):
-    #    result = wrap(lib.tostring(self))
-    #    return cast(result, String)
-    #
-    #@jit('a -> bool')
-    #def __repr__(self):
-    #    result = wrap(lib.torepr(self))
-    #    return cast(result, String)
+    @jit('a -> int64')
+    def __len__(self):
+        return lib.length(self.ptr)
+
+    # ---------------------------------------
+
+    @jit
+    def __str__(self):
+        # Object -> str Object
+        str_obj = wrap(lib.tostring(self.ptr))
+        # Get pointer to str buf
+        p = lib.asstring(str_obj.ptr)
+
+        # Build numba String
+        n = len(str_obj)
+        buf = numba2.Buffer(p, n + 1)
+        return numba2.String(buf)
+
+    @jit
+    def __repr__(self):
+        result = wrap(lib.torepr(self))
+        return str(result)
 
     # ---------------------------------------
 
