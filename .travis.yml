@@ -22,21 +22,21 @@ install:
   - export LLVMPY_DYNLINK=1
   - export CFLAGS="-Wno-strict-aliasing -Wno-unused -Wno-write-strings -Wno-unused-function"
   # Install llvmpy
-  - git clone git://github.com/llvmpy/llvmpy.git -q
+  - git clone git://github.com/llvmpy/llvmpy.git
   - cd llvmpy ; python setup.py install -q >/dev/null ; cd ..
   # Install cython
   - pip -q install cython --install-option="--no-cython-compile" # This takes long
   # Install llvmmath
-  - git clone git://github.com/ContinuumIO/llvmmath.git -q
+  - git clone git://github.com/ContinuumIO/llvmmath.git
   - cd llvmmath
   - pip install -r requirements.txt --use-mirrors
-  - python setup.py install -q
+  - python setup.py install
   - cd ..
   # Install miscellaneous dependencies
   - pip install -r requirements.txt --use-mirrors
   # Install pykit
   - git clone https://github.com/pykit/pykit.git
-  - cd pykit ; git checkout origin/builder ; sudo ~/py setup.py install ; cd ..
+  - cd pykit ; git checkout origin/builder ; python setup.py install ; cd ..
   # Install numba
   # - python setup.py install
 
