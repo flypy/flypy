@@ -7,7 +7,7 @@ Type coercions.
 from __future__ import print_function, division, absolute_import
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function, Op, ops
+from pykit.ir import OpBuilder, Builder, Const, Function, Op, Undef, ops
 
 #------------------------------------------------------------------------
 # Coercions -> Conversions
@@ -147,7 +147,7 @@ class Coercion(object):
         """
         conversion = self.conversions.get((arg, ty))
         if not conversion:
-            isconst = isinstance(arg, Const)
+            isconst = isinstance(arg, (Undef, Const))
 
             conversion = Op('convert', types.Opaque, [arg])
             self.context[conversion] = ty

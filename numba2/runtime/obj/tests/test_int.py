@@ -7,7 +7,7 @@ from numba2.types import integral
 
 class TestInt(unittest.TestCase):
 
-    def test_int_formatting(self):
+    def test_tostr(self):
         @jit('int32 -> a')
         def f1(x):
             return str(x)
@@ -18,9 +18,8 @@ class TestInt(unittest.TestCase):
 
 
         for i in range(-300, 300, 100):
-            for argtype in ('int32', 'int64'):
-                self.assertEqual(f1(i), str(i))
-                self.assertEqual(f2(i), str(i))
+            self.assertEqual(f1(i), str(i))
+            self.assertEqual(f2(i), str(i))
 
     def test_bool(self):
         @jit
@@ -29,6 +28,7 @@ class TestInt(unittest.TestCase):
         self.assertEqual(f(0), False)
         self.assertEqual(f(1), True)
         self.assertEqual(f(10), True)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,7 +31,7 @@ class TestStrings(unittest.TestCase):
 
         self.assertEqual(f("blah"), "h")
 
-    def test_bool(self):
+    def test_nonzero(self):
         @jit
         def f(s):
             return bool(s)
@@ -39,6 +39,19 @@ class TestStrings(unittest.TestCase):
         self.assertEqual(f("a"), True)
         self.assertEqual(f("ham"), True)
 
+    def test_string_add(self):
+        raise unittest.SkipTest("""
+        This works only when run in isolation:
+              File "/Users/mark/numba-lang/numba2/compiler/optimizations/throwing.py", line 16, in rewrite_exceptions
+    raise NotImplementedError("Exception throwing", op, func)
+NotImplementedError: ('Exception throwing', %15, Function(numba2.runtime.obj.rangeobject.__next__))
+        """)
+        @jit
+        def f(s1, s2):
+            return s1 + s2
+        self.assertEqual(f("foo", "bar"), "foobar")
+        self.assertEqual(f("foo", ""), "foo")
+        self.assertEqual(f("", "bar"), "bar")
 
 if __name__ == '__main__':
     unittest.main()

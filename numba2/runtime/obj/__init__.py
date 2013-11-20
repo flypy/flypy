@@ -13,7 +13,7 @@ from .rangeobject import Range
 from .noneobject import NoneType, NoneValue
 from .structobject import struct_
 from .dummy import Void, Function, ForeignFunction, NULL
-from .bufferobject import Buffer, newbuffer, fromseq
+from .bufferobject import Buffer, newbuffer, fromseq, copyto
 from .stringobject import String, from_cstring, as_cstring
 from .exceptions import *
 from .pyobject import Object

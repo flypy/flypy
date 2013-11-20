@@ -64,7 +64,7 @@ class Buffer(object):
         return self.p
 
 #===------------------------------------------------------------------===
-# Buffer creation
+# Buffer utils
 #===------------------------------------------------------------------===
 
 @jit('Type[a] -> int64 -> Buffer[a]')
@@ -79,3 +79,13 @@ def fromseq(seq, basetype):
     for i, item in enumerate(seq):
         buf[i] = item
     return buf
+
+@jit('Buffer[a] -> Buffer[a] -> int64 -> void')
+def copyto(src, dst, offset):
+    p_src = src.pointer()
+    p_dst = dst.pointer() + offset
+
+    # TODO: bounds-check
+
+    for i in range(len(src)):
+        p_dst[i] = p_src[i]

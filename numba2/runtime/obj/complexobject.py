@@ -55,12 +55,19 @@ class Complex(object):
         if bool(self.real):
             return True
         elif bool(self.imag):
-            return bool(self.imag)
+            return True
         else:
             return False
 
         # <- make this work in translation.py
         #return bool(self.real) or bool(self.imag)
+
+    @jit
+    def __str__(self):
+        # TODO: __mod__
+        return str(self.real) + "+" + str(self.imag) + str("j")
+
+    __repr__ = __str__
 
     # __________________________________________________________________
 

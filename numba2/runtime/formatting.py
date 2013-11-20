@@ -28,4 +28,18 @@ def sprintf(buf, fmt, x):
     result = numba2.libc.snprintf(buf.pointer(), n, fmt, x)
     #if result >= n:
     #    raise ValueError("Unable to print to buffer:")
-    return result
+    return result + 1 # n bytes + '\0
+
+@jit
+def format_static(fmt, x, n):
+    """
+    Format 'x' according to 'fmt' using a static buffer size 'n'.
+
+        - upcast to a double
+        - use snprintf
+        - resize buffer according to # of bytes written
+    """
+    buf = numba2.newbuffer(numba2.char, n)
+    n = sprintf(buf, fmt, x)
+    buf.resize(n)
+    return numba2.String(buf)

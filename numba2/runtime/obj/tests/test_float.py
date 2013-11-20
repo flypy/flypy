@@ -19,7 +19,7 @@ class TestFloat(unittest.TestCase):
             self.assertEqual(result, expected)
             self.assertEqual(len(trailing.strip("0")), 0, trailing)
 
-    def test_bool(self):
+    def test_nonzero(self):
         @jit
         def f(x):
             return bool(x)

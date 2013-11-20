@@ -43,14 +43,6 @@ class Float(Number):
 # Formatters
 #===------------------------------------------------------------------===
 
-@jit('float32 -> a')
-def getformat(x):
-    return "%f"
-
-@jit('float64 -> a')
-def getformat(x):
-    return "%llu"
-
 @jit('float64 -> float64')
 def upcast(x):
     return x
@@ -64,10 +56,7 @@ def float_format(x):
         - use snprintf
         - resize buffer according to # of bytes written
     """
-    buf = numba2.newbuffer(numba2.char, 20)
-    n = formatting.sprintf(buf, "%f", upcast(x))
-    buf.resize(n)
-    return numba2.String(buf)
+    return formatting.format_static("%f", upcast(x), 20)
 
 #===------------------------------------------------------------------===
 # typeof

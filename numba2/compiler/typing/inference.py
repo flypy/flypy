@@ -213,6 +213,8 @@ def initial_context(func):
                 context[arg] = set([None])
             elif isinstance(arg, ir.Const):
                 context[arg] = set([typeof(arg.const)])
+            elif isinstance(arg, ir.Undef):
+                context[arg] = set()
             elif isinstance(arg, ir.GlobalValue):
                 raise NotImplementedError("Globals")
 

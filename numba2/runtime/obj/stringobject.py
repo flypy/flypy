@@ -6,10 +6,11 @@ String implementation.
 
 from __future__ import print_function, division, absolute_import
 
+import numba2
 from numba2 import sjit, jit, typeof
 from numba2.runtime.lib import libc
 from ..lib import librt as lib
-from .bufferobject import Buffer
+from .bufferobject import Buffer, copyto
 from .pointerobject import Pointer
 
 @sjit
@@ -40,6 +41,16 @@ class String(object):
     def __len__(self):
         return len(self.buf) - 1
 
+    @jit('a -> a -> a')
+    def __add__(self, other):
+        n = len(self) + len(other) + 1
+        buf = numba2.newbuffer(numba2.char, n)
+
+        copyto(self.buf, buf, 0)
+        copyto(other.buf, buf, len(self))
+
+        return String(buf)
+
     @jit('a -> bool')
     def __nonzero__(self):
         return bool(len(self))
@@ -61,6 +72,10 @@ class String(object):
     # __________________________________________________________________
 
 
+#===------------------------------------------------------------------===
+# String <-> char *
+#===------------------------------------------------------------------===
+
 @jit('Pointer[char] -> String[]')
 def from_cstring(p):
     return String(Buffer(p, libc.strlen(p)))
@@ -68,6 +83,10 @@ def from_cstring(p):
 @jit('String[] -> Pointer[char]')
 def as_cstring(s):
     return s.buf.pointer()
+
+#===------------------------------------------------------------------===
+# typeof
+#===------------------------------------------------------------------===
 
 @typeof.case(str)
 def typeof(pyval):

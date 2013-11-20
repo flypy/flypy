@@ -19,6 +19,15 @@ class Bool(object):
     def __nonzero__(self):
         return self
 
+    @jit
+    def __str__(self):
+        if self:
+            return "True"
+        else:
+            return "False"
+
+    __repr__ = __str__
+
     # ----------------------
 
     @classmethod

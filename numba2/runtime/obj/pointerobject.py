@@ -11,6 +11,7 @@ import numba2
 from numba2 import sjit, jit
 from numba2.compiler import representation_type
 from numba2.conversion import ctype
+from numba2.runtime import formatting
 from ..lowlevel_impls import add_impl_cls
 
 from pykit import types as ptypes
@@ -75,6 +76,13 @@ class Pointer(object):
     @jit('a -> bool')
     def __nonzero__(self):
         return self != numba2.NULL
+
+    @jit
+    def __str__(self):
+        # maxlen = int(math.log10(2**64)) + 1 = 20 in a 64-bit address space
+        return formatting.format_static("%p", self, 20 + 1)
+
+    __repr__ = __str__
 
     # __________________________________________________________________
 

@@ -43,12 +43,25 @@ class TestPointers(unittest.TestCase):
 
         self.assertTrue(f(ctypes.c_void_p(0)))
 
-    def test_bool(self):
+    def test_nonzero(self):
         @jit
         def f(p):
             return bool(p)
         self.assertTrue(f(ffi.new('int *')))
         self.assertFalse(f(ctypes.c_void_p(0)), False)
+
+    def test_tostr(self):
+        @jit
+        def f(x):
+            return str(x)
+
+        p0 = ctypes.pointer(ctypes.c_int(10))
+        p1 = ctypes.c_void_p(0)
+
+        p0_addr = ctypes.cast(p0, ctypes.c_void_p).value
+
+        self.assertEqual(f(p0), hex(p0_addr))
+        self.assertEqual(f(p1), "0x0")
 
 
 if __name__ == '__main__':

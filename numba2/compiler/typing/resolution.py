@@ -161,7 +161,12 @@ def resolve_context(func, env):
     for op, typeset in context.iteritems():
         if typeset:
             typeset = context[op]
-            ty = reduce(typejoin, typeset)
+            try:
+                ty = reduce(typejoin, typeset)
+            except TypeError, e:
+                raise TypeError(
+                    "Cannot type-join types for op %s: %s" % (op, e))
+
             context[op] = ty
 
 def resolve_restype(func, env):
