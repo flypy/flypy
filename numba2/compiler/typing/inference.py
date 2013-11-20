@@ -33,7 +33,7 @@ from itertools import product
 from numba2 import promote, typeof, parse, typejoin
 from numba2.errors import InferError
 from numba2.types import Mono, Function, Pointer, bool_, void
-from numba2.typing import resolve_simple, TypeVar
+from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
 from numba2.prettyprint import debug_print
 from .resolution import infer_call
@@ -57,7 +57,8 @@ def view(G):
     networkx.draw(G)
     plt.show()
 
-Method = type(parse("Method[func, self]"))
+Method = TypeConstructor("Method", 2, [{'coercible': True}] * 2)
+#Method = type(parse("Method[func, self]"))
 
 #===------------------------------------------------------------------===
 # Inference structures

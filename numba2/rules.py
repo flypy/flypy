@@ -95,8 +95,22 @@ def convert(value, type):
 
 def promote(type1, type2):
     """Promote two types to a common type"""
+    from numba2.compiler.typing import inference
+
     if type1 == type2:
         return type1
+    elif (type(type1), type(type2)) == (inference.Method, inference.Method):
+        # promote Method types
+        # TODO: Bit of a hack, do this better
+        func1, obj1 = type1.parameters
+        func2, obj2 = type2.parameters
+        result = promote(obj1, obj2)
+        if result == obj1:
+            return type1
+        elif result == obj2:
+            return type2
+        else:
+            raise TypeError("Cannot promote methods %s and %s" % (type1, type2))
     else:
         t1, t2 = to_blaze(type1), to_blaze(type2)
         result = ds.promote(t1, t2)
@@ -122,3 +136,17 @@ def typejoin(type1, type2):
 
 def is_numba_type(x):
     return getattr(x, '_is_numba_class', False)
+
+
+def typematch(ty, impl):
+    """
+    See whether type instance `ty` is a type for value instances of `impl`.
+
+        >>> @jit('Foo[a, b]')
+        ... class Foo(object):
+        ...     pass
+        ...
+        >>> typematch(Foo[int32, 2], Foo)
+        True
+    """
+    return isinstance(ty, type(impl.type))
