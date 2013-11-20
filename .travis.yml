@@ -36,7 +36,7 @@ install:
   - pip install -r requirements.txt --use-mirrors
   # Install pykit
   - git clone https://github.com/pykit/pykit.git
-  - cd pykit ; git checkout builder ; sudo ~/py setup.py install ; cd ..
+  - cd pykit ; git checkout origin/builder ; sudo ~/py setup.py install ; cd ..
   # Install numba
   # - python setup.py install
 
