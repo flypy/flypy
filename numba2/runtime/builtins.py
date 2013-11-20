@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
+import sys
 
 try:
     import __builtin__ as builtins
@@ -14,6 +15,7 @@ from numba2.types import int32, float64
 from . import ffi
 
 # ____________________________________________________________
+# Type checking
 
 @ijit('a -> Type[a] -> bool')
 def isinstance(obj, type):
@@ -24,6 +26,7 @@ def isinstance(obj, type):
     raise NotImplementedError
 
 # ____________________________________________________________
+# Seq
 
 # TODO: Type join!
 
@@ -40,6 +43,7 @@ def len(x):
     return x.__len__()
 
 # ____________________________________________________________
+# Strings
 
 @jit
 def str(x):
@@ -62,6 +66,16 @@ def print(value, sep=' ', end='\n'):
     #ffi.libc.puts(s.buf.p)
 
 # ____________________________________________________________
+# Conversion
+
+if sys.version_info[0] < 3:
+    @ijit
+    def bool(x):
+        return x.__nonzero__()
+else:
+    @ijit
+    def bool(x):
+        return x.__bool__()
 
 @jit('a : numeric -> int32')
 def int(x):
@@ -70,6 +84,8 @@ def int(x):
 @jit('a : numeric -> float64')
 def float(x):
     return cast(x, float64)
+
+# ____________________________________________________________
 
 @jit('a : numeric -> a')
 def abs(x):
@@ -120,6 +136,7 @@ overlay(builtins.len, len)
 overlay(builtins.str, str)
 overlay(builtins.repr, repr)
 overlay(builtins.unicode, unicode)
+overlay(builtins.bool, bool)
 overlay(builtins.int, int)
 overlay(builtins.float, float)
 overlay(builtins.abs, abs)

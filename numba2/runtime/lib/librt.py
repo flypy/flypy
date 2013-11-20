@@ -85,12 +85,16 @@ usub       = declare('usub'    , obj, [obj])
 
 fromvoidp       = declare('fromvoidp' , obj, [ctypes.c_void_p])
 address         = declare('address', ctypes.c_uint64, [ctypes.py_object])
-istrue          = declare('istrue'       , ctypes.c_int, [obj])
+
 tostring        = declare('tostring'     , obj, [obj])
 torepr          = declare('torepr'       , obj, [obj])
 asstring        = declare('asstring'     , ctypes.POINTER(ctypes.c_int8), [obj])
 fromstring      = declare('fromstring'   , obj, [ctypes.POINTER(ctypes.c_int8),
                                                  ctypes.c_ssize_t])
+
+istrue          = declare('istrue'       , ctypes.c_int, [obj])
+length          = declare('length'       , ctypes.c_ssize_t, [obj])
+
 debug           = declare('debug'        , None, [])
 
 # CFFI always releases the GIL...

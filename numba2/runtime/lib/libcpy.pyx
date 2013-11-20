@@ -159,6 +159,7 @@ cdef public print_(values):
     print(values[-1])
 
 # ______________________________________________________________________
+# Pointers
 
 cdef public fromvoidp(void *p):
     return <object> p
@@ -166,8 +167,8 @@ cdef public fromvoidp(void *p):
 cdef public Py_uintptr_t address(PyObject *x):
     return <Py_uintptr_t> x
 
-cdef public bint istrue(obj):
-    return bool(obj)
+# ______________________________________________________________________
+# Strings
 
 cdef public tostring(obj):
     return str(obj)
@@ -181,6 +182,15 @@ cdef public char * asstring(obj):
 
 cdef public fromstring(char *s, Py_ssize_t length):
     return s[:length]
+
+# ______________________________________________________________________
+# Special
+
+cdef public bint istrue(obj):
+    return bool(obj)
+
+cdef public Py_ssize_t length(obj):
+    return len(obj)
 
 # ______________________________________________________________________
 

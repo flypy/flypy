@@ -19,6 +19,14 @@ class TestFloat(unittest.TestCase):
             self.assertEqual(result, expected)
             self.assertEqual(len(trailing.strip("0")), 0, trailing)
 
+    def test_bool(self):
+        @jit
+        def f(x):
+            return bool(x)
+        self.assertEqual(f(0.0), False)
+        self.assertEqual(f(1.0), True)
+        self.assertEqual(f(10.0), True)
+
 
 if __name__ == '__main__':
     unittest.main()

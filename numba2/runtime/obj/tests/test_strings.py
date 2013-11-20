@@ -31,6 +31,14 @@ class TestStrings(unittest.TestCase):
 
         self.assertEqual(f("blah"), "h")
 
+    def test_bool(self):
+        @jit
+        def f(s):
+            return bool(s)
+        self.assertEqual(f(""), False)
+        self.assertEqual(f("a"), True)
+        self.assertEqual(f("ham"), True)
+
 
 if __name__ == '__main__':
     unittest.main()

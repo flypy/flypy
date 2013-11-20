@@ -40,6 +40,10 @@ class String(object):
     def __len__(self):
         return len(self.buf) - 1
 
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return bool(len(self))
+
     # __________________________________________________________________
 
     @staticmethod

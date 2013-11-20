@@ -22,6 +22,13 @@ class TestInt(unittest.TestCase):
                 self.assertEqual(f1(i), str(i))
                 self.assertEqual(f2(i), str(i))
 
+    def test_bool(self):
+        @jit
+        def f(x):
+            return bool(x)
+        self.assertEqual(f(0), False)
+        self.assertEqual(f(1), True)
+        self.assertEqual(f(10), True)
 
 if __name__ == '__main__':
     unittest.main()

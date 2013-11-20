@@ -143,12 +143,16 @@ class Number(object):
         return self >> other
 
     #===------------------------------------------------------------------===
-    # Unary
+    # Non-opaque methods
     #===------------------------------------------------------------------===
 
     @jit('a -> a')
     def __neg__(self):
         return 0 - self
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return self != 0
 
 
 @abstract
