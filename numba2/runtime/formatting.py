@@ -13,28 +13,10 @@ import numba2
 from numba2 import jit
 
 #===------------------------------------------------------------------===
-# Utils
-#===------------------------------------------------------------------===
-
-@jit #('Buffer[char] -> String[] -> ... -> String[]') # TODO: varargs
-def ll_format(buf, format, *args):
-    return numba2.libc.snprintf(buf.pointer(), len(buf), format, *args)
-
-#===------------------------------------------------------------------===
 # Formatters
 #===------------------------------------------------------------------===
 
-@jit #('a -> String[]')
-def int_format(x):
-    ndigits = int(math.ceil(math.log10(x)))
-    buf = numba2.newbuffer(numba2.char, ndigits + 1)
-    _int_format(buf, x)
-    buf[ndigits + 1] = 0
-    return numba2.String(buf)
-
-@jit('a -> int64 -> void') # 'Int[a, False] -> void'
-def _int_format(buf, x):
-    fmt = numba2.runtime.as_cstring("%lld")
+@jit
+def sprintf(buf, fmt, x):
+    fmt = numba2.runtime.as_cstring(fmt)
     numba2.libc.snprintf(buf.pointer(), len(buf), fmt, x)
-
-# TODO: unsigned!
