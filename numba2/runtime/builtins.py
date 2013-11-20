@@ -71,6 +71,16 @@ def int(x):
 def float(x):
     return cast(x, float64)
 
+@jit('a : numeric -> a')
+def abs(x):
+    if x < 0:
+        x = -x
+    return x
+
+@jit('a -> b')
+def abs(x):
+    return x.__abs__()
+
 # ____________________________________________________________
 
 # TODO: Implement generator fusion
@@ -112,6 +122,7 @@ overlay(builtins.repr, repr)
 overlay(builtins.unicode, unicode)
 overlay(builtins.int, int)
 overlay(builtins.float, float)
+overlay(builtins.abs, abs)
 overlay(builtins.range, range)
 overlay(builtins.list, list)
 overlay(builtins.print, print)
