@@ -17,11 +17,12 @@ class Caller(object):
         self.builder = builder
         self.context = context
 
-    def call(self, phase_to_run, nb_func, args):
+    def call(self, phase_to_run, nb_func, args, argtypes=None):
         from numba2 import phase
 
         # Apply phase
-        argtypes = tuple(self.context[arg] for arg in args)
+        if argtypes is None:
+            argtypes = tuple(self.context[arg] for arg in args)
         f, env = phase.apply_phase(phase_to_run, nb_func, argtypes)
 
         # Generate call
