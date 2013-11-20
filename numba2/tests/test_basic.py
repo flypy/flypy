@@ -40,6 +40,40 @@ class TestTranslation(unittest.TestCase):
 
         self.assertEqual(f(6), 15)
 
+    def test_and(self):
+        @jit
+        def f(x, y):
+            if x < y and y > 10:
+                return 4
+            return 5
+
+        self.assertEqual(f(2, 12), 4)
+        self.assertEqual(f(2, 3), 5)
+        self.assertEqual(f(3, 2), 5)
+        self.assertEqual(f(12, 2), 5)
+
+    def test_or(self):
+        @jit
+        def f(x, y):
+            if x < y or y > 10:
+                return 4
+            return 5
+
+        self.assertEqual(f(2, 12), 4)
+        self.assertEqual(f(20, 12), 4)
+        self.assertEqual(f(2, 9), 4)
+        self.assertEqual(f(12, 2), 5)
+
+    def test_andor(self):
+        @jit
+        def f(x, y):
+            if x < y or (y > 10 and y < 15) or x > 2:
+                return 4
+            return 5
+
+        self.assertEqual(f(2, 12), 4)
+        self.assertEqual(f(2, 1), 5)
+
     def test_call(self):
         @jit
         def g(a):
