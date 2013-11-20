@@ -6,11 +6,20 @@ bool implementation.
 
 from __future__ import print_function, division, absolute_import
 import ctypes
-from numba2 import sjit, typeof
+
+from numba2 import sjit, jit, typeof
 
 @sjit
 class Bool(object):
     layout = []
+
+    # ----------------------
+
+    @jit('a -> a')
+    def __nonzero__(self):
+        return self
+
+    # ----------------------
 
     @classmethod
     def toctypes(cls, val, ty):

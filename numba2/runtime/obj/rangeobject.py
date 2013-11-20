@@ -31,6 +31,10 @@ class Range(Sequence):
     def __len__(self):
         return len_range(self.start, self.stop, self.step)
 
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return bool(len(self))
+
 
 @jit
 class RangeIterator(Iterator):

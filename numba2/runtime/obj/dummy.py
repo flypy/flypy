@@ -22,6 +22,14 @@ from blaze.datashape import Function as FunctionType
 class Function(object):
     layout = []
 
+    # ----------------------
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return True
+
+    # ----------------------
+
     @classmethod
     def ctype(cls, ty):
         restype = ctype(ty.restype)
@@ -37,6 +45,14 @@ class Function(object):
 @jit('ForeignFunction[restype, ...]')
 class ForeignFunction(object):
     layout = [('p', 'Pointer[a]')]
+
+    # ----------------------
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return True
+
+    # ----------------------
 
     @staticmethod
     def fromobject(value, type):
@@ -94,6 +110,10 @@ _NULL = ctypes.c_void_p(0)
 @jit
 class NULL(object):
     layout = []
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return False
 
     @jit('a -> Pointer[b] -> bool')
     def __eq__(self, other):

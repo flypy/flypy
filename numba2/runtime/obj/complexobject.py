@@ -50,6 +50,18 @@ class Complex(object):
     def __eq__(self, other):
         return False
 
+    @jit('a -> bool')
+    def __nonzero__(self):
+        if bool(self.real):
+            return True
+        elif bool(self.imag):
+            return bool(self.imag)
+        else:
+            return False
+
+        # <- make this work in translation.py
+        #return bool(self.real) or bool(self.imag)
+
     # __________________________________________________________________
 
     @staticmethod

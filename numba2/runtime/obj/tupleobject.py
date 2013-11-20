@@ -14,11 +14,14 @@ STATIC_THRESHOLD = 5
 
 @abstract
 class Tuple(object):
-    pass
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return bool(len(self))
 
 
 @sjit('GenericTuple[T]')
-class GenericTuple(object):
+class GenericTuple(Tuple):
     layout = [('items', 'List[T]')]
 
     @jit('a -> T')
@@ -39,7 +42,7 @@ class GenericTuple(object):
 
 
 @sjit('StaticTuple[a, b]')
-class StaticTuple(object):
+class StaticTuple(Tuple):
     layout = [('hd', 'a'), ('tl', 'b')]
 
     @jit
@@ -87,6 +90,10 @@ class StaticTuple(object):
     def __eq__(self, other):
         return self.hd == other.hd and self.tl == other.tl
 
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return bool(len(self))
+
     @jit('a -> str')
     def __repr__(self):
         return '(%s)' % ", ".join(map(str, self))
@@ -121,7 +128,7 @@ class StaticTuple(object):
 
 
 @sjit
-class EmptyTuple(object):
+class EmptyTuple(Tuple):
     layout = []
 
     @jit

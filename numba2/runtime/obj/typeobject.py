@@ -35,6 +35,10 @@ def index_type(argtypes):
 class Type(object):
     layout = []
 
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return True
+
     @staticmethod
     def toobject(obj, type):
         return type.parameters[0]
@@ -48,6 +52,10 @@ class Constructor(object):
          opaque=True, infer_restype=index_type)
     def __getitem__(self, item):
         raise NotImplementedError
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return True
 
 #===------------------------------------------------------------------===
 # Low-level Implementation

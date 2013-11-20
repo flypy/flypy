@@ -43,6 +43,13 @@ class TestPointers(unittest.TestCase):
 
         self.assertTrue(f(ctypes.c_void_p(0)))
 
+    def test_bool(self):
+        @jit
+        def f(p):
+            return bool(p)
+        self.assertTrue(f(ffi.new('int *')))
+        self.assertFalse(f(ctypes.c_void_p(0)), False)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,6 +13,10 @@ from ... import jit, typeof
 class NoneType(object):
     layout = []
 
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return False
+
     @jit('a -> a -> bool')
     def __eq__(self, other):
         return True

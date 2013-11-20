@@ -25,9 +25,11 @@ def is_(a, b):
 def is_(a, b):
     return True
 
-#===------------------------------------------------------------------===
-# Overlays
-#===------------------------------------------------------------------===
+@jit('a -> bool')
+def not_(x):
+    if bool(x):
+        return False
+    return True
 
 @jit
 def getitem(obj, idx):
@@ -37,10 +39,16 @@ def getitem(obj, idx):
 def setitem(obj, idx, value):
     obj.__setitem__(idx, value)
 
+
+#===------------------------------------------------------------------===
+# Overlays
+#===------------------------------------------------------------------===
+
 # We overlay operator.is_ with our own implementation. This works not only
 # when operator.is_ is used in user-code, but frontend/translation.py itself
 # turns 'is' operations into operator.is_ calls
 
 overlay(operator.is_, is_)
+overlay(operator.not_, not_)
 overlay(operator.getitem, getitem)
 overlay(operator.setitem, setitem)

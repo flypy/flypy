@@ -66,5 +66,14 @@ class TestComplex(unittest.TestCase):
 
         self.assertEqual(f(10.0, 12.0), complex(10.0, 12.0))
 
+    def test_bool(self):
+        @jit
+        def f(c):
+            return bool(c)
+        self.assertEqual(f(0+0j), False)
+        self.assertEqual(f(0+1j), True)
+        self.assertEqual(f(1+0j), True)
+
+
 if __name__ == '__main__':
     unittest.main()

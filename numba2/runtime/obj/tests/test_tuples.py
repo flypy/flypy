@@ -71,6 +71,22 @@ class TestJitTuple(unittest.TestCase):
 
         self.assertEqual(f(5, 6), 6)
 
+    def test_len(self):
+        raise unittest.SkipTest
+        @jit
+        def f(t):
+            return len(t)
+        self.assertTrue(f(()), 0)
+        self.assertFalse(f((1, 2, 3)), 3)
+
+    def test_bool(self):
+        raise unittest.SkipTest
+        @jit
+        def f(t):
+            return bool(t)
+        self.assertTrue(f(()), False)
+        self.assertFalse(f((1, 2, 3)), True)
+
 
 if __name__ == '__main__':
     unittest.main()

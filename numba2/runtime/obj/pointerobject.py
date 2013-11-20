@@ -54,6 +54,10 @@ class Pointer(object):
         val2 = numba2.cast(0, numba2.int64)
         return val1 == val2
 
+    @jit('a -> b -> bool')
+    def __ne__(self, other):
+        return not (self == other)
+
     # __________________________________________________________________
 
     @jit('Pointer[a] -> int64 -> a')
@@ -67,6 +71,10 @@ class Pointer(object):
     @jit('a -> int64 -> a')
     def __sub__(self, index):
         return self + -index
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return self != numba2.NULL
 
     # __________________________________________________________________
 
