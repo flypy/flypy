@@ -9,7 +9,7 @@ from functools import partial
 
 from numba2 import types, errors, conversion, compiler
 
-from pykit.ir import FuncArg, Op, Const, Pointer, Struct
+from pykit.ir import FuncArg, Op, Const, Pointer, Struct, Undef
 from pykit import types as ptypes
 from pykit.utils import nestedmap
 
@@ -26,7 +26,7 @@ def resolve_type(context, op):
         - map numba type to low-level representation type
         - represent stack-allocated values through pointers
     """
-    if isinstance(op, (FuncArg, Const, Op)):
+    if isinstance(op, (FuncArg, Const, Op, Undef)):
         if op.type.is_void:
             return op
 
@@ -55,6 +55,8 @@ def resolve_type(context, op):
                 const = Pointer(const, ltype)
 
             op = Const(const, ltype)
+        elif isinstance(op, Undef):
+            op = Undef(ltype)
         else:
             op.type = ltype
 

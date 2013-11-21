@@ -17,6 +17,8 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(f(10), 45.0)
 
     def test_nested_rectangular(self):
+        raise unittest.SkipTest
+
         @jit
         def f(n):
             sum = 0

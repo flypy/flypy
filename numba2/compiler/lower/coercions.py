@@ -113,6 +113,10 @@ class Coercion(object):
                 newval = self.builder.convert(types.Opaque, val)
                 self.context[newval] = ty
                 vals[i] = newval
+            elif isinstance(val, Undef) and self.context[val] != ty:
+                newval = Undef(types.Opaque)
+                self.context[newval] = ty
+                vals[i] = newval
 
         newargs = self.promote_args(vals, [ty] * len(vals), op)
         op.set_args([blocks, newargs])
