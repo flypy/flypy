@@ -6,15 +6,13 @@ C library bindings.
 
 from __future__ import print_function, division, absolute_import
 
-import cffi
-from numba2.extern_support import externlib
+from numba2.extern_support import extern_cffi
 
 #===------------------------------------------------------------------===
 # Decls
 #===------------------------------------------------------------------===
 
-ffi = cffi.FFI()
-ffi.cdef("""
+libc, libc_cffi = extern_cffi(".numba.runtime.c", None, """
 void *malloc(size_t size);
 void *realloc(void *ptr, size_t size);
 void free(void *ptr);
@@ -25,16 +23,3 @@ int puts(char *s);
 size_t strlen(char *s);
 unsigned long clock();
 """)
-
-libclib = ffi.dlopen(None)
-libc = externlib(".numba.runtime.c", libclib, '''
-malloc
-realloc
-free
-memcmp
-printf
-snprintf
-puts
-strlen
-clock
-''')

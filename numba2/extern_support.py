@@ -8,8 +8,8 @@ are resolved by LLVM JIT by mapping runtime addresses for to external symbols.
 
 from __future__ import print_function, division, absolute_import
 from pykit.utils import dylib_support
-from numba2 import coretypes, typeof
-from numba2 import cffi_support
+from numba2 import coretypes, typeof, cffi_support
+import cffi
 
 class ExternalSymbol(object):
     """Represent an external symbol
@@ -46,11 +46,6 @@ class ExternalLibrary(object):
 def is_extern_symbol(pyval):
     return isinstance(pyval, ExternalSymbol)
 
-def from_extern_symbol(extsym):
-    """Get Numba type from the symbol
-    """
-    return extsym.type
-
 # --- shorthand
 
 def extern(name, ffiobj):
@@ -79,3 +74,28 @@ def externlib(prefix, lib, symbols):
         setattr(extlib, raw, extern(mangled, getattr(lib, raw)))
     return extlib
 
+def extern_cffi(prefix, dlopen, declstr):
+    ffi = cffi.FFI()
+    ffi.cdef(declstr)
+    clib = ffi.dlopen(dlopen)
+    symbols = _parse_cdecl(declstr)
+    return externlib(prefix, clib, symbols), clib
+
+# ----- cdecl
+
+def _parse_cdecl(declstr):
+    parser = cffi.cparser.Parser()
+    parser.parse(declstr)
+    functions = []
+    # Get all the functions
+    for k in parser._declarations:
+        typ, val = k.split()
+        if typ == 'function':
+            functions.append(val)
+    return functions
+
+# ----- overloads
+
+@typeof.case(ExternalSymbol)
+def typeof(pyval):
+    return pyval.type

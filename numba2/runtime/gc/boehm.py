@@ -13,9 +13,7 @@ from numba2.types import Pointer, void
 from numba2.runtime.ffi import sizeof, cast
 from numba2.runtime.obj.core import Type
 from . import boehmlib
-from numba2.extern_support import externlib
-
-import cffi
+from numba2.extern_support import extern_cffi
 
 __all__ = ['gc_alloc']
 
@@ -26,24 +24,13 @@ lib = os.path.join(root, "boehmlib.so")
 # Decls
 #===------------------------------------------------------------------===
 
-ffi = cffi.FFI()
-
-ffi.cdef("""
+gc, gclib_cffi = extern_cffi(".numba.runtime.gc", lib, """
 void boehm_collect();
 void *boehm_malloc(size_t nbytes);
 void boehm_disable();
 void boehm_enable();
 void boehm_register_finalizer(void *obj, void *dtor);
 """)
-
-gclib = ffi.dlopen(lib)
-gc = externlib(".numba.runtime.gc", gclib, '''
-boehm_collect
-boehm_malloc
-boehm_disable
-boehm_enable
-boehm_register_finalizer
-''')
 
 
 # We can't take the address of these :(
