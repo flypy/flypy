@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from numba2 import jit, typeof, int32, float64
-from numba2.runtime.obj import make_variant
+from numba2.runtime.obj.core import make_variant
 
 int_or_float = make_variant(int32, float64)
 

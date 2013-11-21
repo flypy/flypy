@@ -82,7 +82,7 @@ def int_format(x):
         - use snprintf
     """
     x = upcast(x)
-    buf = numba2.newbuffer(numba2.char, ndigits(x) + 1)
+    buf = numba2.runtime.obj.core.newbuffer(numba2.char, ndigits(x) + 1)
     formatting.sprintf(buf, getformat(x), x)
     return numba2.String(buf)
 

@@ -5,13 +5,11 @@ Foreign function interface functionality.
 """
 
 from __future__ import print_function, division, absolute_import
-import ctypes
 
 import numba2
-from numba2 import jit, overlay
-from .obj import Type
+from numba2 import jit
 from .casting import cast
-from .obj import Type, Pointer, Void
+from .obj.core import Type, Pointer, Void
 from .lib import libc
 from .lowlevel_impls import add_impl
 

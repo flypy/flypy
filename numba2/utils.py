@@ -47,7 +47,7 @@ def applyable_decorator(decorator):
         if len(args) == 1 and not kwargs:
             f = args[0]
             if isinstance(f, (type, types.FunctionType, types.ClassType)):
-                from .types import Mono
+                from .coretypes import Mono
                 if not isinstance(f, Mono):
                     return decorator(args[0])
 

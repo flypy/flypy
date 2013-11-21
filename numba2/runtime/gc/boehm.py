@@ -10,7 +10,8 @@ import os
 import numba2
 from numba2 import jit
 from numba2.types import Pointer, void
-from numba2.runtime import sizeof, cast, Type
+from numba2.runtime.ffi import sizeof, cast
+from numba2.runtime.obj.core import Type
 from . import boehmlib
 from numba2.extern_support import externlib
 

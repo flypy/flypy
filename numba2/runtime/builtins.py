@@ -9,7 +9,7 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
-from .obj import Range, List, Type
+from .obj.core import Range, List, Type
 from .casting import cast
 from numba2.types import int32, float64
 from . import ffi

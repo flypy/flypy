@@ -12,13 +12,14 @@ from .typing import (overlay, parse, unify, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
 from .conversion import toobject, fromobject, toctypes, fromctypes, ctype
-from .runtime import cast, NULL
+from .runtime import cast
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc, libc
 from .runtime import builtins as bltins
 from .runtime.lib.librt import debug
 from .runtime.special import addressof
-from .runtime import Int, Float, String, Buffer, newbuffer, Object, ffi
+from .runtime import ffi
+from .runtime.obj.core import NULL
 
 # Trigger extraneous definitions
 from .runtime import formatting

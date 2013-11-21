@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 import ctypes.util
 
-from numba2 import types
+from numba2 import coretypes
 from pykit.utils import hashable
 from pykit.utils.ctypes_support import is_ctypes_struct_type, is_ctypes_pointer_type
 
@@ -86,20 +86,20 @@ ptrval = lambda val: ctypes.cast(val, ctypes.c_void_p).value
 #===------------------------------------------------------------------===
 
 ctypes_map = {
-    ctypes.c_bool :  types.bool_,
-    ctypes.c_char :  types.int8,
-    ctypes.c_int8 :  types.int8,
-    ctypes.c_int16:  types.int16,
-    ctypes.c_int32:  types.int32,
-    ctypes.c_int64:  types.int64,
-    ctypes.c_uint8 : types.uint8,
-    ctypes.c_uint16: types.uint16,
-    ctypes.c_uint32: types.uint32,
-    ctypes.c_uint64: types.uint64,
-    ctypes.c_float:  types.float32,
-    ctypes.c_double: types.float64,
-    None:            types.void,
-    ctypes.c_char_p: types.Pointer[types.char],
+    ctypes.c_bool :  coretypes.bool_,
+    ctypes.c_char :  coretypes.int8,
+    ctypes.c_int8 :  coretypes.int8,
+    ctypes.c_int16:  coretypes.int16,
+    ctypes.c_int32:  coretypes.int32,
+    ctypes.c_int64:  coretypes.int64,
+    ctypes.c_uint8 : coretypes.uint8,
+    ctypes.c_uint16: coretypes.uint16,
+    ctypes.c_uint32: coretypes.uint32,
+    ctypes.c_uint64: coretypes.uint64,
+    ctypes.c_float:  coretypes.float32,
+    ctypes.c_double: coretypes.float64,
+    None:            coretypes.void,
+    ctypes.c_char_p: coretypes.Pointer[coretypes.char],
 }
 
 def from_ctypes_type(cty, ctypes_value=None):
@@ -111,19 +111,19 @@ def from_ctypes_type(cty, ctypes_value=None):
     if hashable(cty) and cty in ctypes_map:
         return ctypes_map[cty]
     elif cty is ctypes.c_void_p or cty is ctypes.py_object:
-        return types.Pointer[types.void]
+        return coretypes.Pointer[coretypes.void]
     elif is_ctypes_pointer_type(cty):
-        return types.Pointer[from_ctypes_type(cty._type_)]
+        return coretypes.Pointer[from_ctypes_type(cty._type_)]
     elif is_ctypes_struct_type(cty):
         fields = [(name, from_ctypes_type(field_type))
                       for name, field_type in cty._fields_]
-        fields = fields or [('dummy', types.int8)]
-        return types.struct_(fields)
+        fields = fields or [('dummy', coretypes.int8)]
+        return coretypes.struct_(fields)
     elif is_ctypes_function_type(cty):
         # from_ctypes_type(cty._restype_) # <- this value is arbitrary,
         # it's always a c_int
         restype = from_ctypes_type(ctypes_value.restype)
         argtypes = tuple(from_ctypes_type(argty) for argty in ctypes_value.argtypes)
-        return types.ForeignFunction[argtypes + (restype,)]
+        return coretypes.ForeignFunction[argtypes + (restype,)]
     else:
         raise NotImplementedError(cty)

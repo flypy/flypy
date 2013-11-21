@@ -21,14 +21,15 @@ from blaze import datashape as ds
 @pyoverload
 def typeof(pyval):
     """Python value -> Type"""
-    from .runtime.obj import Type, Constructor
-    from numba2 import cffi_support, ctypes_support, types, extern_support
+    from .runtime.obj.core import Type, Constructor
+    from numba2 import (cffi_support, ctypes_support, coretypes,
+                        extern_support)
 
     if is_numba_type(pyval):
         if pyval.type.parameters:
             return Constructor[pyval.type]
         return Type[pyval.type]
-    elif isinstance(pyval, types.Mono):
+    elif isinstance(pyval, coretypes.Mono):
         return Type[pyval]
     elif is_numba_type(type(pyval)):
         return infer_constant(pyval)
@@ -36,7 +37,7 @@ def typeof(pyval):
         cffi_type = cffi_support.ffi.typeof(pyval)
         return cffi_support.map_type(cffi_type)
     elif (ctypes_support.is_ctypes_value(pyval) and
-              ctypes_support.is_ctypes_function(pyval)):
+          ctypes_support.is_ctypes_function(pyval)):
         return ctypes_support.from_ctypes_type(type(pyval), pyval)
     elif ctypes_support.is_ctypes_value(pyval):
         return ctypes_support.from_ctypes_type(type(pyval))

@@ -7,7 +7,7 @@ from numba2.types import floating
 
 class TestFloat(unittest.TestCase):
 
-    def test_float_formatting(self):
+    def numbatest_float_formatting(self):
         @jit
         def f(x):
             return str(x)

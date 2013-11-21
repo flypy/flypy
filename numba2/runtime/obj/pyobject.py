@@ -9,7 +9,7 @@ import ctypes
 
 import numba2
 from numba2 import jit, ijit, typeof
-from . import Void, Pointer
+from .core import Void, Pointer
 from ..lib import librt as lib
 
 import cffi

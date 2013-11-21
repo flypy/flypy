@@ -23,7 +23,7 @@ def sprintf(buf, fmt, x):
 
     Returns the number of characters written.
     """
-    fmt = numba2.runtime.as_cstring(fmt)
+    fmt = numba2.runtime.obj.core.as_cstring(fmt)
     n = len(buf)
     result = numba2.libc.snprintf(buf.pointer(), n, fmt, x)
     #if result >= n:
@@ -39,7 +39,7 @@ def format_static(fmt, x, n):
         - use snprintf
         - resize buffer according to # of bytes written
     """
-    buf = numba2.newbuffer(numba2.char, n)
+    buf = numba2.runtime.obj.core.newbuffer(numba2.char, n)
     n = sprintf(buf, fmt, x)
     buf.resize(n)
     return numba2.String(buf)

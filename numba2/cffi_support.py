@@ -8,8 +8,7 @@ obtaining the pointer and numba signature.
 from __future__ import print_function, division, absolute_import
 
 import numba2
-from numba2.types import ForeignFunction, Function, Pointer
-from numba2.types import *
+from numba2.coretypes import *
 
 try:
     import cffi

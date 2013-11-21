@@ -6,10 +6,9 @@ Buffer objects.
 
 from __future__ import print_function, division, absolute_import
 
-import numba2
 from numba2 import jit
-from numba2.runtime import ffi
-from . import Type, Pointer
+import numba2
+from .core import Type, Pointer
 
 @jit('Buffer[base]')
 class Buffer(object):
@@ -30,7 +29,7 @@ class Buffer(object):
         elif self.size != other.size:
             return False
         else:
-            return ffi.memcmp(self.p, other.p, self.size)
+            return numba2.runtime.ffi.memcmp(self.p, other.p, self.size)
 
     @jit('a -> b -> bool')
     def __eq__(self, other):
@@ -56,7 +55,7 @@ class Buffer(object):
 
     @jit('a -> int64 -> void')
     def resize(self, n):
-        ffi.realloc(self.p, n)
+        numba2.runtime.ffi.realloc(self.p, n)
         self.size = n
 
     @jit('Buffer[a] -> Pointer[a]')
@@ -69,7 +68,7 @@ class Buffer(object):
 
 @jit('Type[a] -> int64 -> Buffer[a]')
 def newbuffer(basetype, size):
-    p = ffi.malloc(size, basetype)
+    p = numba2.runtime.ffi.malloc(size, basetype)
     return Buffer(p, size)
 
 # @jit('Sequence[a] -> Type[a] -> Buffer[a]') # TODO: <--

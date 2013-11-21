@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 from numba2 import jit, typeof
-from numba2.runtime.obj import Pointer
-from numba2.runtime.obj import struct_
-from numba2.runtime.obj import String
-from numba2.runtime.obj import from_cstring
+from numba2.runtime.obj.core import (struct_, Pointer, from_cstring, String)
 from ctypes import CDLL, Structure, POINTER, c_longlong, c_uint, c_int, \
     c_ubyte, c_char_p, byref, pointer, cast
 

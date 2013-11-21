@@ -54,6 +54,8 @@ def infer_function_call(func, func_type, argtypes):
     """
     from numba2 import phase
 
+    #print(('inferring %s' % func).center(80, '!'))
+
     if is_method(func_type):
         func = func_type.parameters[0]
         argtypes = [func_type.parameters[1]] + list(argtypes)

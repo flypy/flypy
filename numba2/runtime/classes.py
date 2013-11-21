@@ -16,7 +16,7 @@ from numba2.typing import parse
 
 def allocate_type_constructor(cls, signature):
     """Allocate a type constructor for an @jit class"""
-    from numba2.types import TypeConstructor
+    from numba2.coretypes import TypeConstructor
 
     if signature is not None:
         t, name, params = parse_constructor(signature)
@@ -33,7 +33,7 @@ def allocate_type_constructor(cls, signature):
 
 def parse_constructor(signature):
     """Parse a type pass to @jit on a class"""
-    from numba2.types import Mono, TypeVar, EllipsisT
+    from numba2.coretypes import Mono, TypeVar, EllipsisT
 
     if isinstance(signature, basestring):
         t = parse(signature)

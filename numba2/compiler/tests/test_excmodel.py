@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from numba2.compiler import excmodel
-from numba2.runtime.obj import Type
+from numba2.runtime.obj.core import Type
 from numba2.runtime.obj.exceptions import Exception, StopIteration
 
 #===------------------------------------------------------------------===

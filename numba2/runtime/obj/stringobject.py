@@ -8,9 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 import numba2
 from numba2 import sjit, jit, typeof
-from numba2.runtime.lib import libc
-from ..lib import librt as lib
-from .bufferobject import Buffer, copyto
+from .bufferobject import Buffer, newbuffer, copyto
 from .pointerobject import Pointer
 
 @sjit
@@ -44,7 +42,7 @@ class String(object):
     @jit('a -> a -> a')
     def __add__(self, other):
         n = len(self) + len(other) + 1
-        buf = numba2.newbuffer(numba2.char, n)
+        buf = newbuffer(numba2.char, n)
 
         copyto(self.buf, buf, 0)
         copyto(other.buf, buf, len(self))
@@ -60,14 +58,14 @@ class String(object):
     @staticmethod
     def fromobject(strobj, type):
         assert isinstance(strobj, str)
-        p = lib.asstring(strobj)
+        p = numba2.runtime.lib.librt.asstring(strobj)
         buf = Buffer(Pointer(p), len(strobj) + 1)
         return String(buf)
 
     @staticmethod
     def toobject(obj, type):
         buf = obj.buf
-        return lib.fromstring(buf.p, len(obj))
+        return numba2.runtime.lib.librt.fromstring(buf.p, len(obj))
 
     # __________________________________________________________________
 
@@ -78,7 +76,7 @@ class String(object):
 
 @jit('Pointer[char] -> String[]')
 def from_cstring(p):
-    return String(Buffer(p, libc.strlen(p)))
+    return String(Buffer(p, numba2.runtime.lib.strlen(p)))
 
 @jit('String[] -> Pointer[char]')
 def as_cstring(s):

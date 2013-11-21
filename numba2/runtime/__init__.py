@@ -6,4 +6,6 @@ from . import obj
 from .obj import *
 from .casting import cast
 from . import lowlevel_impls
-from .ffi import *
+from .obj.core import *
+
+
