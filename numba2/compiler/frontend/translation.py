@@ -717,10 +717,10 @@ class Translate(object):
     # ------- print ------- #
 
     def op_PRINT_ITEM(self, inst):
-        self.call(print, [self.pop()])
+        self.call_pop(print, [self.pop()])
 
     def op_PRINT_NEWLINE(self, inst):
-        self.call(print, [const('\n')])
+        self.call_pop(print, [const('\n')])
 
     # ------- Misc ------- #
 
