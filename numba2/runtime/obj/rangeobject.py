@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, ijit
+from numba2 import jit, sjit, ijit
 from ..interfaces import Sequence, Iterable, Iterator
 
 # ________________________________________________________________
 
 # TODO: Implement generator fusion
 
-Py_ssize_t = 'int32' # TODO:
+Py_ssize_t = 'int64' # TODO:
 
-@jit
+@jit('int64 -> int64 -> int64 -> int64')
 def len_range(start, stop, step):
     if step < 0:
         start, stop, step = stop, start, -step
@@ -18,16 +18,16 @@ def len_range(start, stop, step):
         return 0
     return (stop - start - 1) // step + 1
 
-@jit
+@sjit
 class Range(Sequence):
 
     layout = [('start', Py_ssize_t), ('stop', Py_ssize_t), ('step', Py_ssize_t)]
 
-    @ijit
+    @ijit('a -> RangeIterator[]')
     def __iter__(self):
         return RangeIterator(self.start, self.step, len(self))
 
-    @ijit
+    @ijit('a -> int64')
     def __len__(self):
         return len_range(self.start, self.stop, self.step)
 
@@ -36,12 +36,12 @@ class Range(Sequence):
         return bool(len(self))
 
 
-@jit
+@sjit
 class RangeIterator(Iterator):
 
     layout = [('start', Py_ssize_t), ('step', Py_ssize_t), ('length', Py_ssize_t)]
 
-    @ijit
+    @ijit('a -> int64')
     def __next__(self):
         if self.length > 0:
             result = self.start
