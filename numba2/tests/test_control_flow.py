@@ -16,6 +16,20 @@ class TestControlFlow(unittest.TestCase):
 
         self.assertEqual(f(10), 45.0)
 
+    def test_nested_rectangular(self):
+        raise unittest.SkipTest
+
+        @jit
+        def f(n):
+            sum = 0
+            for i in range(n):
+                for j in range(n):
+                    for k in range(n):
+                        sum += i * j
+            return sum
+
+        self.assertEqual(f(3), f.py_func(3))
+
 
 if __name__ == '__main__':
     #TestControlFlow('test_reduction').debug()

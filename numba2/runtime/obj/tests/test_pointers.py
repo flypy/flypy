@@ -61,7 +61,7 @@ class TestPointers(unittest.TestCase):
         p0_addr = ctypes.cast(p0, ctypes.c_void_p).value
 
         self.assertEqual(f(p0), hex(p0_addr))
-        self.assertEqual(f(p1), "0x0")
+        self.assertIn(f(p1), ("0x0", "(nil)"))
 
 
 if __name__ == '__main__':

@@ -12,8 +12,10 @@ from __future__ import print_function, division, absolute_import
 import __builtin__
 import inspect
 import dis
+import pprint
 import operator
 import collections
+from collections import namedtuple
 
 from numba2.errors import error_context, CompileError, EmptyStackError
 from numba2.runtime.obj import tupleobject
@@ -112,7 +114,8 @@ class Translate(object):
         # Setup Variables
         self.builder.position_at_beginning(self.dst.startblock)
         for varname in self.varnames:
-            stackvar = self.builder.alloca(types.Pointer(types.Opaque))
+            stackvar = self.builder.alloca(types.Pointer(types.Opaque),
+                                           result=varname)
             self.allocas[varname] = stackvar
 
             # Initialize function arguments
@@ -181,7 +184,12 @@ class Translate(object):
             phi = self.push_insert('phi', [], [])
             self.phis[newblock].append(phi)
 
+        assert len(self.stack) == len(stack)
+
     def update_phis(self):
+        laststack = self.stacks[self.dst.blocks.tail]
+        assert not laststack, laststack
+
         for block in self.dst.blocks:
             phis = self.phis[block]
             preds  = list(self.predecessors[block])
@@ -191,7 +199,7 @@ class Translate(object):
             # -------------------------------------------------
             # Sanity check
 
-            assert all(len(stack) == stacklen for stack in stacks)
+            assert all(len(stack) == stacklen for stack in stacks), preds
 
             if not preds or not stacklen:
                 continue
@@ -211,6 +219,10 @@ class Translate(object):
     @property
     def stack(self):
         return self.stacks[self.curblock]
+
+    @property
+    def stack_level(self):
+        return len(self.stack)
 
     def insert(self, opcode, *args):
         type = types.Void if ops.is_void(opcode) else types.Opaque
@@ -290,6 +302,8 @@ class Translate(object):
             self.except_stack.pop()
         elif isinstance(block, FinallyBlock):
             self.finally_stack.pop()
+
+        del self.stack[block.level:]
 
     def op_POP_TOP(self, inst):
         self.pop()
@@ -425,6 +439,12 @@ class Translate(object):
 
         with self.builder.at_front(loopexit):
             self.insert('exc_catch', [Const(StopIteration, type=types.Exception)])
+
+        # -------------------------------------------------
+        # Exit
+
+        # Add the loop exit at a successor to the header
+        self.predecessors[loopexit].add(self.curblock)
 
     def op_BREAK_LOOP(self, inst):
         scope = self.loops[-1]
@@ -660,13 +680,14 @@ class Translate(object):
     # ------- Blocks ------- #
 
     def op_SETUP_LOOP(self, inst):
-        loop_block = self.blocks[inst.next + inst.arg]
+        exit_block = self.blocks[inst.next + inst.arg]
 
-        block = LoopBlock(loop_block)
+        block = LoopBlock(None, exit_block, self.stack_level)
         self.block_stack.append(block)
         self.loop_stack.append(block)
 
     def op_SETUP_EXCEPT(self, inst):
+        try_block = self.blocks[inst.next]
         except_block = self.blocks[inst.next + inst.arg]
         self.predecessors[except_block].add(self.curblock)
         self.exc_handlers.add(except_block)
@@ -674,15 +695,16 @@ class Translate(object):
         with self.builder.at_front(self.curblock):
             self.builder.exc_setup([except_block])
 
-        block = ExceptionBlock(except_block)
+        block = ExceptionBlock(try_block, except_block, self.stack_level)
         self.block_stack.append(block)
         self.except_stack.append(block)
 
     def op_SETUP_FINALLY(self, inst):
+        try_block = self.blocks[inst.next]
         finally_block = self.blocks[inst.next + inst.arg]
         self.predecessors[finally_block].add(self.curblock)
 
-        block = FinallyBlock(finally_block)
+        block = FinallyBlock(try_block, finally_block, self.stack_level)
         self.block_stack.append(block)
         self.finally_stack.append(block)
 
@@ -730,16 +752,24 @@ Tb  = collections.namedtuple('Tb', ['arg'])
 # Blocks
 #===------------------------------------------------------------------===
 
-class LoopBlock(object):
-    def __init__(self, end):
+class BasicBlock(object):
+    def __init__(self, block, level):
+        self.block = block
+        self.level = level
+
+class LoopBlock(BasicBlock):
+    def __init__(self, block, end, level):
+        BasicBlock.__init__(self, block, level)
         self.end = end
 
-class ExceptionBlock(object):
-    def __init__(self, first_except_block):
+class ExceptionBlock(BasicBlock):
+    def __init__(self, block, first_except_block, level):
+        BasicBlock.__init__(self, block, level)
         self.first_except_block = first_except_block
 
-class FinallyBlock(object):
-    def __init__(self, finally_block):
+class FinallyBlock(BasicBlock):
+    def __init__(self, block, finally_block, level):
+        BasicBlock.__init__(self, block, level)
         self.finally_block = finally_block
 
 #===------------------------------------------------------------------===

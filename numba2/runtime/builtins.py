@@ -65,6 +65,10 @@ def print(value, sep=' ', end='\n'):
     ffi.libc.printf(end.buf.p)
     #ffi.libc.puts(s.buf.p)
 
+@jit
+def clock():
+    return ffi.libc.clock()
+
 # ____________________________________________________________
 # Conversion
 
@@ -103,7 +107,7 @@ def abs(x):
 
 Py_ssize_t = 'int32' # TODO:
 
-@ijit
+@ijit('int64 -> int64 -> int64 -> Range[]')
 def range(start, stop=0xdeadbeef, step=1):
     # TODO: We need to either optimize variants, or recognize that
     # 'x is None' is equivalent to isinstance(x, NoneType) and prune the

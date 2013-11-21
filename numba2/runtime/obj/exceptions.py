@@ -12,7 +12,7 @@ inheritance hierarchy.
 from __future__ import print_function, division, absolute_import
 import exceptions
 
-from numba2 import overlay, typeof, jit
+from numba2 import overlay, typeof, jit, sjit
 
 __all__ = []
 
@@ -24,7 +24,7 @@ def ejit(exc_cls):
     __all__.append(exc_cls.__name__)
     py_cls = getattr(exceptions, exc_cls.__name__)
     exc_cls.layout = []
-    exc_cls = jit(exc_cls)
+    exc_cls = sjit(exc_cls)
     overlay(py_cls, exc_cls)
 
     @typeof.case(py_cls)

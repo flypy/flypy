@@ -50,7 +50,7 @@ class TestTranslation(unittest.TestCase):
         self.assertEqual(f(2, 12), 4)
         self.assertEqual(f(2, 3), 5)
         self.assertEqual(f(3, 2), 5)
-        self.assertEqual(f(12, 2), 5)
+        self.assertEqual(f(20, 12), 5)
 
     def test_or(self):
         @jit
@@ -94,6 +94,12 @@ class TestTranslation(unittest.TestCase):
             return g(x) + 2
 
         self.assertEqual(f(3), 8)
+
+    def test_void(self):
+        @jit
+        def f():
+            pass
+        self.assertEqual(f(), None)
 
     def test_tuple_passing(self):
         @jit

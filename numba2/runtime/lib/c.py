@@ -23,6 +23,7 @@ int printf(char *s, ...);
 int snprintf(char *str, size_t size, const char *format, ...);
 int puts(char *s);
 size_t strlen(char *s);
+unsigned long clock();
 """)
 
 libclib = ffi.dlopen(None)
@@ -35,4 +36,5 @@ printf
 snprintf
 puts
 strlen
+clock
 ''')

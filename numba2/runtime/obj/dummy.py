@@ -100,6 +100,10 @@ class Void(object):
     def toctypes(cls, value, ty):
         return None
 
+    @staticmethod
+    def toobject(value, type):
+        return None
+
 #===------------------------------------------------------------------===
 # NULL
 #===------------------------------------------------------------------===
