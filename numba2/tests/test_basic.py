@@ -95,6 +95,12 @@ class TestTranslation(unittest.TestCase):
 
         self.assertEqual(f(3), 8)
 
+    def test_void(self):
+        @jit
+        def f():
+            pass
+        self.assertEqual(f(), None)
+
     def test_tuple_passing(self):
         @jit
         def f():
