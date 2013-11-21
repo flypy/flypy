@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
+import sys
+import os.path
 import warnings
 import ctypes.util
 from ctypes import CDLL, Structure, POINTER, c_longlong, c_uint, c_int, \
@@ -31,7 +33,21 @@ class mpd_t(Structure):
                 ('data', POINTER(c_uint))]
 
 
-libpath = ctypes.util.find_library("mpdec")
+def _find_library():
+    libpath = ctypes.util.find_library("mpdec")
+    if libpath is None:
+        # Search conda path
+        if sys.platform.startswith('win32'):
+            fileext = '.pyd'
+        elif sys.platform.startswith('darwin'):
+            fileext = '.dylib'
+        else:
+            fileext = '.so'
+        libpath = os.path.join(sys.prefix, 'lib', 'libmpdec' + fileext)
+    return libpath
+
+libpath = _find_library()
+
 if libpath is None:
     msg = "mpdec library not found, no accelerated decimals supported"
     warnings.warn(msg)

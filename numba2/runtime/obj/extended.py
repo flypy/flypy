@@ -7,3 +7,7 @@ from __future__ import print_function, division, absolute_import
 from .pyobject import Object
 from . import exceptions
 from .arrayobject import Array
+try:
+    from .decimalobject import decimal
+except ImportError:
+    pass

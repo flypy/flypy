@@ -2,7 +2,7 @@
 from __future__ import print_function, division, absolute_import
 import numba2
 from numba2 import jit
-from numba2.runtime import decimal
+from numba2.runtime.obj.extended import decimal
 import cdecimal
 
 
