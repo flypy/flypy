@@ -36,4 +36,5 @@ printf
 snprintf
 puts
 strlen
+clock
 ''')
