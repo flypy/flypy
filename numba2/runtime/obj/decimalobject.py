@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
-from numba2 import jit, typeof
-from numba2.runtime.obj.core import (struct_, Pointer, from_cstring, String)
+
+import warnings
+import ctypes.util
 from ctypes import CDLL, Structure, POINTER, c_longlong, c_uint, c_int, \
     c_ubyte, c_char_p, byref, pointer, cast
+
+from numba2 import jit, typeof
+from numba2.runtime.obj.core import (struct_, Pointer, from_cstring, String)
 
 class mpd_context(Structure):
     
@@ -27,7 +31,13 @@ class mpd_t(Structure):
                 ('data', POINTER(c_uint))]
 
 
-dll = CDLL('/usr/local/lib/libmpdec.so.2.3')
+libpath = ctypes.util.find_library("mpdec")
+if libpath is None:
+    msg = "mpdec library not found, no accelerated decimals supported"
+    warnings.warn(msg)
+    raise ImportError(msg)
+
+dll = ctypes.CDLL(libpath)
 
 dll.mpd_new.argtypes = []
 dll.mpd_new.restype = POINTER(mpd_t)

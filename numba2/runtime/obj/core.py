@@ -19,3 +19,7 @@ from .dummy import Void, Function, ForeignFunction, NULL
 from .variantobject import make_variant
 from .bufferobject import Buffer, newbuffer, fromseq, copyto
 from .stringobject import String, from_cstring, as_cstring
+try:
+    from .decimalobject import decimal
+except ImportError:
+    pass
