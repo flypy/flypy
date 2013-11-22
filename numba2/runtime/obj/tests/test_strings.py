@@ -54,4 +54,4 @@ NotImplementedError: ('Exception throwing', %15, Function(numba2.runtime.obj.ran
         self.assertEqual(f("", "bar"), "bar")
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=3)

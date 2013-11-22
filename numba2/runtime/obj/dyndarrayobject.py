@@ -58,8 +58,8 @@ class DyNDArray(object):
     ]
 
     @jit('DyNDArray[a] -> Pointer[DyNDArrayLayout[a]] -> void')
-    def __init__(self, arr_ptr):
-        self.arr = arr_ptr
+    def __init__(self, arr):
+        self.arr = arr
         _lowlevel.memory_block_incref(self.arr)
 
     @jit('DyNDArray[a] -> void')
