@@ -16,11 +16,11 @@ class MemoryBlockData(object):
 @sjit('DyNDArrayLayout[a]')
 class DyNDArrayLayout(object):
     layout = [
-        ('mbd', 'MemoryBlockData'),
+        ('mbd', 'MemoryBlockData[]'),
         ('type', 'Pointer[void]'),
         ('data_pointer', 'Pointer[void]'),
         ('flags', 'uint64'),
-        ('data_reference', 'Pointer[MemoryBlockData]'),
+        ('data_reference', 'Pointer[MemoryBlockData[]]'),
         ('meta', 'a')
     ]
 
