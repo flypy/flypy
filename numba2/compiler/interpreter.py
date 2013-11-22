@@ -11,7 +11,7 @@ from numba2 import typeof, jit
 from numba2.compiler.frontend import translate, interpret
 from numba2.pipeline import environment, phase
 
-from pykit.ir import interp
+from pykit.ir import interp, tracing
 
 #===------------------------------------------------------------------===
 # Helpers
@@ -33,7 +33,10 @@ def interpret(nb_func, phase, args, handlers=None, debug=False):
         print(f)
         print("----------------------- End of %s ------------------------" % (
                                                                      f.name,))
+        tracer = tracing.Tracer()
+    else:
+        tracer = tracing.DummyTracer()
 
     # Interpreter function
     env.setdefault('interp.handlers', {}).update(handlers or {})
-    return interp.run(f, env, args=args)
+    return interp.run(f, env, args=args, tracer=tracer)
