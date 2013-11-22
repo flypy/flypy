@@ -5,21 +5,17 @@ import unittest
 
 from pykit.ir.interp import UncaughtException
 
-from numba2.compiler.frontend import translate, interpret
+from numba2.compiler.frontend import translate, interp as frontend_interp
 from numba2 import environment, phase, typeof, jit
+from numba2.compiler import interpreter
 
 #===------------------------------------------------------------------===
 # Helpers
 #===------------------------------------------------------------------===
 
 def run(f, expected, args):
-    f = jit(f)
-    argtypes = [typeof(arg) for arg in args]
-    env = environment.fresh_env(f, argtypes)
-    code, env = phase.translation(f, env)
-
-    result = interpret(code, args=args)
-    assert result == expected, "Got %s, expected %s" % (result, expected)
+    interpreter.expect(jit(f), phase.translation, args, expected,
+                       handlers=frontend_interp.handlers)
 
 #===------------------------------------------------------------------===
 # Tests
