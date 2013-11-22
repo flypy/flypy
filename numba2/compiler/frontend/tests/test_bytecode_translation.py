@@ -25,8 +25,7 @@ def run(f, expected, args):
 # Tests
 #===------------------------------------------------------------------===
 
-# DISABLED.
-class TestBytecodeTranslation(object): #unittest.TestCase):
+class TestBytecodeTranslation(unittest.TestCase):
 
     #===------------------------------------------------------------------===
     # Ops
@@ -77,6 +76,10 @@ class TestBytecodeTranslation(object): #unittest.TestCase):
         run(f, 20, [0, 10])
 
     def test_for(self):
+        # NOTE: the raise stems from 'next', which is not yet inlined, since
+        # we interpret the result of bytecode translation
+        raise unittest.SkipTest("Exception throwing")
+
         def f(a, b):
             sum = 0
             for i in range(a, b):
@@ -92,6 +95,8 @@ class TestBytecodeTranslation(object): #unittest.TestCase):
     #===------------------------------------------------------------------===
 
     def test_raise(self):
+        raise unittest.SkipTest("Exception throwing")
+
         def f(a, b):
             sum = 0
             for i in range(a, b):
@@ -112,6 +117,8 @@ class TestBytecodeTranslation(object): #unittest.TestCase):
             raise Exception("Expected 'UncaughtException'")
 
     def test_catch_noerror(self):
+        raise unittest.SkipTest("Exception throwing")
+
         def f(a, b):
             try:
                 a + b
@@ -127,6 +134,8 @@ class TestBytecodeTranslation(object): #unittest.TestCase):
         run(f, 3, [0, 10])
 
     def test_catch_error(self):
+        raise unittest.SkipTest("Exception throwing")
+
         def f(a, b):
             try:
                 raise ValueError(a)

@@ -10,7 +10,12 @@ from pykit.analysis import cfa
 from pykit.optimizations import local_exceptions
 
 def rewrite_local_exceptions(func, env):
+    """
+    Rewrite exc_throw(exc) -> jump(handler_block) for statically determined
+    exceptions.
+    """
     local_exceptions.run(func, env, exc_model=excmodel.ExcModel(env))
+
 
 def rewrite_exceptions(func, env):
     blocks = set()
