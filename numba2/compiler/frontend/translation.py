@@ -142,7 +142,9 @@ class Translate(object):
         self.update_phis()
 
     def op(self, inst):
-        with error_context(lineno=inst.lineno):
+        during = "Operation translate in %s" % (self.func.__name__, )
+        with error_context(lineno=inst.lineno, during="Translate operation",
+                           pyfunc=self.func):
             self.lineno = inst.lineno
             attr = 'op_%s' % inst.opname.replace('+', '_')
             fn = getattr(self, attr, self.generic_op)
@@ -390,7 +392,6 @@ class Translate(object):
     def op_CALL_FUNCTION(self, inst):
         argc = inst.arg & 0xff
         kwsc = (inst.arg >> 8) & 0xff
-
         def pop_kws():
             val = self.pop()
             key = self.pop()

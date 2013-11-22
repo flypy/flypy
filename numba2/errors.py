@@ -31,12 +31,16 @@ class SpecializeError(CompileError):
     """
 
 @contextmanager
-def error_context(lineno=-1, during=None):
+def error_context(lineno=-1, during=None, pyfunc=None):
     # Adapted from numbapro/npm/errors.py
     try:
         yield
     except Exception, e:
         msg = []
+        if pyfunc is not None:
+            during = during or ''
+            during += ' - %s' % _tell_func(pyfunc)
+
         if lineno >= 0:
             msg.append('At line %d:' % lineno)
         if during:
@@ -49,5 +53,17 @@ def error_context(lineno=-1, during=None):
         else:
             msg.append('%s: %s' % (type(e).__name__, e))
 
-        exc = error('\n'.join(msg))
+        exctype = type(e)
+        exc = exctype('\n'.join(msg))
         raise exc, None, sys.exc_info()[2]
+
+
+def error_context_phase(env, phase):
+    return error_context(during=phase, pyfunc=env['numba.state.py_func'])
+
+
+def _tell_func(pyfunc):
+    code = pyfunc.func_code
+    filename = code.co_filename
+    firstline = code.co_firstlineno
+    return "%s (%s:%d)" % (pyfunc.__name__, filename, firstline)

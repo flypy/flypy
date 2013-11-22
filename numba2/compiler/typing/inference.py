@@ -31,7 +31,7 @@ import collections
 from itertools import product
 
 from numba2 import promote, typeof, parse, typejoin
-from numba2.errors import InferError
+from numba2.errors import InferError, error_context_phase
 from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
@@ -102,21 +102,22 @@ class Context(object):
 #===------------------------------------------------------------------===
 
 def run(func, env):
-    cache = env['numba.inference.cache']
-    argtypes = env['numba.typing.argtypes']
-    ctx, signature = infer(cache, func, env, argtypes)
+    with error_context_phase(env, "Type inference"):
+        cache = env['numba.inference.cache']
+        argtypes = env['numba.typing.argtypes']
+        ctx, signature = infer(cache, func, env, argtypes)
 
-    env['numba.typing.signature'] = signature
-    env['numba.typing.context'] = ctx.context
-    env['numba.typing.constraints'] = ctx.constraints
+        env['numba.typing.signature'] = signature
+        env['numba.typing.context'] = ctx.context
+        env['numba.typing.constraints'] = ctx.constraints
 
-    if debug_print(func, env):
-        print("Type context:".center(90))
-        for op, typeset in ctx.context.iteritems():
-            print("%s%15s = %s" % (" " * 30, op, typeset))
-        pprint(ctx.context, indent=30)
+        if debug_print(func, env):
+            print("Type context:".center(90))
+            for op, typeset in ctx.context.iteritems():
+                print("%s%15s = %s" % (" " * 30, op, typeset))
+            pprint(ctx.context, indent=30)
 
-    return ctx.func, env
+        return ctx.func, env
 
 def infer(cache, func, env, argtypes):
     """Infer types for the given function"""
