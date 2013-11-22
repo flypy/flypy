@@ -14,7 +14,7 @@ from functools import wraps, partial
 
 from .lexing import lex_source
 from . import viz
-from numba2 import pipeline
+from numba2.pipeline import pipeline
 
 import pykit.ir
 from pykit.analysis import cfa
