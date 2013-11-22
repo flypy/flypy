@@ -31,39 +31,80 @@ def py_cast(x, type):
 #===------------------------------------------------------------------===
 
 @jit('a : numeric -> Type[b : numeric] -> b', opaque=True)
-def cast(x, type):
+def numeric_cast(x, type):
     """Cast a value of type a to type b"""
     return py_cast(x, type) # pure python
 
 @jit('Pointer[a] -> Type[Pointer[b]] -> Pointer[b]', opaque=True)
-def cast(x, type):
+def bitcast(x, type):
     return py_cast(x, type) # pure python
 
 @jit('int64 -> Type[Pointer[a]] -> Pointer[a]', opaque=True)
-def cast(x, type):
+def inttoptr(x, type):
     return py_cast(x, type) # pure python
 
 @jit('Pointer[a] -> Type[int64] -> int64', opaque=True)
-def cast(x, type):
+def ptrtoint(x, type):
     return py_cast(x, type) # pure python
+
+#===------------------------------------------------------------------===
+# cast()
+#===------------------------------------------------------------------===
+
+@jit('a : numeric -> Type[b : numeric] -> b')
+def cast(x, type):
+    """Cast a value of type a to type b"""
+    return numeric_cast(x, type)
+
+@jit('Pointer[a] -> Type[Pointer[b]] -> Pointer[b]')
+def cast(x, type):
+    return bitcast(x, type)
+
+@jit('int64 -> Type[Pointer[a]] -> Pointer[a]')
+def cast(x, type):
+    return inttoptr(x, type)
+
+@jit('Pointer[a] -> Type[int64] -> int64')
+def cast(x, type):
+    return ptrtoint(x, type)
 
 #===------------------------------------------------------------------===
 # Low-level implementation
 #===------------------------------------------------------------------===
 
-def convert(builder, argtypes, value, type):
+def numeric_cast_impl(builder, argtypes, value, type):
+    convert_impl(builder, argtypes, value, type)
+
+def bitcast_impl(builder, argtypes, value, type):
+    ptrcast(builder, argtypes, value, type)
+
+def inttoptr_impl(builder, argtypes, value, type):
+    convert_impl(builder, argtypes, value, type)
+
+def ptrtoint_impl(builder, argtypes, value, type):
+    ptrcast(builder, argtypes, value, type)
+
+# ---------- helper -------------
+
+def convert_impl(builder, argtypes, value, type):
     valtype, typetype = argtypes # e.g. `int, Type[double]`
     type = typetype.parameters[0]
-
-    if type.impl == Pointer or (type.impl == Int and valtype.impl == Pointer):
-        result = builder.ptrcast(lltype(type), value)
-    else:
-        result = builder.convert(lltype(type), value)
-
+    result = builder.convert(lltype(type), value)
     builder.ret(result)
 
+def ptrcast(builder, argtypes, value, type):
+    valtype, typetype = argtypes # e.g. `int, Type[double]`
+    type = typetype.parameters[0]
+    result = builder.ptrcast(lltype(type), value)
+    builder.ret(result)
+
+# ---------- add impls -------------
 
 def result_type(argtypes):
     return lltype(argtypes[1].parameters[0])
 
-add_impl(cast, "cast", convert, restype_func=result_type)
+add_impl(numeric_cast, "numeric_cast", numeric_cast_impl,
+         restype_func=result_type)
+add_impl(bitcast, "bitcast", bitcast_impl, restype_func=result_type)
+add_impl(inttoptr, "inttoptr", inttoptr_impl, restype_func=result_type)
+add_impl(ptrtoint, "ptrtoint", ptrtoint_impl, restype_func=result_type)

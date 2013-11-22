@@ -42,6 +42,14 @@ class TestCasting(unittest.TestCase):
         self.assertEqual(p.value, ctypes.cast(newp, ctypes.c_void_p).value)
         self.assertEqual(newp[0], 5.0)
 
+    def test_int_to_pointer_cast(self):
+        @jit
+        def f(x, dst_type):
+            return cast(x, dst_type)
+
+        newp = f(200, Pointer[float64])
+        self.assertEqual(200, ctypes.cast(newp, ctypes.c_void_p).value)
+
 
 if __name__ == '__main__':
     unittest.main()
