@@ -18,7 +18,7 @@ class Caller(object):
         self.context = context
 
     def call(self, phase_to_run, nb_func, args, argtypes=None):
-        from numba2 import phase
+        from numba2.pipeline import phase
 
         # Apply phase
         if argtypes is None:

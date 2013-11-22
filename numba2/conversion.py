@@ -99,7 +99,7 @@ def fromctypes(value, ty, memo=None):
     """
     Construct a numba object from a ctypes representation.
     """
-    from numba2.ctypes_support import is_ctypes_pointer_type, CTypesStruct
+    from numba2.support.ctypes_support import is_ctypes_pointer_type, CTypesStruct
 
     if hasattr(ty, 'type'):
         ty = ty.type

@@ -63,7 +63,7 @@ def heap_allocate(caller, builder, type, env):
     """
     Heap allocate an object of type `type`
     """
-    from numba2 import phase
+    from numba2.pipeline import phase
 
     # TODO: implement untyped pykit builder !
 
@@ -90,7 +90,7 @@ def register_finalizer(caller, builder, context, type, gcmod, obj):
     """
     Register a finalizer for the object given as pointer `obj`.
     """
-    from numba2 import phase
+    from numba2.pipeline import phase
 
     #(TODO: (indirect) allocation of a new object in __del__ will recurse
     # infinitely)

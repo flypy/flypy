@@ -22,7 +22,8 @@ from blaze import datashape as ds
 def typeof(pyval):
     """Python value -> Type"""
     from .runtime.obj.core import Type, Constructor
-    from numba2 import cffi_support, ctypes_support, coretypes
+    from numba2 import coretypes
+    from numba2.support import ctypes_support, cffi_support
 
     if is_numba_type(pyval):
         if pyval.type.parameters:

@@ -38,7 +38,7 @@ class FunctionWrapper(object):
         from numba2.representation import byref, stack_allocate
         from numba2.conversion import (
             toctypes, fromctypes, toobject, fromobject, ctype)
-        from numba2.ctypes_support import CTypesStruct
+        from numba2.support.ctypes_support import CTypesStruct
         from numba2.types import Function
 
         # Keep this alive for the duration of the call
@@ -86,7 +86,7 @@ class FunctionWrapper(object):
         return result_obj
 
     def translate(self, argtypes):
-        from . import phase, environment
+        from .pipeline import phase, environment
 
         key = tuple(argtypes)
         if key in self.ctypes_funcs:

@@ -5,8 +5,9 @@ import unittest
 
 from pykit.ir.interp import UncaughtException
 
+from numba2 import typeof, jit
 from numba2.compiler.frontend import translate, interp as frontend_interp
-from numba2 import environment, phase, typeof, jit
+from numba2.pipeline import environment, phase
 from numba2.compiler import interpreter
 
 #===------------------------------------------------------------------===

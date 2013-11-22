@@ -8,10 +8,10 @@ from __future__ import print_function, division, absolute_import
 
 from functools import partial, wraps
 
+from numba2.compiler.overloading import best_match
 from .pipeline import run_pipeline
 from .passes import (frontend, typing, optimizations, lowering, backend_init,
                      backend_run, backend_finalize)
-from .compiler.overloading import best_match
 from .environment import fresh_env
 
 from pykit.analysis import callgraph

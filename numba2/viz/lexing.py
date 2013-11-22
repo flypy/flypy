@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+Source code lexing using pygments.
+"""
+
 from __future__ import print_function, division, absolute_import
 import warnings
 from functools import partial

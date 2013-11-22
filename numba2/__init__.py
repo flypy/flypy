@@ -25,7 +25,7 @@ from .runtime.obj.core import NULL
 from .runtime import formatting
 from .runtime import mathlib
 
-from .passes import translate
+from .pipeline.passes import translate
 from .errors import error, InferError, SpecializeError
 
 __version__ = '0.1'

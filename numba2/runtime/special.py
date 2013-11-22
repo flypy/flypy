@@ -7,10 +7,9 @@ Special numba functions.
 from __future__ import print_function, division, absolute_import
 
 from numba2 import jit, Type, Pointer
-from numba2.environment import fresh_env
+from numba2.pipeline import fresh_env, phase
 from numba2.runtime import lowlevel_impls
 from numba2.compiler import opaque
-#from numba2 import phase
 
 __all__ = ['typeof']
 

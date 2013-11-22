@@ -35,7 +35,7 @@ from numba2.errors import InferError, error_context_phase
 from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
-from numba2.prettyprint import debug_print
+from numba2.viz.prettyprint import debug_print
 from .resolution import infer_call
 from .. import opaque
 

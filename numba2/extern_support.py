@@ -7,8 +7,9 @@ are resolved by LLVM JIT by mapping runtime addresses for to external symbols.
 """
 
 from __future__ import print_function, division, absolute_import
+from numba2.support import cffi_support
 from pykit.utils import dylib_support
-from numba2 import coretypes, typeof, cffi_support
+from numba2 import coretypes, typeof
 import cffi
 
 class ExternalSymbol(object):

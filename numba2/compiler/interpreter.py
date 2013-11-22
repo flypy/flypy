@@ -7,8 +7,9 @@ interpreter the IR with the arguments.
 
 from __future__ import print_function, division, absolute_import
 
+from numba2 import typeof, jit
 from numba2.compiler.frontend import translate, interpret
-from numba2 import environment, phase, typeof, jit
+from numba2.pipeline import environment, phase
 
 from pykit.ir import interp
 

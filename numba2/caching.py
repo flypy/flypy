@@ -27,6 +27,8 @@ relationship between stages.
 """
 
 from __future__ import print_function, division, absolute_import
+import numba2.pipeline
+
 
 class Cache(object):
     def __init__(self):
@@ -86,9 +88,7 @@ class InferenceCache(object):
 #===------------------------------------------------------------------===
 
 def lookup(cache, func, root_env=None):
-    from . import environment
-
-    root_env = root_env or environment.root_env
+    root_env = root_env or numba2.pipeline.root_env
     envs = root_env['numba.state.envs']
     env = envs[func]
     return cache.lookup((func, env['numba.typing.argtypes']))

@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 import inspect
 from blaze.error import UnificationError
 
-from numba2.environment import fresh_env
+from numba2.pipeline import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
 from numba2.types import Type, Constructor, ForeignFunction, Function
@@ -52,7 +52,7 @@ def infer_function_call(func, func_type, argtypes):
     """
     Method call or numba function call.
     """
-    from numba2 import phase
+    from numba2.pipeline import phase
 
     #print(('inferring %s' % func).center(80, '!'))
 

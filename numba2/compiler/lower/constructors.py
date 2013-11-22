@@ -48,7 +48,7 @@ def rewrite_constructors(func, env):
         register_finalizer(obj.__del__)
 
     """
-    from numba2 import phase
+    from numba2.pipeline import phase
 
     context = env['numba.typing.context']
     b = OpBuilder()

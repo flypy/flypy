@@ -2,10 +2,12 @@
 from __future__ import print_function, division, absolute_import
 import unittest
 
-from pykit.ir import verify, findop
-from numba2 import jit, phase, environment
+from numba2 import jit
 from numba2.types import Function, Bool, Int, Float
 from numba2.typing import resolve
+from numba2.pipeline import phase, environment
+
+from pykit.ir import verify, findop
 
 class C(object):
     @jit('C -> C -> Bool')

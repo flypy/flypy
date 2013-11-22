@@ -6,8 +6,8 @@ Numba compilation environment.
 
 from __future__ import print_function, division, absolute_import
 
-from .utils import FrozenDict
-from .caching import Cache, InferenceCache, TypingCache
+from numba2.utils import FrozenDict
+from numba2.caching import Cache, InferenceCache, TypingCache
 
 from pykit import environment as pykit_env
 from pykit.codegen import llvm as llvm_codegen

@@ -7,17 +7,17 @@ Numba passes that perform translation, type inference, code generation, etc.
 from __future__ import print_function, division, absolute_import
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
-from .compiler.frontend import translate, simplify_exceptions
-from .compiler import simplification, transition
-from .compiler.typing import inference, typecheck
-from .compiler.typing.resolution import (resolve_context, resolve_restype)
-from .compiler.optimizations import optimize, inliner, throwing
-from .compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
-                             rewrite_constructors, explicit_coercions,
-                             rewrite_optional_args, rewrite_constants,
-                             convert_retval, rewrite_obj_return, allocator,
-                             rewrite_externs)
-from .prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
+from numba2.compiler.frontend import translate, simplify_exceptions
+from numba2.compiler import simplification, transition
+from numba2.compiler.typing import inference, typecheck
+from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
+from numba2.compiler.optimizations import optimize, inliner, throwing
+from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
+                                   rewrite_constructors, explicit_coercions,
+                                   rewrite_optional_args, rewrite_constants,
+                                   convert_retval, rewrite_obj_return, allocator,
+                                   rewrite_externs)
+from numba2.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.analysis import cfa
 from pykit.transform import dce

@@ -7,7 +7,7 @@ from numba2 import jit, typeof, int32, float64
 #from numba2.compiler.representation import build_ctypes_representation
 from numba2.runtime.obj.tupleobject import StaticTuple, EmptyTuple, NoneType
 from numba2.conversion import fromobject, toobject, toctypes
-from numba2.ctypes_support import CTypesStruct
+from numba2.support.ctypes_support import CTypesStruct
 
 none = NoneType()
 

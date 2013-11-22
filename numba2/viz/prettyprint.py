@@ -12,13 +12,12 @@ import dis
 import types
 from functools import wraps, partial
 
-from numba2.lexing import lex_source
-from numba2 import viz, pipeline
+from .lexing import lex_source
+from . import viz
+from numba2 import pipeline
 
 import pykit.ir
 from pykit.analysis import cfa
-
-import networkx as nx
 
 #===------------------------------------------------------------------===
 # Passes

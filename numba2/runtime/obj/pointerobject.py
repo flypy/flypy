@@ -139,8 +139,8 @@ add_impl_cls(Pointer, "store", pointer_store, restype=ptypes.Void)
 #===------------------------------------------------------------------===
 
 def make_ctypes_ptr(ptr, type):
-    from numba2.cffi_support import is_cffi, ffi
-    from numba2.ctypes_support import is_ctypes_pointer_type
+    from numba2.support.cffi_support import is_cffi, ffi
+    from numba2.support.ctypes_support import is_ctypes_pointer_type
 
     cty = ctype(type)
 
