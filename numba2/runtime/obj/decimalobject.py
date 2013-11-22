@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-import sys
-import os.path
 import warnings
-import ctypes.util
-from ctypes import CDLL, Structure, POINTER, c_longlong, c_uint, c_int, \
-    c_ubyte, c_char_p, byref, pointer, cast
+from ctypes import Structure, POINTER, c_longlong, c_uint, c_int, \
+    c_ubyte, c_char_p, byref, pointer
 
 from numba2 import jit, typeof
 from numba2.runtime.obj.core import (struct_, Pointer, from_cstring, String)
+from numba2.support import libfinder
 
 class mpd_context(Structure):
     
@@ -32,30 +30,9 @@ class mpd_t(Structure):
                 ('alloc', c_longlong),
                 ('data', POINTER(c_uint))]
 
-
-def _find_library():
-    libpath = ctypes.util.find_library("mpdec")
-    if libpath is None:
-        # Search conda path
-        if sys.platform.startswith('win32'):
-            fileext = '.pyd'
-        elif sys.platform.startswith('darwin'):
-            fileext = '.dylib'
-        else:
-            fileext = '.so'
-        libpath = os.path.join(sys.prefix, 'lib', 'libmpdec' + fileext)
-    return libpath
-
-libpath = _find_library()
-
 msg = "mpdec library not found, no accelerated decimals supported"
-
-if libpath is None:
-    warnings.warn(msg)
-    raise ImportError(msg)
-
 try:
-    dll = ctypes.CDLL(libpath)
+    dll = libfinder.open_lib_ctypes(libfinder.find_lib("mpdec"))
 except OSError, e:
     warnings.warn(msg)
     raise ImportError("%s: %s" % (msg, str(e)))
