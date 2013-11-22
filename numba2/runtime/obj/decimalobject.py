@@ -48,12 +48,17 @@ def _find_library():
 
 libpath = _find_library()
 
+msg = "mpdec library not found, no accelerated decimals supported"
+
 if libpath is None:
-    msg = "mpdec library not found, no accelerated decimals supported"
     warnings.warn(msg)
     raise ImportError(msg)
 
-dll = ctypes.CDLL(libpath)
+try:
+    dll = ctypes.CDLL(libpath)
+except OSError, e:
+    warnings.warn(msg)
+    raise ImportError("%s: %s" % (msg, str(e)))
 
 dll.mpd_new.argtypes = []
 dll.mpd_new.restype = POINTER(mpd_t)
