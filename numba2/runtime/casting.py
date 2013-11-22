@@ -39,6 +39,10 @@ def cast(x, type):
 def cast(x, type):
     return py_cast(x, type) # pure python
 
+@jit('int64 -> Type[Pointer[a]] -> Pointer[a]', opaque=True)
+def cast(x, type):
+    return py_cast(x, type) # pure python
+
 @jit('Pointer[a] -> Type[int64] -> int64', opaque=True)
 def cast(x, type):
     return py_cast(x, type) # pure python
