@@ -36,6 +36,7 @@ from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
 from numba2.viz.prettyprint import debug_print
+from numba2.errors import error_context
 from .resolution import infer_call
 from .. import opaque
 
@@ -409,58 +410,65 @@ def infer_node(cache, ctx, node):
 
     processed = set()
 
-    if C == 'pointer':
-        for neighbor in incoming:
+    # Get line number of original function
+    if isinstance(node, ir.Op):
+        lineno = node.metadata.get('lineno', -1)
+    else:
+        lineno = -1
+
+    with error_context(lineno=lineno, during="Infer call"):
+        if C == 'pointer':
+            for neighbor in incoming:
+                for type in ctx.context[neighbor]:
+                    #result = Pointer[type]
+                    result = type
+                    changed |= result not in typeset
+                    typeset.add(result)
+
+        elif C == 'flow':
+            for neighbor in incoming:
+                for type in ctx.context[neighbor]:
+                    changed |= type not in typeset
+                    typeset.add(type)
+
+        elif C == 'attr':
+            [neighbor] = incoming
+            attr = ctx.metadata[node]['attr']
             for type in ctx.context[neighbor]:
-                #result = Pointer[type]
-                result = type
+                if attr in type.fields:
+                    value = type.fields[attr]
+                    func, self = value, type
+                    result = Method(func, self)
+                elif attr in type.layout:
+                    result = type.resolved_layout[attr]
+                else:
+                    raise InferError("Type %s has no attribute %s" % (type, attr))
+
                 changed |= result not in typeset
                 typeset.add(result)
 
-    elif C == 'flow':
-        for neighbor in incoming:
-            for type in ctx.context[neighbor]:
-                changed |= type not in typeset
-                typeset.add(type)
+        else:
+            assert C == 'call'
+            func = ctx.metadata[node]['func']
+            func_types = ctx.context[func]
+            arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]
 
-    elif C == 'attr':
-        [neighbor] = incoming
-        attr = ctx.metadata[node]['attr']
-        for type in ctx.context[neighbor]:
-            if attr in type.fields:
-                value = type.fields[attr]
-                func, self = value, type
-                result = Method(func, self)
-            elif attr in type.layout:
-                result = type.resolved_layout[attr]
-            else:
-                raise InferError("Type %s has no attribute %s" % (type, attr))
+            # Iterate over cartesian product, processing only unpreviously
+            # processed combinations
+            for func_type in set(func_types):
+                for arg_types in product(*arg_typess):
+                    key = (node, func_type, tuple(arg_types))
+                    if key not in processed:
+                        processed.add(key)
+                        _, signature, result = infer_call(func, func_type, arg_types)
+                        if isinstance(result, TypeVar):
+                            raise TypeError("Expected a concrete type result, "
+                                            "not a type variable! (%s)" % (func,))
+                        changed |= result not in typeset
+                        typeset.add(result)
+                        if None in func_types:
+                            func_types.remove(None)
+                            func_types.add(signature)
 
-            changed |= result not in typeset
-            typeset.add(result)
-
-    else:
-        assert C == 'call'
-        func = ctx.metadata[node]['func']
-        func_types = ctx.context[func]
-        arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]
-
-        # Iterate over cartesian product, processing only unpreviously
-        # processed combinations
-        for func_type in set(func_types):
-            for arg_types in product(*arg_typess):
-                key = (node, func_type, tuple(arg_types))
-                if key not in processed:
-                    processed.add(key)
-                    _, signature, result = infer_call(func, func_type, arg_types)
-                    if isinstance(result, TypeVar):
-                        raise TypeError("Expected a concrete type result, "
-                                        "not a type variable! (%s)" % (func,))
-                    changed |= result not in typeset
-                    typeset.add(result)
-                    if None in func_types:
-                        func_types.remove(None)
-                        func_types.add(signature)
-
-    return changed
+        return changed
 
