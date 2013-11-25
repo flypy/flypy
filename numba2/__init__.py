@@ -6,7 +6,7 @@ import unittest
 
 from pykit.utils.pattern import match as pyoverload
 
-from .entrypoints import jit, ijit, sjit, abstract
+from .entrypoints import jit, ijit, sjit, abstract, unijit
 from .compiler import (annotate, overload, overloadable)
 from .typing import (overlay, parse, unify, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type

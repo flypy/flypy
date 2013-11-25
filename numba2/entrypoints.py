@@ -97,5 +97,12 @@ def sjit(cls, *args, **kwds):
             "Cannot stack-allocate instances with __del__: %s" % (cls,))
     return jit_class(cls, *args, stackallocate=True, **kwds)
 
+@applyable_decorator
+def unijit(f, *args, **kwds):
+    """@jit(target='uni')
+    Compile into universal representation
+    """
+    return _jit(f, *args, target="uni", **kwds)
+
 #ijit = partial(jit, inline=True)
 #sjit = partial(jit, stackallocate=True)

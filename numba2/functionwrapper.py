@@ -21,7 +21,8 @@ class FunctionWrapper(object):
     Result of @jit for functions.
     """
 
-    def __init__(self, dispatcher, py_func, abstract=False, opaque=False):
+    def __init__(self, dispatcher, py_func, abstract=False, opaque=False,
+                 target="cpu"):
         self.dispatcher = dispatcher
         self.py_func = py_func
         # self.signature = signature
@@ -33,6 +34,7 @@ class FunctionWrapper(object):
 
         self.opaque = opaque
         self.implementor = None
+        self.target = target
 
     def __call__(self, *args, **kwargs):
         from numba2.representation import byref, stack_allocate
@@ -94,7 +96,10 @@ class FunctionWrapper(object):
             return self.ctypes_funcs[key], env["numba.typing.restype"]
 
         # Translate
-        env = environment.fresh_env(self, argtypes)
+        if self.target == "uni":
+            env = environment.fresh_uni_env(self, argtypes)
+        else:
+            env = environment.fresh_env(self, argtypes)
         llvm_func, env = phase.codegen(self, env)
         cfunc = env["codegen.llvm.ctypes"]
 
@@ -127,7 +132,8 @@ class FunctionWrapper(object):
         return self
 
 
-def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False, **kwds):
+def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False,
+         target="cpu", **kwds):
     """
     Wrap a function in a FunctionWrapper. Take care of overloading.
     """
@@ -145,7 +151,9 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False, 
 
     if isinstance(py_func, types.FunctionType):
         return FunctionWrapper(dispatcher, py_func,
-                               opaque=opaque, abstract=abstract)
+                               opaque=opaque, abstract=abstract,
+                               target=target)
     else:
         assert isinstance(py_func, FunctionWrapper), py_func
         return py_func
+
