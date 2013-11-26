@@ -80,9 +80,8 @@ class TestInfer(unittest.TestCase):
         def undefined(x):
             y += x
             return y
-        f, context, signature = get(undefined, [int32])
-        # TODO: expect raise of some compiler error
-        self.fail("Should raise error about undefined variable")
+
+        self.assertRaises(NameError, get, undefined, [int32])
 
 
 if __name__ == '__main__':

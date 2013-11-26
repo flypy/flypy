@@ -191,4 +191,8 @@ def resolve_restype(func, env):
                 "type %s for function %r: %s" % (
                     restype, inferred_restype, func.name, e))
 
+    if isinstance(restype, set):
+        raise TypeError(
+            "Undetermined return type for function %s" % (func.name,))
+
     env['numba.typing.restype'] = restype

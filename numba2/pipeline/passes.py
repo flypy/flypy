@@ -7,7 +7,7 @@ Numba passes that perform translation, type inference, code generation, etc.
 from __future__ import print_function, division, absolute_import
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
-from numba2.compiler.frontend import translate, simplify_exceptions
+from numba2.compiler.frontend import translate, simplify_exceptions, scoping
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
@@ -35,6 +35,7 @@ frontend = [
     simplification.rewrite_ops,
     simplification.rewrite_overlays,
     cfa,
+    scoping,
 ]
 
 typing = [
