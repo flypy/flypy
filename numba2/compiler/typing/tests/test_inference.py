@@ -72,6 +72,18 @@ class TestInfer(unittest.TestCase):
         type = resolve(type, globals(), {})
         #self.assertEqual(type, set([Bool]))
 
+    def test_undefined(self):
+        """
+        This test case is incomplete but demonstrate a problem with
+        undefined variable use.
+        """
+        def undefined(x):
+            y += x
+            return y
+        f, context, signature = get(undefined, [int32])
+        # TODO: expect raise of some compiler error
+        self.fail("Should raise error about undefined variable")
+
 
 if __name__ == '__main__':
     #TestInfer('test_simple').debug()
