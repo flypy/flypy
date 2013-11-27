@@ -30,14 +30,29 @@ class VarDim(object):
         ('blockref', 'Pointer[MemoryBlockData]'),
         ('stride', 'int64'), # 'intptr'),
         ('offset', 'int64'), # 'intptr'),
+        ('child', 'a')
     ]
+
+    @jit('a -> void')
+    def hello(self):
+        print('hello VarDim')
+        self.child.hello()
 
 @sjit('StridedDim[a]')
 class StridedDim(object):
     layout = [
         ('size', 'int64'), # 'intptr')
         ('stride', 'int64'), # 'intptr'),
+        ('child', 'a')
     ]
+
+    #@jit('x -> y : integral -> z')
+    #def getitem(self, dataptr, key):
+        
+    @jit('a -> void')
+    def hello(self):
+        print('hello StridedDim')
+        self.child.hello()
 
 @sjit('FixedDim[size, stride, a]')
 class FixedDim(object):
@@ -46,6 +61,10 @@ class FixedDim(object):
 @sjit('WrapNumbaType[a]')
 class WrapNumbaType(object):
     layout = []
+
+    @jit('a -> void')
+    def hello(self):
+        print('hello NumbaType')
 
 @jit('DyNDArray[a]')
 class DyNDArray(object):
@@ -65,6 +84,16 @@ class DyNDArray(object):
     @jit('DyNDArray[a] -> void')
     def __del__(self):
         _lowlevel.memory_block_decref(self.arr)
+
+    @jit('DyNDArray[a] -> b -> c')
+    def __getitem__(self, key):
+        return self.arr.contents.meta.getitem(self.arr.data_pointer, key)
+
+    @jit('a -> void')
+    def hello(self):
+        print('hello DyNDArray')
+        print(dir(self.arr))
+        self.arr.contents.meta.hello()
 
 def _meta_type(tp):
     """
