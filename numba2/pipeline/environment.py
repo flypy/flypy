@@ -22,6 +22,7 @@ _env = {
     'numba.typing.cache':       TypingCache(),
     'numba.inference.cache':    InferenceCache(),
     'numba.opt.cache':          Cache(),
+    'numba.prelowering.cache':  Cache(),
     'numba.lowering.cache':     Cache(),
     'numba.codegen.cache':      Cache(),
 
@@ -94,63 +95,21 @@ def fresh_env(func, argtypes, env=None):
     return env
 
 #===------------------------------------------------------------------===
-# Universal Environment
+# Data Parallel Python Environment
 #===------------------------------------------------------------------===
 
-_uni_env = {
-    # Command line args
-    'numba.cmdopts':            {},
-    'numba.script':             False, # True when run from the numba script
+_dpp_env = dict(root_env)
+_dpp_env .update({
+    "numba.target": "dpp",
 
-    # Caching
-    'numba.frontend.cache':     Cache(),
-    'numba.typing.cache':       TypingCache(),
-    'numba.inference.cache':    InferenceCache(),
-    'numba.opt.cache':          Cache(),
-    'numba.lowering.cache':     Cache(),
-    'numba.codegen.cache':      Cache(),
-
-    # General state
-    'numba.state.func_name':    None,
-    'numba.state.py_func':      None,   # This value may be None
-    'numba.state.func_globals': None,
-    'numba.state.func_code':    None,
-    'numba.state.callgraph':    None,
-    'numba.state.opaque':       False,  # Whether the function is opaque
-    'numba.state.phase':        None,
-    'numba.state.copies':       None,
-    'numba.state.crnt_func':    None,
-    'numba.state.options':      None,
-
-    # GC
-    'numba.gc.impl':            "boehm",
-
-    # Global state
-    'numba.state.envs':         {},     # All cached environments
-
-    # Typing
-    'numba.typing.restype': None,       # Input/Output
-    'numba.typing.argtypes': None,      # Input
-    'numba.typing.signature': None,     # Output
-    'numba.typing.context': None,       # Output
-    'numba.typing.constraints': None,   # Output
-
-    # Flags
-    'numba.verify':         True,
-    'numba.optimize':       False,
-    'numba.target':         'uni',
-
-    # Codegen
     "codegen.llvm.opt":     None,
     "codegen.llvm.engine":  None,
     "codegen.llvm.module":  None,
     "codegen.llvm.machine": None,
     "codegen.llvm.ctypes":  None,
-}
+})
+_dpp_env = FrozenDict(_dpp_env)
 
-_uni_env.update(pykit_env.fresh_env())
-_uni_env = FrozenDict(_uni_env)
-
-def fresh_uni_env(func, argtypes):
-    return fresh_env(func, argtypes, env=_uni_env)
+def fresh_dpp_env(func, argtypes):
+    return fresh_env(func, argtypes, env=_dpp_env)
 

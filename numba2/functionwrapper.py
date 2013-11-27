@@ -87,8 +87,7 @@ class FunctionWrapper(object):
 
         return result_obj
 
-    def translate(self, argtypes):
-        from .pipeline import phase, environment
+    def translate(self, argtypes, target='cpu'):
 
         key = tuple(argtypes)
         if key in self.ctypes_funcs:
@@ -96,11 +95,7 @@ class FunctionWrapper(object):
             return self.ctypes_funcs[key], env["numba.typing.restype"]
 
         # Translate
-        if self.target == "uni":
-            env = environment.fresh_uni_env(self, argtypes)
-        else:
-            env = environment.fresh_env(self, argtypes)
-        llvm_func, env = phase.codegen(self, env)
+        llvm_func, env = self.do_lower(target, argtypes)
         cfunc = env["codegen.llvm.ctypes"]
 
         # Cache
@@ -109,6 +104,18 @@ class FunctionWrapper(object):
         self.envs[key] = env
 
         return cfunc, env["numba.typing.restype"]
+
+    def do_lower(self, target, argtypes):
+        from .pipeline import phase, environment
+
+        # TODO refactor this to a separate system for easier target extension
+        if target == 'cpu':
+            env = environment.fresh_env(self, argtypes)
+            llvm_func, env = phase.codegen(self, env)
+        elif target == 'dpp':
+            env = environment.fresh_dpp_env(self, argtypes)
+            llvm_func, env = phase.dpp_codegen(self, env)
+        return llvm_func, env
 
     def get_llvm_func(self, argtypes):
         """Get the LLVM function object for the argtypes.

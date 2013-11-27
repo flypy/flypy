@@ -22,7 +22,8 @@ from numba2.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 from pykit.analysis import cfa
 from pykit.transform import dce
 #from pykit.optimizations import local_exceptions
-from pykit.codegen.llvm import verify, optimize, llvm_postpasses
+from pykit.codegen.llvm import (verify, optimize as llvm_optimize,
+                                llvm_postpasses)
 
 #===------------------------------------------------------------------===
 # Passes
@@ -61,6 +62,9 @@ optimizations = [
     dce,
     #cfa,
     optimize,
+]
+
+prelowering = [
     lltyping,
 ]
 
@@ -86,11 +90,23 @@ backend_run = [
 backend_finalize = [
     verify,
     dump_llvm,
-    optimize,
+    llvm_optimize,
     dump_optimized,
     llvm.get_ctypes,
+]
+
+dpp_backend_run = [
+    llvm.codegen_run,
+    # llvm_postpasses,  # for math
+    #llvm.codegen_link, # do nothing
+]
+
+dpp_backend_finalize = [
+    verify,
+    dump_llvm,
 ]
 
 all_passes = [frontend, typing, optimizations, lowering,
               backend_init, backend_run]
 passes = sum(all_passes, [])
+

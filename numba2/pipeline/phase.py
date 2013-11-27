@@ -10,8 +10,9 @@ from functools import partial, wraps
 
 from numba2.compiler.overloading import best_match
 from .pipeline import run_pipeline
-from .passes import (frontend, typing, optimizations, lowering, backend_init,
-                     backend_run, backend_finalize)
+from .passes import (frontend, typing, optimizations, prelowering, lowering,
+                     backend_init, backend_run, backend_finalize,
+                     dpp_backend_run, dpp_backend_finalize)
 from .environment import fresh_env
 
 from pykit.analysis import callgraph
@@ -119,6 +120,19 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
 
     return func, env
 
+@cached('numba.prelowering')
+def prelowering_phase(func, env, passes=prelowering, dependences=None):
+    envs = env["numba.state.envs"]
+    if dependences is None:
+        dependences = _deps(func)
+
+    for f in dependences:
+        if f != func:
+            prelowering_phase(f, envs[f], passes, [])
+    run_pipeline(func, env, passes)
+
+    return func, env
+
 @cached('numba.lowering')
 def lowering_phase(func, env, passes=lowering, dependences=None):
     envs = env["numba.state.envs"]
@@ -185,8 +199,41 @@ setup = setup_phase
 translation = phasecompose(translation_phase, setup)
 typing = phasecompose(typing_phase, translation)
 opt = phasecompose(optimization_phase, typing)
-lower = phasecompose(lowering_phase, opt)
+prelower = phasecompose(prelowering_phase, opt)
+lower = phasecompose(lowering_phase, prelower)
 codegen = phasecompose(codegen_phase, lower)
+
+# ______________________________________________________________________
+# Data Parallel Python Specifics
+
+def dpp_codegen_phase(func, env):
+    from pykit.codegen.llvm import llvm_utils
+    cache = env['numba.codegen.cache']
+    envs = env["numba.state.envs"]
+
+    if func in cache:
+        return cache[func]
+
+    dependences = [d for d in _deps(func) if d not in cache]
+
+    for f in dependences:
+        print('dependency', f)
+        localenv = envs[f]
+        localenv['codegen.llvm.module'] = llvm_utils.module("tmp")
+        run_pipeline(f, envs[f], backend_init)
+    for f in dependences:
+        run_pipeline(f, envs[f], dpp_backend_run)
+    for f in dependences:
+        e = envs[f]
+        lfunc = e["numba.state.llvm_func"]
+        run_pipeline(lfunc, envs[f], dpp_backend_finalize)
+        cache.insert(f, (lfunc, e))
+
+    return env["numba.state.llvm_func"], env
+
+dpp_lower = phasecompose(lowering_phase, prelower)
+dpp_codegen = phasecompose(dpp_codegen_phase, dpp_lower)
+
 
 # ______________________________________________________________________
 # Naming
