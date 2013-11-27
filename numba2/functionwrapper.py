@@ -38,8 +38,8 @@ class FunctionWrapper(object):
         from numba2.representation import byref, stack_allocate
         from numba2.conversion import (
             toctypes, fromctypes, toobject, fromobject, ctype)
-        from numba2.support.ctypes_support import CTypesStruct
-        from numba2.types import Function
+        #from numba2.support.ctypes_support import CTypesStruct
+        #from numba2.types import Function
 
         # Keep this alive for the duration of the call
         keepalive = list(args) + list(kwargs.values())
@@ -123,6 +123,7 @@ class FunctionWrapper(object):
 
     def __get__(self, instance, owner=None):
         if instance is not None:
+            # TODO: return partial(self, instance)
             return partial(self.py_func, instance)
         return self
 

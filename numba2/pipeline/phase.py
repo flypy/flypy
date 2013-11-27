@@ -170,6 +170,7 @@ class CompileError(BaseException):
     """Compile error"""
 
 def phasecompose(phase1, phase2):
+    @wraps(phase1)
     def wrapper(func, env):
         try:
             return phase1(*phase2(func, env))
@@ -196,6 +197,7 @@ phases = {
     "translation":  translation,
     "typing":       typing,
     "opt":          opt,
+    "lower":        lower,
     "codegen":      codegen,
 }
 
