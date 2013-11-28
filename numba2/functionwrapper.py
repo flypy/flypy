@@ -121,6 +121,8 @@ class FunctionWrapper(object):
     def __str__(self):
         return "<numba function (%s)>" % str(self.dispatcher)
 
+    __repr__ = __str__
+
     def __get__(self, instance, owner=None):
         if instance is not None:
             # TODO: return partial(self, instance)
