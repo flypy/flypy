@@ -142,7 +142,7 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False, 
     else:
         func = Dispatcher()
 
-    dispatcher = overload(signature, func=func, inline=inline, **kwds)(py_func)
+    dispatcher = overload(signature, dispatcher=func, inline=inline, **kwds)(py_func)
 
     if isinstance(py_func, types.FunctionType):
         return FunctionWrapper(dispatcher, py_func,
