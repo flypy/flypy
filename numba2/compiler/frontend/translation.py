@@ -213,7 +213,7 @@ class Translate(object):
                 values = []
                 for pred in preds:
                     value_stack = self.stacks[pred]
-                    value = value_stack[-1 - pos]
+                    value = value_stack[pos]
                     values.append(value)
 
                 phi.set_args([preds, values])
