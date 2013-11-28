@@ -107,7 +107,7 @@ class Translate(object):
 
         # Setup Blocks
         for offset in self.bytecode.labels:
-            block = self.dst.new_block("Block%d" % offset)
+            block = self.dst.new_block("Block%d_" % offset)
             self.blocks[offset] = block
             self.stacks[block] = []
 
@@ -157,10 +157,12 @@ class Translate(object):
         """
         Switch to a new block and merge incoming values from the stacks.
         """
+        #print("%s -> %s" % (self.curblock.name, newblock.name), self.stack)
         if not self.curblock.is_terminated():
             self.jump(newblock)
 
         self.builder.position_at_end(newblock)
+        self.prevblock = self.curblock
         self.curblock = newblock
 
         # -------------------------------------------------
@@ -201,7 +203,7 @@ class Translate(object):
             # -------------------------------------------------
             # Sanity check
 
-            assert all(len(stack) == stacklen for stack in stacks), preds
+            assert all(len(stack) == stacklen for stack in stacks), (preds, stacks)
 
             if not preds or not stacklen:
                 continue
@@ -425,7 +427,8 @@ class Translate(object):
         delta = inst.arg
         loopexit = self.blocks[inst.next + delta]
 
-        self.loop_stack[-1].catch_block = loopexit
+        loop_block = self.loop_stack[-1]
+        loop_block.catch_block = loopexit
 
         # -------------------------------------------------
         # Try
@@ -448,6 +451,10 @@ class Translate(object):
 
         # Add the loop exit at a successor to the header
         self.predecessors[loopexit].add(self.curblock)
+
+        # Remove ourselves as a predecessor from the actual exit block, set by
+        # SETUP_LOOP
+        self.predecessors[loop_block.end].remove(self.prevblock)
 
     def op_BREAK_LOOP(self, inst):
         loopblock = self.loop_stack[-1]
@@ -684,6 +691,7 @@ class Translate(object):
 
     def op_SETUP_LOOP(self, inst):
         exit_block = self.blocks[inst.next + inst.arg]
+        self.predecessors[exit_block].add(self.curblock)
 
         block = LoopBlock(None, exit_block, self.stack_level)
         self.block_stack.append(block)

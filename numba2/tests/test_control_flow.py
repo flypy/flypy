@@ -28,6 +28,18 @@ class TestControlFlow(unittest.TestCase):
 
         self.assertEqual(f(3), f.py_func(3))
 
+    def test_continue(self):
+        @jit
+        def f(n):
+            sum = 0
+            for i in range(n):
+                if i > n - 4:
+                    continue
+                sum += i
+            return sum
+
+        self.assertEqual(f(10), f.py_func(10))
+
     def test_break(self):
         @jit
         def f(n):
@@ -36,6 +48,21 @@ class TestControlFlow(unittest.TestCase):
                 if i > n - 4:
                     break
                 sum += i
+            return sum
+
+        self.assertEqual(f(10), f.py_func(10))
+
+    def test_moderately_complicated(self):
+        @jit
+        def f(n):
+            i = 0
+            sum = 0
+            for i in range(n):
+                if i % 4 > 2:
+                    while i > 0:
+                        sum += i
+                        i -= 1
+
             return sum
 
         self.assertEqual(f(10), f.py_func(10))
@@ -58,8 +85,7 @@ class TestControlFlow(unittest.TestCase):
                                 break
             return sum
 
-        print(f(3))
-        #self.assertEqual(f(3), f.py_func(3))
+        self.assertEqual(f(3), f.py_func(3))
 
 
 if __name__ == '__main__':

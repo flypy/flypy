@@ -11,7 +11,7 @@ from numba2.compiler.frontend import translate, simplify_exceptions, scoping
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
-from numba2.compiler.optimizations import optimize, inliner, throwing
+from numba2.compiler.optimizations import optimize, inliner, throwing, deadblocks
 from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
@@ -34,6 +34,7 @@ frontend = [
     dump_cfg,
     simplification.rewrite_ops,
     simplification.rewrite_overlays,
+    deadblocks,
     cfa,
     scoping,
 ]
