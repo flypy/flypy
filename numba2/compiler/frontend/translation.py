@@ -42,6 +42,9 @@ COMPARE_OP_FUNC = {
 
 const = lambda val: Const(val, types.Opaque)
 
+def blockname(func, offset):
+    return "Block%d.%s" % (offset, func.__name__)
+
 class Translate(object):
     """
     Translate bytecode to untypes pykit IR.
@@ -107,7 +110,8 @@ class Translate(object):
 
         # Setup Blocks
         for offset in self.bytecode.labels:
-            block = self.dst.new_block("Block%d_" % offset)
+            name = blockname(self.func, offset)
+            block = self.dst.new_block(name)
             self.blocks[offset] = block
             self.stacks[block] = []
 
@@ -458,7 +462,7 @@ class Translate(object):
 
     def op_BREAK_LOOP(self, inst):
         loopblock = self.loop_stack[-1]
-        self.jump(target=loopblock.catch_block)
+        self.jump(target=loopblock.catch_block or loopblock.end)
 
     def op_BUILD_TUPLE(self, inst):
         count = inst.arg

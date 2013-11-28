@@ -43,4 +43,6 @@ def update_outdated_incoming_blocks(func, candidates):
                 newblocks = [block for block in blocks if block in preds]
                 newvalues = [val for block, val in zip(blocks, values)
                                      if block in preds]
+                assert len(newblocks) == len(preds), (op.block, newblocks,
+                                                      preds, blocks)
                 op.set_args([newblocks, newvalues])

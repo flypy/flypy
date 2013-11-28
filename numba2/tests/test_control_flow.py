@@ -28,7 +28,7 @@ class TestControlFlow(unittest.TestCase):
 
         self.assertEqual(f(3), f.py_func(3))
 
-    def test_continue(self):
+    def test_for_continue(self):
         @jit
         def f(n):
             sum = 0
@@ -40,7 +40,7 @@ class TestControlFlow(unittest.TestCase):
 
         self.assertEqual(f(10), f.py_func(10))
 
-    def test_break(self):
+    def test_for_break(self):
         @jit
         def f(n):
             sum = 0
@@ -48,6 +48,32 @@ class TestControlFlow(unittest.TestCase):
                 if i > n - 4:
                     break
                 sum += i
+            return sum
+
+        self.assertEqual(f(10), f.py_func(10))
+
+    def test_while_continue(self):
+        @jit
+        def f(n):
+            i = sum = 0
+            while i < n:
+                i += 1
+                if i > n - 4:
+                    continue
+                sum += i
+            return sum
+
+        self.assertEqual(f(10), f.py_func(10))
+
+    def test_while_break(self):
+        @jit
+        def f(n):
+            i = sum = 0
+            while i < n:
+                if i > n - 4:
+                    break
+                sum += i
+                i += 1
             return sum
 
         self.assertEqual(f(10), f.py_func(10))
@@ -68,6 +94,7 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(f(10), f.py_func(10))
 
     def test_complicated(self):
+        #return
         @jit
         def f(n):
             sum = 0
@@ -77,7 +104,7 @@ class TestControlFlow(unittest.TestCase):
                         for j in range(n):
                             i -= 1
                             for k in range(n):
-                                while k:
+                                while k != 0:
                                     sum += i * j
                                     break
                                 else:
@@ -90,4 +117,4 @@ class TestControlFlow(unittest.TestCase):
 
 if __name__ == '__main__':
     #TestControlFlow('test_reduction').debug()
-    unittest.main()
+    unittest.main(verbosity=3)
