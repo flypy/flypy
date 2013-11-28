@@ -425,6 +425,8 @@ class Translate(object):
         delta = inst.arg
         loopexit = self.blocks[inst.next + delta]
 
+        self.loop_stack[-1].catch_block = loopexit
+
         # -------------------------------------------------
         # Try
 
@@ -448,8 +450,8 @@ class Translate(object):
         self.predecessors[loopexit].add(self.curblock)
 
     def op_BREAK_LOOP(self, inst):
-        scope = self.loops[-1]
-        self.jump(target=self.blocks[scope[1]])
+        loopblock = self.loop_stack[-1]
+        self.jump(target=loopblock.catch_block)
 
     def op_BUILD_TUPLE(self, inst):
         count = inst.arg
@@ -762,6 +764,7 @@ class LoopBlock(BasicBlock):
     def __init__(self, block, end, level):
         BasicBlock.__init__(self, block, level)
         self.end = end
+        self.catch_block = None # Block with the exc_catch(StopIteration)
 
 class ExceptionBlock(BasicBlock):
     def __init__(self, block, first_except_block, level):
