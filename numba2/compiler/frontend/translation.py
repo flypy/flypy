@@ -115,7 +115,7 @@ class Translate(object):
         self.builder.position_at_beginning(self.dst.startblock)
         for varname in self.varnames:
             stackvar = self.builder.alloca(types.Pointer(types.Opaque),
-                                           result=varname)
+                                           result=self.dst.temp(varname))
             self.allocas[varname] = stackvar
 
             # Initialize function arguments
