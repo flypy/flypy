@@ -42,9 +42,18 @@ class Array(object):
         ptr = _array_getptr(self.data, indices, self.shape, self.strides, 0)
         return ptr[0]
 
-    @jit('Array[a, n] -> int64 -> a')
+    @jit('Array[dtype, n] -> int64 -> dtype')
     def __getitem__(self, item):
         return self[(item,)]
+
+    @jit('Array[dtype, n] -> StaticTuple[a, b] -> dtype -> void')
+    def __setitem__(self, indices, value):
+        ptr = _array_getptr(self.data, indices, self.shape, self.strides, 0)
+        ptr[0] = value
+
+    @jit('Array[dtype, n] -> int64 -> dtype -> void')
+    def __setitem__(self, item, value):
+        self[(item,)] = value
 
     @jit #('Array[a, n] -> Iterable[a]')
     def __iter__(self):

@@ -59,6 +59,41 @@ class TestArray(unittest.TestCase):
         test((2, 6, 9, 4))
         test((2, 6, 9, 4, 3))
 
+    def test_1d_array_setitem(self):
+        @jit
+        def index(a):
+            a[6] = 14
+
+        a = np.arange(10)
+        index(a)
+        self.assertEqual(a[6], 14)
+
+    def test_2d_array_setitem(self):
+        @jit
+        def index(a):
+            a[6, 9] = 14
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        index(a)
+        self.assertEqual(a[6, 9], 14)
+
+    def test_nd_array_setitem(self):
+        @jit
+        def index(a, t):
+            a[t] = 14
+
+        def test(t, dtype=np.float64):
+            shape = tuple(np.array(t) + 5)
+            a = np.empty(shape, dtype=dtype)
+            index(a, t)
+            self.assertEqual(a[t], 14)
+
+        test((2,))
+        test((2, 6))
+        test((2, 6, 9))
+        test((2, 6, 9, 4))
+        test((2, 6, 9, 4, 3))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=3)
