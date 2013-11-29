@@ -94,7 +94,6 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(f(10), f.py_func(10))
 
     def test_complicated(self):
-        #return
         @jit
         def f(n):
             sum = 0
