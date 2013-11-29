@@ -56,7 +56,6 @@ typing = [
     rewrite_externs,
     rewrite_constants,
     rewrite_obj_return,
-    convert_retval,
 ]
 
 optimizations = [
