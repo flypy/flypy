@@ -10,7 +10,7 @@ from numba2 import jit, sjit, abstract, typeof
 from numba2.conversion import fromobject, toobject
 from .noneobject import NoneType
 
-STATIC_THRESHOLD = 5
+STATIC_THRESHOLD = 8
 
 @abstract
 class Tuple(object):
@@ -163,13 +163,13 @@ def tail(t):
 
 # TODO: Exceptions
 
-@jit('a -> b')
-def head(t):
-    raise NotImplementedError
-
-@jit('a -> b')
-def tail(t):
-    return EmptyTuple()
+#@jit('a -> b')
+#def head(t):
+#    raise NotImplementedError
+#
+#@jit('a -> b')
+#def tail(t):
+#    raise NotImplementedError
 
 @typeof.case(tuple)
 def typeof(pyval):

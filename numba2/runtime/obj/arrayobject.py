@@ -37,7 +37,7 @@ class Array(object):
 
     # ---------------------------------------
 
-    @jit('Array[a, n] -> StaticTuple[a, b] -> a')
+    @jit('Array[dtype, n] -> StaticTuple[a, b] -> dtype')
     def __getitem__(self, indices):
         ptr = _array_getptr(self.data, indices, self.shape, self.strides, 0)
         return ptr[0]
@@ -96,7 +96,8 @@ def _array_getptr(p, indices, shape, strides, dim):
     """
     # TODO: Pass in indexer class, e.g. WrapAroundIndexer, BoundsCheckIndexer, etc
     indexer = DimIndexer(p, shape[dim], strides[dim])
-    result = indexer.advance(indices[dim])
+    result = indexer.advance(indices[0])
+    # NOTE: take the tail() of indices to structurally reduce the tuple type
     return _array_getptr(result, tail(indices), shape, strides, dim + 1)
 
 @jit('Pointer[t] -> EmptyTuple[] -> b -> b -> int64 -> Pointer[t]')
