@@ -65,6 +65,17 @@ class TestCoercions(unittest.TestCase):
 
         self.assertEqual(f(2), 2.0)
 
+    def test_coerce_conditional(self):
+        @jit
+        def f(x):
+            sum = 0
+            for i in range(10):
+                if i and x:
+                    print(i)
+                    sum += i * x
+            return sum
+
+        self.assertEqual(f(3.0), f.py_func(3.0))
 
 if __name__ == '__main__':
     unittest.main()

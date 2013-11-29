@@ -6,12 +6,17 @@ Type coercions.
 
 from __future__ import print_function, division, absolute_import
 
+import numba2
+
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, Function, Op, Undef, ops
 
 #------------------------------------------------------------------------
 # Coercions -> Conversions
 #------------------------------------------------------------------------
+
+# TODO: In a later pass, we need to call builtins like int() and bool() or the
+# TODO: 'cast function to perform the coercions
 
 def explicit_coercions(func, env):
     """
@@ -38,6 +43,8 @@ def explicit_coercions(func, env):
             coercer.coerce_to_phi(op)
         elif op.opcode == 'ret':
             coercer.coerce_to_restype(op)
+        elif op.opcode == 'cbranch':
+            coercer.coerce_to_conditional(op)
 
         # TODO: return, phi
 
@@ -98,6 +105,13 @@ class Coercion(object):
         if retval is not None and self.context[retval] != restype:
             retval = self.convert(retval, restype, op)
             op.set_args([retval])
+
+    def coerce_to_conditional(self, op):
+        restype = numba2.bool_
+        cond, trueblock, falseblock = op.args
+        if self.context[cond] != restype:
+            retval = self.convert(cond, restype, op)
+            op.set_args([retval, trueblock, falseblock])
 
     def coerce_to_phi(self, op):
         """
