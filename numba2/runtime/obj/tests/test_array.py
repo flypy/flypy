@@ -94,6 +94,14 @@ class TestArray(unittest.TestCase):
         test((2, 6, 9, 4))
         test((2, 6, 9, 4, 3))
 
+    def test_partial_getitem(self):
+        @jit
+        def index(a):
+            return a[6]
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        self.assertEqual(index(a), a[6])
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=3)

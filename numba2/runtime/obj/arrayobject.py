@@ -22,7 +22,7 @@ import numpy as np
 # NumPy-like ndarray
 #===------------------------------------------------------------------===
 
-@jit('Array[a, n]')
+@jit('Array[a, dims]')
 class Array(object):
     """
     N-dimensional NumPy-like array object.
@@ -30,28 +30,26 @@ class Array(object):
 
     layout = [
         ('data', 'Pointer[a]'),
-        ('shape', 'Buffer[int64]'),
-        ('strides', 'Buffer[int64]'),
-        #('keep_alive', 'Object'),
+        ('dims', 'dims')
     ]
 
     # ---------------------------------------
 
-    @jit('Array[dtype, n] -> StaticTuple[a, b] -> dtype')
+    @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
     def __getitem__(self, indices):
-        ptr = _array_getptr(self.data, indices, self.shape, self.strides, 0)
-        return ptr[0]
+        result = self.dims.index(self.data, indices)
+        return _unpack(result)
 
-    @jit('Array[dtype, n] -> int64 -> dtype')
+    @jit('Array[dtype, dims] -> int64 -> dtype')
     def __getitem__(self, item):
         return self[(item,)]
 
-    @jit('Array[dtype, n] -> StaticTuple[a, b] -> dtype -> void')
+    @jit('Array[dtype, dims] -> StaticTuple[a, b] -> dtype -> void')
     def __setitem__(self, indices, value):
-        ptr = _array_getptr(self.data, indices, self.shape, self.strides, 0)
-        ptr[0] = value
+        result = self.dims.index(self.data, indices)
+        fill(result, value)
 
-    @jit('Array[dtype, n] -> int64 -> dtype -> void')
+    @jit('Array[dtype, dims] -> int64 -> dtype -> void')
     def __setitem__(self, item, value):
         self[(item,)] = value
 
@@ -62,7 +60,7 @@ class Array(object):
 
     @jit('a -> int64')
     def __len__(self):
-        return self.shape[0]
+        return self.dims.extent
 
     # ---------------------------------------
 
@@ -75,43 +73,65 @@ class Array(object):
 
     @classmethod
     def toobject(cls, obj, ty):
-        dtype, n = ty.parameters
-        return tonumpy(obj, obj.shape, dtype)
+        dtype, dimtype = ty.parameters
+        return tonumpy(obj, dtype)
 
 #===------------------------------------------------------------------===
 # Indexing
 #===------------------------------------------------------------------===
 
-@sjit('DimIndexer[a]')
-class DimIndexer(object):
+@sjit('Dimension[base]')
+class Dimension(object):
     """
     Dimension indexer, knows how to navigate through an array dimension.
     """
 
-    layout = [('p', 'Pointer[a]'), ('extent', 'int64'), ('stride', 'int64')]
+    layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
 
-    @jit('DimIndexer[a] -> int64 -> Pointer[a]')
-    def advance(self, item):
-        return self.p + item * self.stride
+    @jit('Dimension[base] -> Pointer[a] -> StaticTuple[x, y] -> r')
+    def index(self, p, indices):
+        idx = head(indices)
+        return self.base.index(p + idx * self.stride, tail(indices))
 
-# TODO: Indexers for bounds checking and wraparound
+    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Array[a, Dimension[base]]')
+    def index(self, p, indices):
+        return Array(p, self)
+
+@sjit
+class EmptyDim(object):
+    layout = []
+
+    @jit('empty -> Pointer[a] -> EmptyTuple[] -> Array[a, empty]')
+    def index(self, p, indices):
+        return Array(p, self)
 
 
-@jit('Pointer[t] -> a -> b -> b -> int64 -> Pointer[t]')
-def _array_getptr(p, indices, shape, strides, dim):
-    """
-    Navigate data pointer `p` to point to the item according to the `indices`
-    and `strides`.
-    """
-    # TODO: Pass in indexer class, e.g. WrapAroundIndexer, BoundsCheckIndexer, etc
-    indexer = DimIndexer(p, shape[dim], strides[dim])
-    result = indexer.advance(indices[0])
-    # NOTE: take the tail() of indices to structurally reduce the tuple type
-    return _array_getptr(result, tail(indices), shape, strides, dim + 1)
+# TODO: Dimensions for bounds checking and wraparound
 
-@jit('Pointer[t] -> EmptyTuple[] -> b -> b -> int64 -> Pointer[t]')
-def _array_getptr(p, indices, shape, strides, dim):
-    return p
+#===------------------------------------------------------------------===
+# getitem/setitem
+#===------------------------------------------------------------------===
+
+# Unpack the result for getitem
+
+@jit('Array[a, EmptyDim[]] -> a')
+def _unpack(array):
+    return array.data[0]
+
+@jit('Array[a, dims] -> Array[a, dims]')
+def _unpack(array):
+    return array
+
+# Fill the array with `value`
+
+@jit('Array[a, EmptyDim[]] -> a -> void')
+def fill(array, value):
+    array.data[0] = value
+
+@jit('Array[a, dims] -> a -> void')
+def fill(array, value):
+    for i in range(len(array)):
+        fill(array[i], value)
 
 #===------------------------------------------------------------------===
 # Conversion
@@ -136,14 +156,27 @@ def fromnumpy(ndarray):
 
     # Type we use for shape/strides. We use Buffer since we can't spell
     # "a tuple of size n" very well yet
-    shape = fromseq(ndarray.shape, numba2.int64)
-    strides = fromseq(steps, numba2.int64)
+    #shape = fromseq(ndarray.shape, numba2.int64)
+    #strides = fromseq(steps, numba2.int64)
     #keepalive = fromobject(ndarray, Object[()])
 
-    return Array(data, shape, strides) #, keepalive)
+    dims = EmptyDim()
+    for extent, stride in reversed(zip(ndarray.shape, steps)):
+        dims = Dimension(dims, extent, stride)
 
-def tonumpy(arr, shape, dtype):
+    return Array(data, dims)
+
+
+def _getshape(dims):
+    if isinstance(dims, Dimension):
+        return (dims.extent,) + _getshape(dims.base)
+    else:
+        return ()
+
+def tonumpy(arr, dtype):
     """Build an Array from a numpy ndarray"""
+    shape = _getshape(arr.dims)
+
     size = np.prod(shape)
     total_size = size * numba2.sizeof_type(dtype)
     np_dtype = numpy_support.to_dtype(dtype)
@@ -163,7 +196,12 @@ def typeof(array):
     #     return ContigArray[typeof(array.dtype)]
     # else:
     dtype = numpy_support.from_dtype(array.dtype)
-    return Array[dtype, array.ndim]
+
+    dims = EmptyDim[()]
+    for i in range(array.ndim):
+        dims = Dimension[dims]
+
+    return Array[dtype, dims]
 
 #@pyoverload(np.ndarray, Array)
 #def convert(ndarray):
