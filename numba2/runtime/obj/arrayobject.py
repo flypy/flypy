@@ -39,8 +39,7 @@ class Array(object):
 
     @jit('Array[a, n] -> StaticTuple[a, b] -> a')
     def __getitem__(self, indices):
-        ptr = _array_getptr(self.data, indices, self.shape, self.strides,
-                            len(indices))
+        ptr = _array_getptr(self.data, indices, self.shape, self.strides, 0)
         return ptr[0]
 
     @jit('Array[a, n] -> int64 -> a')
@@ -96,14 +95,13 @@ def _array_getptr(p, indices, shape, strides, dim):
     and `strides`.
     """
     # TODO: Pass in indexer class, e.g. WrapAroundIndexer, BoundsCheckIndexer, etc
-    indexer = DimIndexer(p, strides[dim], shape[dim])
-    result = indexer.advance(head(indices))
+    indexer = DimIndexer(p, shape[dim], strides[dim])
+    result = indexer.advance(indices[dim])
     return _array_getptr(result, tail(indices), shape, strides, dim + 1)
 
 @jit('Pointer[t] -> EmptyTuple[] -> b -> b -> int64 -> Pointer[t]')
 def _array_getptr(p, indices, shape, strides, dim):
     return p
-
 
 #===------------------------------------------------------------------===
 # Conversion

@@ -25,14 +25,14 @@ class TestArray(unittest.TestCase):
         self.assertEqual(length(np.arange(10)), 10)
         self.assertEqual(length(np.empty((12, 8))), 12)
 
-    #def test_array_index(self):
-    #    @jit
-    #    def index(a):
-    #        return a[6]
-    #
-    #    a = np.arange(10)
-    #    self.assertEqual(a[6], index(a))
+    def test_array_index(self):
+        @jit
+        def index(a):
+            return a[6]
+
+        a = np.arange(10)
+        self.assertEqual(a[6], index(a))
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=3)

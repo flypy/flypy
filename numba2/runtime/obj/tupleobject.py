@@ -165,7 +165,7 @@ def tail(t):
 
 @jit('a -> b')
 def head(t):
-    return 0xdeadbeef
+    raise NotImplementedError
 
 @jit('a -> b')
 def tail(t):
