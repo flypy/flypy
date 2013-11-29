@@ -71,7 +71,6 @@ class TestCoercions(unittest.TestCase):
             sum = 0
             for i in range(10):
                 if i and x:
-                    print(i)
                     sum += i * x
             return sum
 

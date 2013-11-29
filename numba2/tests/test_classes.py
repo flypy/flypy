@@ -193,4 +193,4 @@ class TestDestruction(unittest.TestCase):
 
 if __name__ == '__main__':
     #TestClasses('test_special_method').debug()
-    unittest.main()
+    unittest.main(verbosity=3)

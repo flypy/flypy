@@ -7,7 +7,6 @@ Check variable use and scoping rules.
 from __future__ import print_function, division, absolute_import
 
 from numba2.errors import error_context_phase
-from numba2 import phase
 
 from pykit.ir import Undef
 from pykit.utils import flatten
@@ -27,5 +26,7 @@ def check_scoping(func, env):
 
 
 def run(func, env):
+    from numba2.pipeline import phase
+
     with error_context_phase(env, phase.typing):
         check_scoping(func, env)

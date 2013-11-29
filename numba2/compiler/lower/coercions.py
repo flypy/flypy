@@ -167,7 +167,7 @@ class Coercion(object):
         if not conversion:
             isconst = isinstance(arg, (Undef, Const))
 
-            conversion = Op('convert', types.Opaque, [arg])
+            conversion = Op('coerce', types.Opaque, [arg])
             self.context[conversion] = ty
 
             if isconst:

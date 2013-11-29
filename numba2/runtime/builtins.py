@@ -9,7 +9,7 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
-from .obj.core import Range, List, Type
+from .obj.core import Range, List, Type, Complex
 from .casting import cast
 from numba2.types import int32, float64
 from . import ffi
@@ -81,13 +81,25 @@ else:
     def bool(x):
         return x.__bool__()
 
-@jit('a : numeric -> int32')
-def int(x):
-    return cast(x, int32)
+# TODO: integral | floating typeset
 
-@jit('a : numeric -> float64')
+@jit('a -> int64')
+def int(x):
+    return x.__int__()
+
+@jit('a : integral -> float64')
 def float(x):
     return cast(x, float64)
+
+@jit('a : floating -> float64')
+def float(x):
+    return cast(x, float64)
+
+# TODO: adjust type of constants depending on argtype
+
+@jit('a : numeric -> a -> Complex[a]')
+def complex(real, imag=0):
+    return Complex(real, imag)
 
 # ____________________________________________________________
 
@@ -143,6 +155,7 @@ overlay(builtins.unicode, unicode)
 overlay(builtins.bool, bool)
 overlay(builtins.int, int)
 overlay(builtins.float, float)
+overlay(builtins.complex, complex)
 overlay(builtins.abs, abs)
 overlay(builtins.range, range)
 overlay(builtins.list, list)

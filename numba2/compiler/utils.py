@@ -17,7 +17,7 @@ class Caller(object):
         self.builder = builder
         self.context = context
 
-    def call(self, phase_to_run, nb_func, args, argtypes=None):
+    def call(self, phase_to_run, nb_func, args, argtypes=None, result=None):
         from numba2.pipeline import phase
 
         # Apply phase
@@ -26,7 +26,7 @@ class Caller(object):
         f, env = phase.apply_phase(phase_to_run, nb_func, argtypes)
 
         # Generate call
-        result = self.builder.call(ptypes.Opaque, f, args)
+        result = self.builder.call(ptypes.Opaque, f, args, result=result)
 
         # Update context
         self.context[result] = env["numba.typing.restype"]

@@ -18,6 +18,10 @@ from ..interfaces import Number
 class Int(Number):
     layout = []
 
+    @jit('a -> int64')
+    def __int__(self):
+        return numba2.cast(self, numba2.int64)
+
     @jit
     def __str__(self):
         return int_format(self)

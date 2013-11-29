@@ -12,6 +12,7 @@ from .typing import (overlay, parse, unify, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
 from .conversion import toobject, fromobject, toctypes, fromctypes, ctype
+from .pipeline import passes, phase, environment
 from .runtime import cast
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc, libc

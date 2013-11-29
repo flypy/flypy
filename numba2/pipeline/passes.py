@@ -15,7 +15,7 @@ from numba2.compiler.optimizations import optimize, inliner, throwing, deadblock
 from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
-                                   convert_retval, rewrite_obj_return, allocator,
+                                   conversion, rewrite_obj_return, allocator,
                                    rewrite_externs)
 from numba2.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
@@ -53,6 +53,7 @@ typing = [
     allocator,
     rewrite_optional_args,
     explicit_coercions,
+    conversion,
     rewrite_externs,
     rewrite_constants,
     rewrite_obj_return,

@@ -17,6 +17,10 @@ from ..interfaces import Number
 class Float(Number):
     layout = [('x', 'Float[nbits]')]
 
+    @jit('a -> int64')
+    def __int__(self):
+        return numba2.cast(self, numba2.int64)
+
     @jit
     def __str__(self):
         return float_format(self)
