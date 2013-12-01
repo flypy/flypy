@@ -100,7 +100,18 @@ class TestArray(unittest.TestCase):
             return a[6]
 
         a = np.arange(8 * 12).reshape(8, 12)
-        self.assertEqual(index(a), a[6])
+        result = index(a)
+        self.assertEqual(len(result), 12)
+        self.assertTrue(np.all(result == a[6]))
+
+    def test_partial_setitem(self):
+        @jit
+        def index(a):
+            a[6] = 4
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        index(a)
+        self.assertTrue(np.all(a[6] == 4))
 
 
 if __name__ == '__main__':

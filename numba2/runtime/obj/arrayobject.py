@@ -40,7 +40,7 @@ class Array(object):
         result = self.dims.index(self.data, indices)
         return _unpack(result)
 
-    @jit('Array[dtype, dims] -> int64 -> dtype')
+    @jit('Array[dtype, dims] -> int64 -> r')
     def __getitem__(self, item):
         return self[(item,)]
 
@@ -84,6 +84,8 @@ class Array(object):
 class Dimension(object):
     """
     Dimension indexer, knows how to navigate through an array dimension.
+    Each dimension applies a single index and stride, and dispatches to the
+    next dimension.
     """
 
     layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
@@ -124,14 +126,17 @@ def _unpack(array):
 
 # Fill the array with `value`
 
-@jit('Array[a, EmptyDim[]] -> a -> void')
+@jit('Array[dtype, EmptyDim[]] -> a -> void')
 def fill(array, value):
+    """Fill a 0D array"""
     array.data[0] = value
 
-@jit('Array[a, dims] -> a -> void')
+@jit('Array[dtype, dims] -> a -> void')
 def fill(array, value):
+    """Fill an ND-array with N > 0"""
     for i in range(len(array)):
-        fill(array[i], value)
+        subarray = array.dims.index(array.data, (i,))
+        fill(subarray, value)
 
 #===------------------------------------------------------------------===
 # Conversion
