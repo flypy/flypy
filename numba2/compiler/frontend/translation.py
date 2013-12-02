@@ -18,10 +18,10 @@ import collections
 from collections import namedtuple
 
 from numba2.errors import error_context, CompileError, EmptyStackError
-from numba2.runtime.obj import tupleobject
+from numba2.runtime.obj import tupleobject, sliceobject
 from .bytecode import ByteCode
 
-from pykit.ir import Function, Builder, Op, Const, Value, ops
+from pykit.ir import Function, Builder, Op, Const, OConst, Value, ops
 from pykit import types
 
 #===------------------------------------------------------------------===
@@ -40,10 +40,14 @@ COMPARE_OP_FUNC = {
     'exception match': isinstance,
 }
 
-const = lambda val: Const(val, types.Opaque)
+def const(val):
+    if not isinstance(val, Value):
+        val = OConst(val)
+    return val
 
 def blockname(func, offset):
     return "Block%d.%s" % (offset, func.__name__)
+
 
 class Translate(object):
     """
@@ -641,40 +645,42 @@ class Translate(object):
     def op_INPLACE_XOR(self, inst):
         self.binary_op(operator.xor)
 
+    def slice(self, start=None, stop=None, step=None):
+        start, stop, step = map(const, [start, stop, step])
+        return self.call_pop(const(sliceobject.Slice), [start, stop, step])
+
     def op_SLICE_0(self, inst):
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [None, None, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice()))
 
     def op_SLICE_1(self, inst):
         start = self.pop()
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [start, None, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice(start=start)))
 
     def op_SLICE_2(self, inst):
         stop = self.pop()
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [None, stop, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice(stop=stop)))
 
     def op_SLICE_3(self, inst):
         stop = self.pop()
         start = self.pop()
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [start, stop, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice(start, stop)))
 
     def op_BUILD_SLICE(self, inst):
         argc = inst.arg
         tos = [self.pop() for _ in range(argc)]
 
         if argc == 2:
-            self.push_insert('slice', *map(slicearg, [tos[1], tos[0], None]))
+            start, stop, step = [tos[1], tos[0], None]
         elif argc == 3:
-            self.push_insert('slice', *map(slicearg, [tos[2], tos[1], tos[0]]))
+            start, stop, step = [tos[2], tos[1], tos[0]]
         else:
             raise Exception('unreachable')
+
+        self.push(self.slice(start, stop, step))
 
     # ------- Exceptions ------- #
 
@@ -753,7 +759,7 @@ def func_name(func):
 
 def slicearg(v):
     """Construct an argument to a slice instruction"""
-    return Const(v, types.Int64)
+    return OConst(v)
 
 #===------------------------------------------------------------------===
 # Exceptions

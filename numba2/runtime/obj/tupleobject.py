@@ -50,6 +50,12 @@ class StaticTuple(Tuple):
         self.hd = hd
         self.tl = tl
 
+    @jit # slice
+    def __getitem__(self, item):
+        # TODO: implement
+        # TODO: variants
+        return self
+
     @jit('a -> b : integral -> c')
     def __getitem__(self, item):
         if item == 0:
