@@ -21,7 +21,7 @@ def is_(a, b):
 
 # TODO: Overload for variants !
 
-@jit('NoneType -> NoneType -> bool')
+@jit('NoneType[] -> NoneType[] -> bool')
 def is_(a, b):
     return True
 

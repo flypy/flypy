@@ -6,7 +6,7 @@ from numba2 import jit
 
 import numpy as np
 
-class TestArray(unittest.TestCase):
+class TestArrayAttributes(unittest.TestCase):
 
     def test_array_create(self):
         @jit
@@ -24,6 +24,8 @@ class TestArray(unittest.TestCase):
 
         self.assertEqual(length(np.arange(10)), 10)
         self.assertEqual(length(np.empty((12, 8))), 12)
+
+class TestArrayIndexing(unittest.TestCase):
 
     def test_1d_array_index(self):
         @jit
@@ -112,6 +114,43 @@ class TestArray(unittest.TestCase):
         a = np.arange(8 * 12).reshape(8, 12)
         index(a)
         self.assertTrue(np.all(a[6] == 4))
+
+
+class TestArraySlicing(unittest.TestCase):
+
+    def test_1d_array_slice(self):
+        @jit
+        def index(a):
+            return a[:]
+
+        a = np.arange(10)
+        self.assertTrue(np.all(a == index(a)))
+
+    def test_1d_array_slice_bounds(self):
+        raise unittest.SkipTest("Array slicing bounds")
+
+        @jit
+        def index(a, start, stop, step):
+            return a[start:stop:step]
+
+        def test(start=0, stop=10, step=1):
+            a = np.arange(10)
+            result = index(a, start, stop, step)
+            expected = a[start:stop:step]
+            self.assertTrue(np.all(result == expected))
+
+        test(start=1)
+        test(stop=3)
+        test(start=2, stop=8, step=3)
+
+    def test_2d_array_slice(self):
+        @jit
+        def index(a):
+            return a[:, 5]
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        result = index(a)
+        self.assertTrue(np.all(a[:, 5] == result))
 
 
 if __name__ == '__main__':

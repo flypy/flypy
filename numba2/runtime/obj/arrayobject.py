@@ -10,7 +10,7 @@ import numba2
 from numba2 import jit, sjit, ijit, typeof
 from numba2.support import numpy_support
 from numba2.conversion import fromobject, toobject
-from .core import Type, Pointer, StaticTuple, address, Buffer
+from .core import Type, Pointer, StaticTuple, address, Buffer, Slice, NoneType
 from .extended import Object
 from .bufferobject import fromseq
 from .tupleobject import head, tail, EmptyTuple
@@ -42,6 +42,10 @@ class Array(object):
         return result
 
     @jit('Array[dtype, dims] -> int64 -> r')
+    def __getitem__(self, item):
+        return self[(item,)]
+
+    @jit('Array[dtype, dims] -> Slice[start, stop, step] -> r')
     def __getitem__(self, item):
         return self[(item,)]
 
@@ -81,6 +85,23 @@ class Array(object):
 # Indexing
 #===------------------------------------------------------------------===
 
+## ---- begin hack --- ##
+
+# NOTE: This works around the type inferencer not recognizing 'is not None'
+#       as type checks.
+
+# TODO: Integrate SCCP pass in type inferencer
+
+@jit('a -> NoneType[] -> a')
+def choose(a, b):
+    return a
+
+@jit('a -> b -> b')
+def choose(a, b):
+    return b
+
+## ---- end hack --- ##
+
 @sjit('Dimension[base]')
 class Dimension(object):
     """
@@ -99,7 +120,35 @@ class Dimension(object):
         #    return self.base.index(p, tail(indices))
         return self.base.index(p + idx * self.stride, tail(indices))
 
-    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Array[a, Dimension[base]]')
+    @jit('Dimension[base] -> Pointer[a] -> '
+         'StaticTuple[Slice[NoneType[], NoneType[], NoneType[]], y] -> r')
+    def index(self, p, indices):
+        # TODO: wraparound
+        s = head(indices)
+
+        data = p
+        extent = self.extent
+        stride = self.stride
+
+        # Process start
+        if s.start is not None:
+            data += choose(0, s.start) * stride
+
+        # Process stop
+        if s.stop is not None and choose(extent, s.stop) < extent:
+            extent = len(xrange(choose(0, s.start),
+                                choose(extent, s.stop),
+                                choose(1, s.step)))
+
+        # Process step
+        if s.step is not None:
+            stride *= choose(1, s.step)
+
+        array = self.base.index(data, tail(indices))
+        dims = Dimension(array.dims, extent, stride)
+        return Array(array.data, dims)
+
+    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> r')
     def index(self, p, indices):
         return Array(p, self)
 
@@ -209,29 +258,24 @@ def fromnumpy(ndarray, boundscheck=False):
 
     return Array(data, dims)
 
-
-def _getshape(dims):
-    if isinstance(dims, Dimension):
-        return (dims.extent,) + _getshape(dims.base)
-    else:
-        return ()
-
 def tonumpy(arr, dtype):
     """Build an Array from a numpy ndarray"""
-    shape = _getshape(arr.dims)
+    itemsize = numba2.sizeof_type(dtype)
+    steps = np.array(_getsteps(arr.dims))
+    shape = np.array(_getshape(arr.dims))
+    strides = steps * itemsize
 
-    size = np.prod(shape)
-    total_size = size * numba2.sizeof_type(dtype)
+    total_size = np.sum(shape * strides)
     np_dtype = numpy_support.to_dtype(dtype)
 
     # Build NumPy array
     data = toobject(arr.data, Pointer[dtype])
     ndarray = libcpy.dummy_array(address(data), total_size)
 
-    # Cast and reshape
-    result = ndarray.view(np_dtype).reshape(shape)
-
-    return result
+    # Create view on memory
+    result = ndarray.view(np_dtype)
+    axes = tuple(slice(None, None, step) for step in steps)
+    return result[axes]
 
 @typeof.case(np.ndarray)
 def typeof(array):
@@ -252,3 +296,17 @@ def typeof(array):
 #    shape = convert(ndarray.shape, 'Tuple[Int, n]')
 #    strides = convert(ndarray.strides, 'Tuple[Int, n]')
 #    return Array(data, shape, strides, ndarray)
+
+# ------------- Helpers ------------- #
+
+def _getshape(dims):
+    if isinstance(dims, Dimension):
+        return (dims.extent,) + _getshape(dims.base)
+    else:
+        return ()
+
+def _getsteps(dims):
+    if isinstance(dims, Dimension):
+        return (dims.stride,) + _getsteps(dims.base)
+    else:
+        return ()
