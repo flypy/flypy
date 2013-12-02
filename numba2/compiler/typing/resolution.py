@@ -91,7 +91,6 @@ def infer_foreign_call(func, func_type, argtypes):
     """
     Higher-order or foreign function call.
     """
-
     if isinstance(func_type, type(ForeignFunction.type)):
         restype = func_type.parameters[-1]
     else:

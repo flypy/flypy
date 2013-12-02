@@ -543,11 +543,11 @@ class Translate(object):
         opname = dis.cmp_op[inst.arg]
 
         if opname == 'not in':
-            self.binary_op('in')
-            self.unary_op('not')
+            self.binary_op(COMPARE_OP_FUNC['in'])
+            self.unary_op(operator.not_)
         elif opname == 'is not':
-            self.binary_op('is')
-            self.unary_op('not')
+            self.binary_op(COMPARE_OP_FUNC['is'])
+            self.unary_op(operator.not_)
         else:
             opfunc = COMPARE_OP_FUNC[opname]
             self.binary_op(opfunc)
