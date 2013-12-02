@@ -7,7 +7,7 @@ Arrays and NumPy conversion.
 from __future__ import print_function, division, absolute_import
 
 import numba2
-from numba2 import jit, sjit, typeof
+from numba2 import jit, sjit, ijit, typeof
 from numba2.support import numpy_support
 from numba2.conversion import fromobject, toobject
 from .core import Type, Pointer, StaticTuple, address, Buffer
@@ -22,7 +22,7 @@ import numpy as np
 # NumPy-like ndarray
 #===------------------------------------------------------------------===
 
-@jit('Array[a, dims]')
+@sjit('Array[a, dims]')
 class Array(object):
     """
     N-dimensional NumPy-like array object.
@@ -38,7 +38,8 @@ class Array(object):
     @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
     def __getitem__(self, indices):
         result = self.dims.index(self.data, indices)
-        return _unpack(result)
+        result = _unpack(result)
+        return result
 
     @jit('Array[dtype, dims] -> int64 -> r')
     def __getitem__(self, item):
@@ -93,6 +94,9 @@ class Dimension(object):
     @jit('Dimension[base] -> Pointer[a] -> StaticTuple[x, y] -> r')
     def index(self, p, indices):
         idx = head(indices)
+        #if idx < 0 or idx > self.extent:
+        #    print("Index out of bounds!")
+        #    return self.base.index(p, tail(indices))
         return self.base.index(p + idx * self.stride, tail(indices))
 
     @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Array[a, Dimension[base]]')
@@ -107,6 +111,38 @@ class EmptyDim(object):
     def index(self, p, indices):
         return Array(p, self)
 
+@sjit('BoundsCheck[base]')
+class BoundsCheck(object):
+    """
+    Check bounds for the Dimension that we wrap.
+    """
+
+    layout = [('base', 'base')]
+
+    @jit
+    def index(self, p, indices):
+        idx = head(indices)
+        if 0 <= idx < self.base.extent:
+            return self.base.index(p, indices)
+
+        # TODO: Exceptions
+        print("Index out of bounds: index", end="")
+        print(idx, end=", extent ")
+        print(self.base.extent)
+
+    #@jit('BoundsCheck[EmptyTuple[]] -> a -> b -> c')
+    #def index(self, p, indices):
+    #    return self.base.index(p, indices)
+
+    # TODO: Support properties to allow composing BoundsCheck/WrapAround
+
+    @property
+    def extent(self):
+        return self.base.extent
+
+    @property
+    def stride(self):
+        return self.base.stride
 
 # TODO: Dimensions for bounds checking and wraparound
 
@@ -142,7 +178,7 @@ def fill(array, value):
 # Conversion
 #===------------------------------------------------------------------===
 
-def fromnumpy(ndarray):
+def fromnumpy(ndarray, boundscheck=False):
     """Build an Array from a numpy ndarray"""
     # Compute steps
     itemsize = ndarray.dtype.itemsize
@@ -168,6 +204,8 @@ def fromnumpy(ndarray):
     dims = EmptyDim()
     for extent, stride in reversed(zip(ndarray.shape, steps)):
         dims = Dimension(dims, extent, stride)
+        if boundscheck:
+            dims = BoundsCheck(dims)
 
     return Array(data, dims)
 
