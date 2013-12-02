@@ -127,8 +127,6 @@ class TestArraySlicing(unittest.TestCase):
         self.assertTrue(np.all(a == index(a)))
 
     def test_1d_array_slice_bounds(self):
-        raise unittest.SkipTest("Array slicing bounds")
-
         @jit
         def index(a, start, stop, step):
             return a[start:stop:step]
@@ -137,11 +135,25 @@ class TestArraySlicing(unittest.TestCase):
             a = np.arange(10)
             result = index(a, start, stop, step)
             expected = a[start:stop:step]
-            self.assertTrue(np.all(result == expected))
+            self.assertTrue(np.all(result == expected), (result, expected))
 
-        test(start=1)
-        test(stop=3)
-        test(start=2, stop=8, step=3)
+        # Ascending
+        test(1)
+        test(3)
+        test(2, 8, 3)
+        test(2, 9, 3)
+
+        # Descending (wrap-around)
+        test(-2)
+        test(-2, -3)
+        test(-2, -3, -1)
+
+        # Wrap around and adjust
+        test(-12, 3, 1)
+        test(12, 4, -1)
+        test(12, -3, -1)
+        test(8, -12, -1)
+
 
     def test_2d_array_slice(self):
         @jit

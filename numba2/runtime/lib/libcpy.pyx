@@ -12,6 +12,8 @@ cimport numpy as npy
 
 npy.import_array()
 
+import numpy as np
+
 import functools
 try:
     import __builtin__ as builtin
@@ -22,6 +24,20 @@ cdef extern from "Python.h":
     char *PyString_AS_STRING(object)
 
     ctypedef unsigned long Py_uintptr_t
+    ctypedef struct PyTypeObject:
+        pass
+
+
+cdef extern from "numpy/arrayobject.h":
+    PyObject *PyArray_NewFromDescr(PyTypeObject* subtype,
+                                   PyObject* descr,
+                                   int nd,
+                                   npy.npy_intp* dims,
+                                   npy.npy_intp* strides,
+                                   void* data, int flags,
+                                   PyObject* obj)
+
+    PyTypeObject PyArray_Type
 
 # ______________________________________________________________________
 # Iterators
@@ -196,10 +212,22 @@ cdef public Py_ssize_t length(obj):
 
 # NumPy
 
-def dummy_array(Py_uintptr_t data, npy.npy_intp size):
+def create_array(Py_uintptr_t data, npy.npy_intp[:] shape,
+                 npy.npy_intp[:] strides, dtype):
     """Create a dummy int8 array from the given data and size"""
-    return npy.PyArray_SimpleNewFromData(1, &size, npy.NPY_INT8, <void *> data)
+    cdef npy.npy_intp *shape_p = &shape[0]
+    cdef npy.npy_intp *strides_p = &strides[0]
+    cdef int ndim = len(shape)
 
+    assert len(shape) == len(strides)
+    assert isinstance(dtype, np.dtype)
+
+    Py_INCREF(dtype)
+    cdef PyObject *result = PyArray_NewFromDescr(
+        <PyTypeObject *> &PyArray_Type, <PyObject *> dtype, ndim,
+        shape_p, strides_p, <void *> data, 0, NULL)
+
+    return <object> result
 # ______________________________________________________________________
 
 cdef public void debug():

@@ -112,7 +112,7 @@ class Dimension(object):
 
     layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
 
-    @jit('Dimension[base] -> Pointer[a] -> StaticTuple[x, y] -> r')
+    @jit('Dimension[base] -> Pointer[a] -> StaticTuple[x : integral, y] -> r')
     def index(self, p, indices):
         idx = head(indices)
         #if idx < 0 or idx > self.extent:
@@ -121,7 +121,7 @@ class Dimension(object):
         return self.base.index(p + idx * self.stride, tail(indices))
 
     @jit('Dimension[base] -> Pointer[a] -> '
-         'StaticTuple[Slice[NoneType[], NoneType[], NoneType[]], y] -> r')
+         'StaticTuple[Slice[start, stop, step], y] -> r')
     def index(self, p, indices):
         # TODO: wraparound
         s = head(indices)
@@ -130,19 +130,34 @@ class Dimension(object):
         extent = self.extent
         stride = self.stride
 
+        start = choose(0, s.start)
+        stop = choose(extent, s.stop)
+        step = choose(1, s.step)
+
+        #-- Wrap around --#
+        if start < 0:
+            start += extent
+            if start < 0:
+                start = 0
+        if start > extent:
+            start = extent - 1
+
+        if stop < 0:
+            stop += extent
+            if stop < -1:
+                stop = -1
+        if stop > extent:
+            stop = extent
+
+        extent = len(xrange(start, stop, step))
+
         # Process start
         if s.start is not None:
-            data += choose(0, s.start) * stride
-
-        # Process stop
-        if s.stop is not None and choose(extent, s.stop) < extent:
-            extent = len(xrange(choose(0, s.start),
-                                choose(extent, s.stop),
-                                choose(1, s.step)))
+            data += start * stride
 
         # Process step
         if s.step is not None:
-            stride *= choose(1, s.step)
+            stride *= step
 
         array = self.base.index(data, tail(indices))
         dims = Dimension(array.dims, extent, stride)
@@ -265,17 +280,12 @@ def tonumpy(arr, dtype):
     shape = np.array(_getshape(arr.dims))
     strides = steps * itemsize
 
-    total_size = np.sum(shape * strides)
     np_dtype = numpy_support.to_dtype(dtype)
 
     # Build NumPy array
     data = toobject(arr.data, Pointer[dtype])
-    ndarray = libcpy.dummy_array(address(data), total_size)
-
-    # Create view on memory
-    result = ndarray.view(np_dtype)
-    axes = tuple(slice(None, None, step) for step in steps)
-    return result[axes]
+    ndarray = libcpy.create_array(address(data), shape, strides, np_dtype)
+    return ndarray
 
 @typeof.case(np.ndarray)
 def typeof(array):
