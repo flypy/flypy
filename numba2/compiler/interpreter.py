@@ -11,7 +11,8 @@ import inspect
 from functools import partial
 from collections import namedtuple
 
-from numba2 import typeof, jit, functionwrapper
+import numba2
+from numba2 import typeof, jit, functionwrapper, conversion
 from numba2.rules import is_numba_type
 from numba2.pipeline import environment, phase
 from numba2.compiler.opaque import implement
@@ -68,6 +69,8 @@ def op_call(run_phase, typeof_func, interp, func, args):
     return interp.call(func, args)
 
 
+is_dict_obj = lambda d: isinstance(d, dict) and set(d) == set(['type', 'value'])
+
 def op_untyped_getfield(typeof_func, interp, obj, attr):
     """
     Retrieve an attribute/method from an object.
@@ -84,11 +87,30 @@ def op_untyped_getfield(typeof_func, interp, obj, attr):
         if attr not in obj_type.layout:
             raise AttributeError(
                 "Object of type %s has no attribute %r" % (obj_type, attr))
+
+        if is_dict_obj(obj):
+            return interp.getfield(obj, attr)
+
         return getattr(obj, attr)
 
+def op_getfield(interp, obj, attr):
+    """
+    Retrieve an attribute/method from an object.
+    """
+    if is_dict_obj(obj):
+        return interp.getfield(obj, attr)
+    return getattr(obj, attr)
 
-def op_untyped_setfield(interp, obj, attr, value):
-    setattr(obj, attr, value)
+def op_setfield(interp, obj, attr, value):
+    if is_dict_obj(obj):
+        interp.setfield(obj, attr, value)
+    else:
+        setattr(obj, attr, value)
+
+def op_ptradd(interp, obj, addend):
+    if isinstance(obj, numba2.runtime.obj.core.Pointer):
+        obj = obj.p
+    return interp.ptradd(obj, addend)
 
 #===------------------------------------------------------------------===
 # Typing
@@ -138,16 +160,16 @@ def handlers(run_phase, env):
     Create interpreter handlers.
     """
     typeof_arg = Typer(env['numba.typing.context'], run_phase).typeof
+
     handlers = {
-        'call': partial(op_call, run_phase, typeof_arg),
+        'call':     partial(op_call, run_phase, typeof_arg),
+        'getfield': op_getfield,
+        'setfield': op_setfield,
+        'ptradd':   op_ptradd,
     }
 
-    if run_phase in (phase.translation, phase.typing):
-        # Add getfield/setfield handlers for untyped code
-        handlers.update({
-            'getfield': partial(op_untyped_getfield, typeof_arg),
-            'setfield': op_untyped_setfield,
-        })
+    if run_phase in (phase.translation,):
+        handlers['getfield'] = partial(op_untyped_getfield, typeof_arg)
 
     return handlers
 
@@ -177,6 +199,8 @@ def interpret(nb_func, run_phase, args, debug=False, tracer=None):
         else:
             tracer = tracing.DummyTracer()
 
+    newargs = [conversion.fromobject(arg, typeof(arg)) for arg in args]
+
     # Interpret function
     env.setdefault('interp.handlers', handlers(run_phase, env))
-    return interp.run(f, env, args=args, tracer=tracer)
+    return interp.run(f, env, args=newargs, tracer=tracer)
