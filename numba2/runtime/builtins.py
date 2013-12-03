@@ -9,7 +9,7 @@ except ImportError:
 
 from .. import jit, ijit, overlay, overload
 from .interfaces import Sequence, Iterable, Iterator
-from .obj.core import Range, List, Type, Complex
+from .obj.core import Range, List, Type, Complex, Slice
 from .casting import cast
 from numba2.types import int32, float64
 from . import ffi
@@ -132,6 +132,12 @@ def range(start, stop=0xdeadbeef, step=1):
 
 # ____________________________________________________________
 
+# TODO: Overloading on arity: slice(start) -> slice(None, start, None)
+
+@ijit
+def slice(start, stop, step):
+    return Slice(start, stop, step)
+
 @ijit('Iterable[x] -> List[x]')
 def list(value):
     result = []
@@ -157,6 +163,7 @@ overlay(builtins.int, int)
 overlay(builtins.float, float)
 overlay(builtins.complex, complex)
 overlay(builtins.abs, abs)
+overlay(builtins.slice, slice)
 overlay(builtins.range, range)
 overlay(builtins.xrange, range)
 overlay(builtins.list, list)
