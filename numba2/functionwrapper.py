@@ -105,6 +105,9 @@ class FunctionWrapper(object):
 
         return cfunc, env["numba.typing.restype"]
 
+    def overload(self, py_func, signature, **kwds):
+        overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
+
     def get_llvm_func(self, argtypes):
         """Get the LLVM function object for the argtypes.
         """
@@ -137,18 +140,15 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False, 
     func = lookup_previous(py_func, [scope])
 
     if isinstance(func, FunctionWrapper):
-        func = func.dispatcher
+        pass
     elif isinstance(func, types.FunctionType) and func != py_func:
         raise TypeError(
             "Function %s in current scope is not overloadable" % (func,))
     else:
-        func = Dispatcher()
+        dispatcher = Dispatcher()
+        func = FunctionWrapper(dispatcher, py_func,
+                               abstract=abstract, opaque=opaque)
 
-    dispatcher = overload(signature, dispatcher=func, inline=inline, **kwds)(py_func)
-
-    if isinstance(py_func, types.FunctionType):
-        return FunctionWrapper(dispatcher, py_func,
-                               opaque=opaque, abstract=abstract)
-    else:
-        assert isinstance(py_func, FunctionWrapper), py_func
-        return py_func
+    func.overload(py_func, signature, inline=inline, opaque=opaque,
+                  abstract=abstract, **kwds)
+    return func
