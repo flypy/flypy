@@ -11,7 +11,8 @@ from numba2.compiler.frontend import translate, simplify_exceptions, scoping
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
-from numba2.compiler.optimizations import optimize, inliner, throwing, deadblocks
+from numba2.compiler.optimizations import (dataflow, optimize, inliner,
+                                           throwing, deadblocks)
 from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
@@ -19,7 +20,6 @@ from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_externs)
 from numba2.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
-from pykit.analysis import cfa
 from pykit.transform import dce
 #from pykit.optimizations import local_exceptions
 from pykit.codegen.llvm import verify, optimize, llvm_postpasses
@@ -35,7 +35,7 @@ frontend = [
     simplification.rewrite_ops,
     simplification.rewrite_overlays,
     deadblocks,
-    cfa,
+    dataflow,
     scoping,
 ]
 
@@ -61,14 +61,14 @@ typing = [
 
 optimizations = [
     dce,
-    #cfa,
+    #dataflow,
     optimize,
     lltyping,
 ]
 
 lowering = [
     inliner,
-    cfa,
+    dataflow,
     throwing.rewrite_local_exceptions,
     rewrite_lowlevel_constants,
     #lowering.lower_fields,
