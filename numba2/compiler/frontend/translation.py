@@ -375,15 +375,32 @@ class Translate(object):
         falsebr = self.blocks[inst.next + inst.arg]
         self.jump_if(self.peek(), truebr, falsebr)
 
+    def _make_popblock(self):
+        popblock = self.dst.new_block(self.dst.temp("popblock"),
+                                      after=self.curblock)
+        self.stacks[popblock] = []
+        return popblock
+
     def op_JUMP_IF_TRUE_OR_POP(self, inst):
         falsebr = self.blocks[inst.next]
         truebr = self.blocks[inst.arg]
-        self.jump_if(self.peek(), truebr, falsebr)
+
+        popblock = self._make_popblock()
+        self.jump_if(self.peek(), truebr, popblock)
+        self.switchblock(popblock)
+        self.pop()
+        self.jump(falsebr)
+
 
     def op_JUMP_IF_FALSE_OR_POP(self, inst):
         truebr = self.blocks[inst.next]
         falsebr = self.blocks[inst.arg]
-        self.jump_if(self.peek(), truebr, falsebr)
+
+        popblock = self._make_popblock()
+        self.jump_if(self.peek(), popblock, falsebr)
+        self.switchblock(popblock)
+        self.pop()
+        self.jump(truebr)
 
     def op_JUMP_ABSOLUTE(self, inst):
         target = self.blocks[inst.arg]
