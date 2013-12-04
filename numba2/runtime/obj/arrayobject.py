@@ -167,6 +167,23 @@ class Dimension(object):
     def index(self, p, indices):
         return Array(p, self)
 
+@sjit('DimensionContig[base]')
+class DimensionContig(object):
+    """
+    Note: stride attribute is left here for uniform layout.
+    """
+    layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
+
+    @jit('DimensionContig[base] -> Pointer[a] -> '
+         'StaticTuple[x : integral, y] -> r')
+    def index(self, p, indices):
+        idx = head(indices)
+        return self.base.index(p + idx, tail(indices))
+
+    @jit('DimensionContig[base] -> Pointer[a] -> EmptyTuple[] -> r')
+    def index(self, p, indices):
+        return Array(p, self)
+
 @sjit
 class EmptyDim(object):
     layout = []
@@ -267,7 +284,9 @@ def fromnumpy(ndarray, boundscheck=False):
 
     dims = EmptyDim()
     for extent, stride in reversed(zip(ndarray.shape, steps)):
-        dims = Dimension(dims, extent, stride)
+        dimcls = DimensionContig if stride == 1 else Dimension
+        dims = dimcls(dims, extent, stride)
+
         if boundscheck:
             dims = BoundsCheck(dims)
 
@@ -295,8 +314,10 @@ def typeof(array):
     dtype = numpy_support.from_dtype(array.dtype)
 
     dims = EmptyDim[()]
-    for i in range(array.ndim):
-        dims = Dimension[dims]
+
+    for i, stride in zip(range(array.ndim), reversed(array.strides)):
+        dimcls = DimensionContig if stride == array.itemsize else Dimension
+        dims = dimcls[dims]
 
     return Array[dtype, dims]
 
@@ -313,10 +334,12 @@ def _getshape(dims):
     if isinstance(dims, Dimension):
         return (dims.extent,) + _getshape(dims.base)
     else:
+        assert isinstance(dims, EmptyDim)
         return ()
 
 def _getsteps(dims):
     if isinstance(dims, Dimension):
         return (dims.stride,) + _getsteps(dims.base)
     else:
+        assert isinstance(dims, EmptyDim)
         return ()
