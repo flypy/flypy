@@ -66,9 +66,9 @@ class Number(object):
     def __div__(self, other):
         return self / other
 
-    @ojit('a -> a -> a')
+    @jit('a -> a -> a')
     def __truediv__(self, other):
-        return self / other
+        return self.__div__(other)
 
     @jit('a -> a -> a')
     def __floordiv__(self, other):
