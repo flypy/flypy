@@ -176,7 +176,7 @@ class Object(object):
 
         # Build numba String
         n = len(str_obj)
-        buf = numba2.Buffer(p, n + 1)
+        buf = numba2.Buffer(p, n + 1, False)
         return numba2.String(buf)
 
     @jit
