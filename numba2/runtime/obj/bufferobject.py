@@ -6,21 +6,23 @@ Buffer objects.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit
+from numba2 import sjit, jit
 import numba2
 from .core import Type, Pointer
 
 @jit('Buffer[a]')
 class Buffer(object):
-    layout = [('p', 'Pointer[a]'), ('size', 'int64'),
-              #('free', 'Function[Pointer[void], void]')
+    layout = [
+        ('p', 'Pointer[a]'),
+        ('size', 'int64'),
+        ('free', 'bool'),
     ]
 
-    @jit('Buffer[a] -> Pointer[a] -> int64 -> void') # Function[Pointer[a], void]
-    def __init__(self, p, size): #, free):
+    @jit('Buffer[a] -> Pointer[a] -> int64 -> bool -> void')
+    def __init__(self, p, size, free=False):
         self.p = p
         self.size = size
-        #self.free = free
+        self.free = free # TODO: make this a function !
 
     @jit('a -> a -> bool')
     def __eq__(self, other):
@@ -49,7 +51,8 @@ class Buffer(object):
 
     #@jit
     #def __del__(self):
-    #    self.free(self.p)
+    #    if self.free:
+    #        numba2.runtime.ffi.free(self.p)
 
     # ----------------------------------
 
@@ -69,7 +72,7 @@ class Buffer(object):
 @jit('Type[a] -> int64 -> Buffer[a]')
 def newbuffer(basetype, size):
     p = numba2.runtime.ffi.malloc(size, basetype)
-    return Buffer(p, size)
+    return Buffer(p, size, True)
 
 # @jit('Sequence[a] -> Type[a] -> Buffer[a]') # TODO: <--
 def fromseq(seq, basetype):
