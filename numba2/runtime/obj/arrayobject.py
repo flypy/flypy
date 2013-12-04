@@ -112,7 +112,7 @@ class Dimension(object):
 
     layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
 
-    @jit('Dimension[base] -> Pointer[a] -> StaticTuple[x : integral, y] -> r')
+    @jit('s -> Pointer[a] -> StaticTuple[x : integral, y] -> r')
     def index(self, p, indices):
         idx = head(indices)
         #if idx < 0 or idx > self.extent:
@@ -120,8 +120,7 @@ class Dimension(object):
         #    return self.base.index(p, tail(indices))
         return self.base.index(p + idx * self.stride, tail(indices))
 
-    @jit('Dimension[base] -> Pointer[a] -> '
-         'StaticTuple[Slice[start, stop, step], y] -> r')
+    @jit('s -> Pointer[a] -> StaticTuple[Slice[start, stop, step], y] -> r')
     def index(self, p, indices):
         # TODO: wraparound
         s = head(indices)
@@ -163,24 +162,65 @@ class Dimension(object):
         dims = Dimension(array.dims, extent, stride)
         return Array(array.data, dims)
 
-    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> r')
+    @jit('s -> Pointer[a] -> EmptyTuple[] -> r')
     def index(self, p, indices):
         return Array(p, self)
 
 @sjit('DimensionContig[base]')
-class DimensionContig(object):
+class DimensionContig(Dimension):
     """
     Note: stride attribute is left here for uniform layout.
     """
     layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
 
-    @jit('DimensionContig[base] -> Pointer[a] -> '
-         'StaticTuple[x : integral, y] -> r')
+    @jit('s -> Pointer[a] -> StaticTuple[x : integral, y] -> r')
     def index(self, p, indices):
         idx = head(indices)
         return self.base.index(p + idx, tail(indices))
 
-    @jit('DimensionContig[base] -> Pointer[a] -> EmptyTuple[] -> r')
+    @jit('s -> Pointer[a] -> StaticTuple[Slice[start, stop, step], y] -> r')
+    def index(self, p, indices):
+        # TODO: wraparound
+        s = head(indices)
+
+        data = p
+        extent = self.extent
+        stride = self.stride
+
+        start = choose(0, s.start)
+        stop = choose(extent, s.stop)
+        step = choose(1, s.step)
+
+        #-- Wrap around --#
+        if start < 0:
+            start += extent
+            if start < 0:
+                start = 0
+        if start > extent:
+            start = extent - 1
+
+        if stop < 0:
+            stop += extent
+            if stop < -1:
+                stop = -1
+        if stop > extent:
+            stop = extent
+
+        extent = len(xrange(start, stop, step))
+
+        # Process start
+        if s.start is not None:
+            data += start * stride
+
+        # Process step
+        if s.step is not None:
+            stride *= step
+
+        array = self.base.index(data, tail(indices))
+        dims = DimensionContig(array.dims, extent, stride)
+        return Array(array.data, dims)
+
+    @jit('s -> Pointer[a] -> EmptyTuple[] -> r')
     def index(self, p, indices):
         return Array(p, self)
 
