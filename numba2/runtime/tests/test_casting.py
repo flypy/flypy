@@ -42,6 +42,16 @@ class TestCasting(unittest.TestCase):
         self.assertEqual(p.value, ctypes.cast(newp, ctypes.c_void_p).value)
         self.assertEqual(newp[0], 5.0)
 
+    def test_type_appl(self):
+        raise unittest.SkipTest("Casting through type application")
+
+        @jit
+        def f(x, dst_type):
+            return dst_type(x)
+
+        self.assertEqual(f(2, float64), 2.0)
+        self.assertEqual(f(2.0, int32), 2)
+
 
 if __name__ == '__main__':
     unittest.main()
