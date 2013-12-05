@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from numba2 import jit
-from numba2.lib.arrays.vectorize import broadcast
+from numba2.lib.arrays.vectorize import broadcast, add
 
 import numpy as np
 
@@ -31,6 +31,19 @@ class TestBroadcasting(unittest.TestCase):
     def test_broadcast_unequeal(self):
         self._run([[1, 2], [3, 4]], [5, 6], (2, 2), (1, 2))
         self._run([1, 2], [[3, 4], [5, 6]], (1, 2), (2, 2))
+
+
+
+class TestVectorize(unittest.TestCase):
+
+    def test_add(self):
+        @jit
+        def f(a, b):
+            return add(a, b)
+
+        a = np.arange(10)
+        b = np.arange(10, 20)
+        self.assertEqual(f(a, b), a + b)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof, parse
 from .arrayobject import Array, Dimension, EmptyDim
-from numba2.runtime.obj.core import head, tail, NoneType
+from numba2.runtime.obj.core import head, tail, NoneType, Type
 
 import numpy as np
 
@@ -86,11 +86,11 @@ def add(a, b):
     arrays = broadcast(a, b)
     a = head(arrays)
     b = head(tail(arrays))
-    out = np.empty_like(a, dtype=unify(a.dtype, b.dtype))
-    _add(a, b)
+    out = np.empty_like(a, unify(a.dtype, b.dtype))
+    _add(a, b, out)
     return out
 
-@jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> Array[dtype3, dims3] -> r')
+@jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> Array[dtype3, dims3] -> void')
 def _add(a, b, out):
     for i in range(len(out)):
         _add(a[i], b[i], out[i])
