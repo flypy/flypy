@@ -85,22 +85,6 @@ class Array(object):
 # Indexing
 #===------------------------------------------------------------------===
 
-## ---- begin hack --- ##
-
-# NOTE: This works around the type inferencer not recognizing 'is not None'
-#       as type checks.
-
-# TODO: Integrate SCCP pass in type inferencer
-
-@jit('a -> NoneType[] -> a')
-def choose(a, b):
-    return a
-
-@jit('a -> b -> b')
-def choose(a, b):
-    return b
-
-## ---- end hack --- ##
 
 @sjit('Dimension[base]')
 class Dimension(object):
