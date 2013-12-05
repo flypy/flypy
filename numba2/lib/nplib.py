@@ -28,6 +28,18 @@ def empty_like(array, dtype=None):
     shape = array.getshape()
     return empty(shape, dtype)
 
+@jit
+def zeros_like(array, dtype=None):
+    result = empty_like(array, dtype)
+    result[:] = 0
+    return result
+
+@jit
+def ones_like(array, dtype=None):
+    result = empty_like(array, dtype)
+    result[:] = 1
+    return result
+
 @jit('shape -> Type[dtype] -> Array[dtype, dims]')
 def empty(shape, dtype):
     items = product(shape)
@@ -36,25 +48,38 @@ def empty(shape, dtype):
     dims = c_layout_from_shape(shape, dtype)
     return Array(data, dims, dtype)
 
+@jit('shape -> Type[dtype] -> Array[dtype, dims]')
+def zeros(shape, dtype):
+    result = empty(shape, dtype)
+    result[:] = 0
+    return result
+
+@jit('shape -> Type[dtype] -> Array[dtype, dims]')
+def ones(shape, dtype):
+    result = empty(shape, dtype)
+    result[:] = 0
+    return result
+
 #===------------------------------------------------------------------===
 # Helpers
 #===------------------------------------------------------------------===
 
 @jit('StaticTuple[a, b] -> dtype -> Dimension[base]')
 def c_layout_from_shape(shape, dtype):
+    """Construct dimensions for an array of shape `shape` with a C layout"""
     dim = c_layout_from_shape(tail(shape), dtype)
     extent = head(shape)
-    stride = dim.stride * extent
+    stride = dim.stride * dim.extent
     return Dimension(dim, extent, stride)
 
 @jit('StaticTuple[a, EmptyTuple[]] -> dtype -> Dimension[base]')
 def c_layout_from_shape(shape, dtype):
     extent = head(shape)
-    stride = sizeof(dtype)
-    return Dimension(EmptyDim(), extent, stride) # TODO: ContigDim
+    return Dimension(EmptyDim(), extent, 1) # TODO: ContigDim
 
 @jit
 def product(it):
+    """Take the product of the iterable"""
     prod = 1
     for x in it:
         prod *= x
@@ -66,3 +91,5 @@ def product(it):
 
 overlay(np.empty, empty)
 overlay(np.empty_like, empty_like)
+overlay(np.zeros_like, zeros_like)
+overlay(np.ones_like,  ones_like)
