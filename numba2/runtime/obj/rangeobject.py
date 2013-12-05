@@ -35,6 +35,10 @@ class Range(Sequence):
     def __nonzero__(self):
         return bool(len(self))
 
+    def __str__(self):
+        return "range(%d, %d, %d)" % (self.start, self.stop, self.step)
+
+    __repr__ = __str__
 
 @sjit
 class RangeIterator(Iterator):
@@ -49,5 +53,11 @@ class RangeIterator(Iterator):
             self.length -= 1
             return result
         raise StopIteration
+
+    def __str__(self):
+        return "RangeIterator(start=%d, step=%d, length=%d)" % (
+                                self.start, self.step, self.length)
+
+    __repr__ = __str__
 
 # ________________________________________________________________

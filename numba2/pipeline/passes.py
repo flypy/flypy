@@ -7,19 +7,19 @@ Numba passes that perform translation, type inference, code generation, etc.
 from __future__ import print_function, division, absolute_import
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
-from numba2.compiler.frontend import translate, simplify_exceptions
+from numba2.compiler.frontend import translate, simplify_exceptions, scoping
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
-from numba2.compiler.optimizations import optimize, inliner, throwing
+from numba2.compiler.optimizations import (dataflow, optimize, inliner,
+                                           throwing, deadblocks)
 from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
-                                   convert_retval, rewrite_obj_return, allocator,
+                                   conversion, rewrite_obj_return, allocator,
                                    rewrite_externs)
 from numba2.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
-from pykit.analysis import cfa
 from pykit.transform import dce
 #from pykit.optimizations import local_exceptions
 from pykit.codegen.llvm import (verify, optimize as llvm_optimize,
@@ -35,7 +35,9 @@ frontend = [
     dump_cfg,
     simplification.rewrite_ops,
     simplification.rewrite_overlays,
-    cfa,
+    deadblocks,
+    dataflow,
+    scoping,
 ]
 
 typing = [
@@ -52,15 +54,15 @@ typing = [
     allocator,
     rewrite_optional_args,
     explicit_coercions,
+    conversion,
     rewrite_externs,
     rewrite_constants,
     rewrite_obj_return,
-    convert_retval,
 ]
 
 optimizations = [
     dce,
-    #cfa,
+    #dataflow,
     optimize,
 ]
 
@@ -70,7 +72,7 @@ prelowering = [
 
 lowering = [
     inliner,
-    cfa,
+    dataflow,
     throwing.rewrite_local_exceptions,
     rewrite_lowlevel_constants,
     #lowering.lower_fields,

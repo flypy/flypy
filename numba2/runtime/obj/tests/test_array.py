@@ -6,7 +6,7 @@ from numba2 import jit
 
 import numpy as np
 
-class TestArray(unittest.TestCase):
+class TestArrayAttributes(unittest.TestCase):
 
     def test_array_create(self):
         @jit
@@ -25,14 +25,145 @@ class TestArray(unittest.TestCase):
         self.assertEqual(length(np.arange(10)), 10)
         self.assertEqual(length(np.empty((12, 8))), 12)
 
-    #def test_array_index(self):
-    #    @jit
-    #    def index(a):
-    #        return a[6]
-    #
-    #    a = np.arange(10)
-    #    self.assertEqual(a[6], index(a))
+class TestArrayIndexing(unittest.TestCase):
+
+    def test_1d_array_index(self):
+        @jit
+        def index(a):
+            return a[6]
+
+        a = np.arange(10)
+        self.assertEqual(a[6], index(a))
+
+    def test_2d_array_index(self):
+        @jit
+        def index(a):
+            return a[6, 9]
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        self.assertEqual(a[6, 9], index(a))
+
+    def test_nd_array_index(self):
+        @jit
+        def index(a, t):
+            return a[t]
+
+        def test(t, dtype=np.float64):
+            shape = tuple(np.array(t) + 5)
+            a = np.empty(shape, dtype=dtype)
+            a[t] = 6.4
+
+            self.assertEqual(6.4, index(a, t))
+
+        test((2,))
+        test((2, 6))
+        test((2, 6, 9))
+        test((2, 6, 9, 4))
+        test((2, 6, 9, 4, 3))
+
+    def test_1d_array_setitem(self):
+        @jit
+        def index(a):
+            a[6] = 14
+
+        a = np.arange(10)
+        index(a)
+        self.assertEqual(a[6], 14)
+
+    def test_2d_array_setitem(self):
+        @jit
+        def index(a):
+            a[6, 9] = 14
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        index(a)
+        self.assertEqual(a[6, 9], 14)
+
+    def test_nd_array_setitem(self):
+        @jit
+        def index(a, t):
+            a[t] = 14
+
+        def test(t, dtype=np.float64):
+            shape = tuple(np.array(t) + 5)
+            a = np.empty(shape, dtype=dtype)
+            index(a, t)
+            self.assertEqual(a[t], 14)
+
+        test((2,))
+        test((2, 6))
+        test((2, 6, 9))
+        test((2, 6, 9, 4))
+        test((2, 6, 9, 4, 3))
+
+    def test_partial_getitem(self):
+        @jit
+        def index(a):
+            return a[6]
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        result = index(a)
+        self.assertEqual(len(result), 12)
+        self.assertTrue(np.all(result == a[6]))
+
+    def test_partial_setitem(self):
+        @jit
+        def index(a):
+            a[6] = 4
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        index(a)
+        self.assertTrue(np.all(a[6] == 4))
+
+
+class TestArraySlicing(unittest.TestCase):
+
+    def test_1d_array_slice(self):
+        @jit
+        def index(a):
+            return a[:]
+
+        a = np.arange(10)
+        self.assertTrue(np.all(a == index(a)))
+
+    def test_1d_array_slice_bounds(self):
+        @jit
+        def index(a, start, stop, step):
+            return a[start:stop:step]
+
+        def test(start=0, stop=10, step=1):
+            a = np.arange(10)
+            result = index(a, start, stop, step)
+            expected = a[start:stop:step]
+            self.assertTrue(np.all(result == expected), (result, expected))
+
+        # Ascending
+        test(1)
+        test(3)
+        test(2, 8, 3)
+        test(2, 9, 3)
+
+        # Descending (wrap-around)
+        test(-2)
+        test(-2, -3)
+        test(-2, -3, -1)
+
+        # Wrap around and adjust
+        test(-12, 3, 1)
+        test(12, 4, -1)
+        test(12, -3, -1)
+        test(8, -12, -1)
+
+
+    def test_2d_array_slice(self):
+        @jit
+        def index(a):
+            return a[:, 5]
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        result = index(a)
+        self.assertTrue(np.all(a[:, 5] == result))
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=3)

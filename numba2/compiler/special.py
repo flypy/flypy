@@ -45,8 +45,3 @@ def lookup_special(func):
     """Look up a special method name for an operator.* function"""
     operator = defs.operator2opcode[func]
     return special[operator]
-
-def lookup_operator(name):
-    """Given a special __*__ name, return the operator.* function"""
-    opcode = special2op[name]
-    return defs.opcode2operator[opcode]

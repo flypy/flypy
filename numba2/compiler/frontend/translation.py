@@ -18,10 +18,10 @@ import collections
 from collections import namedtuple
 
 from numba2.errors import error_context, CompileError, EmptyStackError
-from numba2.runtime.obj import tupleobject
+from numba2.runtime.obj import tupleobject, sliceobject
 from .bytecode import ByteCode
 
-from pykit.ir import Function, Builder, Op, Const, Value, ops
+from pykit.ir import Function, Builder, Op, Const, OConst, Value, ops
 from pykit import types
 
 #===------------------------------------------------------------------===
@@ -40,7 +40,14 @@ COMPARE_OP_FUNC = {
     'exception match': isinstance,
 }
 
-const = lambda val: Const(val, types.Opaque)
+def const(val):
+    if not isinstance(val, Value):
+        val = OConst(val)
+    return val
+
+def blockname(func, offset):
+    return "Block%d.%s" % (offset, func.__name__)
+
 
 class Translate(object):
     """
@@ -107,7 +114,8 @@ class Translate(object):
 
         # Setup Blocks
         for offset in self.bytecode.labels:
-            block = self.dst.new_block("Block%d" % offset)
+            name = blockname(self.func, offset)
+            block = self.dst.new_block(name)
             self.blocks[offset] = block
             self.stacks[block] = []
 
@@ -115,7 +123,7 @@ class Translate(object):
         self.builder.position_at_beginning(self.dst.startblock)
         for varname in self.varnames:
             stackvar = self.builder.alloca(types.Pointer(types.Opaque),
-                                           result=varname)
+                                           result=self.dst.temp(varname))
             self.allocas[varname] = stackvar
 
             # Initialize function arguments
@@ -157,10 +165,12 @@ class Translate(object):
         """
         Switch to a new block and merge incoming values from the stacks.
         """
+        #print("%s -> %s" % (self.curblock.name, newblock.name), self.stack)
         if not self.curblock.is_terminated():
             self.jump(newblock)
 
         self.builder.position_at_end(newblock)
+        self.prevblock = self.curblock
         self.curblock = newblock
 
         # -------------------------------------------------
@@ -201,7 +211,7 @@ class Translate(object):
             # -------------------------------------------------
             # Sanity check
 
-            assert all(len(stack) == stacklen for stack in stacks), preds
+            assert all(len(stack) == stacklen for stack in stacks), (preds, stacks)
 
             if not preds or not stacklen:
                 continue
@@ -213,7 +223,7 @@ class Translate(object):
                 values = []
                 for pred in preds:
                     value_stack = self.stacks[pred]
-                    value = value_stack[-1 - pos]
+                    value = value_stack[pos]
                     values.append(value)
 
                 phi.set_args([preds, values])
@@ -365,15 +375,32 @@ class Translate(object):
         falsebr = self.blocks[inst.next + inst.arg]
         self.jump_if(self.peek(), truebr, falsebr)
 
+    def _make_popblock(self):
+        popblock = self.dst.new_block(self.dst.temp("popblock"),
+                                      after=self.curblock)
+        self.stacks[popblock] = []
+        return popblock
+
     def op_JUMP_IF_TRUE_OR_POP(self, inst):
         falsebr = self.blocks[inst.next]
         truebr = self.blocks[inst.arg]
-        self.jump_if(self.peek(), truebr, falsebr)
+
+        popblock = self._make_popblock()
+        self.jump_if(self.peek(), truebr, popblock)
+        self.switchblock(popblock)
+        self.pop()
+        self.jump(falsebr)
+
 
     def op_JUMP_IF_FALSE_OR_POP(self, inst):
         truebr = self.blocks[inst.next]
         falsebr = self.blocks[inst.arg]
-        self.jump_if(self.peek(), truebr, falsebr)
+
+        popblock = self._make_popblock()
+        self.jump_if(self.peek(), popblock, falsebr)
+        self.switchblock(popblock)
+        self.pop()
+        self.jump(truebr)
 
     def op_JUMP_ABSOLUTE(self, inst):
         target = self.blocks[inst.arg]
@@ -425,6 +452,9 @@ class Translate(object):
         delta = inst.arg
         loopexit = self.blocks[inst.next + delta]
 
+        loop_block = self.loop_stack[-1]
+        loop_block.catch_block = loopexit
+
         # -------------------------------------------------
         # Try
 
@@ -447,9 +477,13 @@ class Translate(object):
         # Add the loop exit at a successor to the header
         self.predecessors[loopexit].add(self.curblock)
 
+        # Remove ourselves as a predecessor from the actual exit block, set by
+        # SETUP_LOOP
+        self.predecessors[loop_block.end].remove(self.prevblock)
+
     def op_BREAK_LOOP(self, inst):
-        scope = self.loops[-1]
-        self.jump(target=self.blocks[scope[1]])
+        loopblock = self.loop_stack[-1]
+        self.jump(target=loopblock.catch_block or loopblock.end)
 
     def op_BUILD_TUPLE(self, inst):
         count = inst.arg
@@ -526,11 +560,11 @@ class Translate(object):
         opname = dis.cmp_op[inst.arg]
 
         if opname == 'not in':
-            self.binary_op('in')
-            self.unary_op('not')
+            self.binary_op(COMPARE_OP_FUNC['in'])
+            self.unary_op(operator.not_)
         elif opname == 'is not':
-            self.binary_op('is')
-            self.unary_op('not')
+            self.binary_op(COMPARE_OP_FUNC['is'])
+            self.unary_op(operator.not_)
         else:
             opfunc = COMPARE_OP_FUNC[opname]
             self.binary_op(opfunc)
@@ -628,40 +662,42 @@ class Translate(object):
     def op_INPLACE_XOR(self, inst):
         self.binary_op(operator.xor)
 
+    def slice(self, start=None, stop=None, step=None):
+        start, stop, step = map(const, [start, stop, step])
+        return self.call_pop(const(sliceobject.Slice), [start, stop, step])
+
     def op_SLICE_0(self, inst):
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [None, None, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice()))
 
     def op_SLICE_1(self, inst):
         start = self.pop()
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [start, None, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice(start=start)))
 
     def op_SLICE_2(self, inst):
         stop = self.pop()
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [None, stop, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice(stop=stop)))
 
     def op_SLICE_3(self, inst):
         stop = self.pop()
         start = self.pop()
         tos = self.pop()
-        sl = self.insert('slice', *map(slicearg, [start, stop, None]))
-        self.call(operator.getitem, args=(tos, sl))
+        self.call(operator.getitem, args=(tos, self.slice(start, stop)))
 
     def op_BUILD_SLICE(self, inst):
         argc = inst.arg
         tos = [self.pop() for _ in range(argc)]
 
         if argc == 2:
-            self.push_insert('slice', *map(slicearg, [tos[1], tos[0], None]))
+            start, stop, step = [tos[1], tos[0], None]
         elif argc == 3:
-            self.push_insert('slice', *map(slicearg, [tos[2], tos[1], tos[0]]))
+            start, stop, step = [tos[2], tos[1], tos[0]]
         else:
             raise Exception('unreachable')
+
+        self.push(self.slice(start, stop, step))
 
     # ------- Exceptions ------- #
 
@@ -682,6 +718,7 @@ class Translate(object):
 
     def op_SETUP_LOOP(self, inst):
         exit_block = self.blocks[inst.next + inst.arg]
+        self.predecessors[exit_block].add(self.curblock)
 
         block = LoopBlock(None, exit_block, self.stack_level)
         self.block_stack.append(block)
@@ -739,7 +776,7 @@ def func_name(func):
 
 def slicearg(v):
     """Construct an argument to a slice instruction"""
-    return Const(v, types.Int64)
+    return OConst(v)
 
 #===------------------------------------------------------------------===
 # Exceptions
@@ -762,6 +799,7 @@ class LoopBlock(BasicBlock):
     def __init__(self, block, end, level):
         BasicBlock.__init__(self, block, level)
         self.end = end
+        self.catch_block = None # Block with the exc_catch(StopIteration)
 
 class ExceptionBlock(BasicBlock):
     def __init__(self, block, first_except_block, level):

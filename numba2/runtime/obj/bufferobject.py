@@ -10,9 +10,9 @@ from numba2 import jit
 import numba2
 from .core import Type, Pointer
 
-@jit('Buffer[base]')
+@jit('Buffer[a]')
 class Buffer(object):
-    layout = [('p', 'Pointer[base]'), ('size', 'int64'),
+    layout = [('p', 'Pointer[a]'), ('size', 'int64'),
               #('free', 'Function[Pointer[void], void]')
     ]
 
@@ -35,11 +35,11 @@ class Buffer(object):
     def __eq__(self, other):
         return False
 
-    @jit('a -> int64 -> base')
+    @jit('Buffer[a] -> int64 -> a')
     def __getitem__(self, item):
         return self.p[item]
 
-    @jit('a -> int64 -> base -> void')
+    @jit('Buffer[a] -> int64 -> a -> void')
     def __setitem__(self, item, value):
         self.p[item] = value
 

@@ -1,32 +1,47 @@
 # -*- coding: utf-8 -*-
 
 """
-Convert the return value to the function return type.
+Lower conversion operations.
 """
 
 from __future__ import print_function, division, absolute_import
-from pykit.ir import Builder
 
-def convert_retval(func, env):
+import numba2
+from numba2.pipeline import environment
+from ..utils import Caller
+
+from pykit import types
+from pykit.ir import OpBuilder, Const, OConst
+
+def run(func, env):
     """
-    Rewrite 'return x' to 'return (restype) x'
+    Turn `convert` ops into calls to coerce().
     """
+    from numba2.runtime.coercion import coerce
+
     if env['numba.state.opaque']:
-        return
+        return # TODO: @no_opaque decorator...
 
-    restype = func.type.restype
-    context = env['numba.typing.context']
+    context = env["numba.typing.context"]
+    envs = env["numba.state.envs"]
 
-    b = Builder(func)
+    builder = OpBuilder()
+    caller = Caller(builder, context)
+
     for op in func.ops:
-        if op.opcode != 'ret' or op.args[0] is None:
-            continue
+        if op.opcode == 'coerce':
+            [arg] = op.args
 
-        [retval] = op.args
-        if retval.type != restype:
-            b.position_before(op)
-            converted = b.convert(restype, retval)
-            op.set_args([converted])
+            dst_type = context[op]
+            src_type = context[arg]
 
-            # Update type context
-            context[converted] = context[retval]
+            if src_type == dst_type:
+                continue
+
+            type_argtype = numba2.Type[dst_type]
+            type_arg = OConst(dst_type)
+            context[type_arg] = type_argtype
+
+            call = caller.call(numba2.phase.typing, coerce, [arg, type_arg],
+                               result=op.result)
+            op.replace(call)

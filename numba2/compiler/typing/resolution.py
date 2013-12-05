@@ -91,7 +91,6 @@ def infer_foreign_call(func, func_type, argtypes):
     """
     Higher-order or foreign function call.
     """
-
     if isinstance(func_type, type(ForeignFunction.type)):
         restype = func_type.parameters[-1]
     else:
@@ -190,5 +189,9 @@ def resolve_restype(func, env):
                 "Annotated result type %s does not match inferred "
                 "type %s for function %r: %s" % (
                     restype, inferred_restype, func.name, e))
+
+    if isinstance(restype, set):
+        raise TypeError(
+            "Undetermined return type for function %s" % (func.name,))
 
     env['numba.typing.restype'] = restype

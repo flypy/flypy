@@ -10,6 +10,7 @@ from .boolobject import Bool
 from .intobject import Int
 from .floatobject import Float
 from .complexobject import Complex
+from .sliceobject import Slice
 from .tupleobject import Tuple, StaticTuple, GenericTuple
 from .listobject import List
 from .rangeobject import Range

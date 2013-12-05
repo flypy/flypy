@@ -106,8 +106,12 @@ def fromctypes(value, ty, memo=None):
 
     if memo is None:
         memo = {}
-    if id(value) in memo:
-        return memo[id(value)]
+
+    # NOTE: This cache doesn't work by hashing on ids, since ctypes values
+    # are transient.
+
+    #if id(value) in memo:
+    #    return memo[id(value)]
 
     cls = ty.impl
     if hasattr(cls, 'fromctypes'):
@@ -132,7 +136,7 @@ def fromctypes(value, ty, memo=None):
 
         result = cls(**values)
 
-    memo[id(value)] = result
+    #memo[id(value)] = result
     return result
 
 def ctype(type, memo=None):

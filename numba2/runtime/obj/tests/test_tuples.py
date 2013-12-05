@@ -63,13 +63,55 @@ class TestSmallTuple(unittest.TestCase):
 
 class TestJitTuple(unittest.TestCase):
 
-    def test_jit_smalltup(self):
+    def test_getitem(self):
         @jit
         def f(a, b):
             t = (a, b)
             return t[1]
 
         self.assertEqual(f(5, 6), 6)
+
+    def test_getitem_slice(self):
+        @jit
+        def f(t, s):
+            return t[s]
+
+        def test(t, s):
+            self.assertEqual(f(t, s), t[s])
+
+        t = (1, 2, 3)
+
+        # Full
+        test(t, slice(None, None, None))
+
+        # TODO: implement tuple slicing
+
+        ## Start
+        #test(t, slice(1,    None, None))
+        #test(t, slice(3,    None, None))
+        #test(t, slice(10,   None, None))
+        #test(t, slice(-1,   None, None))
+        #test(t, slice(-6,   None, None))
+        #
+        ## Stop
+        #test(t, slice(None, 1,    None))
+        #test(t, slice(None, 3,    None))
+        #test(t, slice(None, 5,    None))
+        #test(t, slice(None, -1,   None))
+        #test(t, slice(None, -5,   None))
+        #
+        ## Step
+        #test(t, slice(None, None, 1))
+        #test(t, slice(None, None, 2))
+        #test(t, slice(None, None, 5))
+        #test(t, slice(None, None, -1))
+        #test(t, slice(None, None, -5))
+        #
+        ## Combination
+        #test(t, slice(1, 2, 1))
+        #test(t, slice(-2, None, None))
+        #test(t, slice(None, None, 5))
+        #test(t, slice(-1, -1, -1))
 
     def test_len(self):
         raise unittest.SkipTest
