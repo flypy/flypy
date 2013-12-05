@@ -6,6 +6,7 @@ Hacks that should go away when we have more powerful constructs.
 
 from __future__ import print_function, division, absolute_import
 from numba2 import jit
+from numba2.runtime.obj.core import NoneType
 
 # -- choice -- #
 

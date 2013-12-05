@@ -8,6 +8,13 @@ from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof, parse
 from .arrayobject import Array, Dimension, EmptyDim
+from numba2.runtime.obj.core import head, tail, NoneType
+
+import numpy as np
+
+#===------------------------------------------------------------------===
+# Vectorize
+#===------------------------------------------------------------------===
 
 def vectorize(py_func, signatures, **kwds):
     signature = parse(signatures[0])
@@ -22,7 +29,7 @@ def make_ndmap(py_func, nargs):
     raise NotImplementedError("This will be messy")
 
 #===------------------------------------------------------------------===
-# broadcasting
+# Broadcasting
 #===------------------------------------------------------------------===
 
 @jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> r')
@@ -72,6 +79,28 @@ def raise_level(dims, missing):
 # test
 #===------------------------------------------------------------------===
 
+# -- Some testing code -- #
+
 @jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> r')
 def add(a, b):
-    return broadcast(a, b)
+    arrays = broadcast(a, b)
+    a = head(arrays)
+    b = head(tail(arrays))
+    out = np.empty_like(a, dtype=unify(a.dtype, b.dtype))
+    _add(a, b)
+    return out
+
+@jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> Array[dtype3, dims3] -> r')
+def _add(a, b, out):
+    for i in range(len(out)):
+        _add(a[i], b[i], out[i])
+
+@jit
+def _add(a, b, out):
+    for i in range(len(out)):
+        out[i] = a[i] + b[i]
+
+
+@jit('Type[a] -> Type[a] -> Type[a]')
+def unify(t1, t2):
+    return t1
