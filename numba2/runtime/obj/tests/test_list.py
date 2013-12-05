@@ -126,6 +126,17 @@ class TestList(unittest.TestCase):
 
         self.assertEqual(count([2+2j, 7+1j, 4+2j, 4+2j, 3+1j, 4+2j]), 3)
 
+    def test_iter(self):
+        raise unittest.SkipTest
+
+        @jit
+        def iterate(lst1, lst2):
+            for x in lst1:
+                lst2.append(x)
+            return lst2
+
+        self.assertEqual(iterate(range(5), [-1]), range(-1, 5))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=3)

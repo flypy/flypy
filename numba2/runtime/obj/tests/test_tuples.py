@@ -9,6 +9,8 @@ from numba2.runtime.obj.tupleobject import StaticTuple, EmptyTuple, NoneType
 from numba2.conversion import fromobject, toobject, toctypes
 from numba2.support.ctypes_support import CTypesStruct
 
+import numpy as np
+
 none = NoneType()
 
 def tonb(tup):
@@ -114,20 +116,34 @@ class TestJitTuple(unittest.TestCase):
         #test(t, slice(-1, -1, -1))
 
     def test_len(self):
-        raise unittest.SkipTest
         @jit
         def f(t):
             return len(t)
-        self.assertTrue(f(()), 0)
-        self.assertFalse(f((1, 2, 3)), 3)
+
+        self.assertEqual(f(()), 0)
+        self.assertEqual(f((1, 2, 3)), 3)
 
     def test_bool(self):
-        raise unittest.SkipTest
+        #raise unittest.SkipTest
         @jit
         def f(t):
             return bool(t)
-        self.assertTrue(f(()), False)
-        self.assertFalse(f((1, 2, 3)), True)
+
+        self.assertFalse(f(()))
+        self.assertTrue(f((1, 2, 3)))
+
+    def test_iter(self):
+        @jit
+        def f(t, array):
+            i = 0
+            for x in t:
+                array[i] = x
+                i += 1
+            return a
+
+        a = np.empty(3, dtype=np.int64)
+        result = f((4, 9, 17), a)
+        self.assertEqual(list(result), [4, 9, 17])
 
 
 if __name__ == '__main__':

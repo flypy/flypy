@@ -11,6 +11,7 @@ from numba2.conversion import toobject, fromobject, toctypes
 from .typeobject import Type
 from .pointerobject import Pointer
 from .bufferobject import newbuffer, Buffer
+from .iterators import counting_iterator
 
 keepalive = []
 
@@ -60,6 +61,10 @@ class List(object):
             pass
 
         self.buf[key] = value
+
+    @jit #('a -> Iterator[T]')
+    def __iter__(self):
+        return counting_iterator(self)
 
     @jit
     def __len__(self):

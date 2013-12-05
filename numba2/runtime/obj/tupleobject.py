@@ -9,6 +9,7 @@ from __future__ import print_function, division, absolute_import
 from numba2 import jit, sjit, abstract, typeof
 from numba2.conversion import fromobject, toobject
 from .noneobject import NoneType
+from .iterators import counting_iterator
 
 STATIC_THRESHOLD = 8
 
@@ -63,11 +64,9 @@ class StaticTuple(Tuple):
         else:
             return self.tl[item - 1]
 
-    @jit('a -> Iterator[T]')
+    @jit #('a -> Iterator[T]')
     def __iter__(self):
-        yield self.hd
-        for x in self.tl:
-            yield x
+        return counting_iterator(self)
 
     @jit('a -> int64')
     def __len__(self):
@@ -95,10 +94,6 @@ class StaticTuple(Tuple):
     @jit('a -> a -> bool')
     def __eq__(self, other):
         return self.hd == other.hd and self.tl == other.tl
-
-    @jit('a -> bool')
-    def __nonzero__(self):
-        return bool(len(self))
 
     @jit('a -> str')
     def __repr__(self):
