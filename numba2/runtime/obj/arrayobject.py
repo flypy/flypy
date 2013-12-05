@@ -220,9 +220,6 @@ class DimensionContig(Dimension):
         dims = DimensionContig(array.dims, extent, stride)
         return Array(array.data, dims)
 
-    @jit('s -> Pointer[a] -> EmptyTuple[] -> r')
-    def index(self, p, indices):
-        return Array(p, self)
 
 @sjit
 class EmptyDim(object):

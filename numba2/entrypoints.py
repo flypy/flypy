@@ -71,11 +71,36 @@ def jit_class(cls, signature=None, abstract=False, stackallocate=False, scope=No
     if not abstract:
         patch_class(cls)
 
-    for base in cls.__mro__:
-        copy_methods(cls, base)
+    #print(cls)
+    for base in cls.__mro__[1:]:
+        #print('-base', base)
+        if isinstance(base, MetaType):
+            #print('--overload')
+            overload_methods(cls, base)
+        else:
+            copy_methods(cls, base)
+
 
     return MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
 
+def overload_methods(cls, base):
+    import inspect
+    from numba2.functionwrapper import FunctionWrapper
+    for attr, method in inspect.getmembers(base):
+        if isinstance(method, FunctionWrapper):
+            if not method.abstract:
+                if attr not in vars(cls):
+                    # Copy method if not present
+                    setattr(cls, attr, method.copy())
+                elif attr[0] != '_':
+                    # NOTE: contains awful hacks to make signature comparsion
+                    #       works
+                    # Get overload from parent
+                    childmeth = getattr(cls, attr)
+                    knownsig = [str(s) for _, s, _ in childmeth.overloads]
+                    for func, signature, kwds in method.overloads:
+                        if str(signature) not in knownsig:
+                            childmeth.overload(func, signature, **kwds)
 
 @applyable_decorator
 def abstract(f, *args, **kwds):
