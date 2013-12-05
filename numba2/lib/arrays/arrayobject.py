@@ -14,6 +14,7 @@ from numba2.runtime.obj.core import (Type, Pointer, StaticTuple, address,
                                      Buffer, Slice, NoneType,
                                      fromseq, head, tail, EmptyTuple)
 from numba2.runtime.lib import libcpy
+from numba2.runtime.hacks import choose
 
 import numpy as np
 
@@ -37,8 +38,7 @@ class Array(object):
 
     @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
     def __getitem__(self, indices):
-        result = self.dims.index(self.data, indices, self.dtype)
-        result = _unpack(result)
+        result = _unpack(self._index(indices))
         return result
 
     @jit('Array[dtype, dims] -> int64 -> r')
@@ -51,7 +51,7 @@ class Array(object):
 
     @jit('Array[dtype, dims] -> StaticTuple[a, b] -> dtype -> void')
     def __setitem__(self, indices, value):
-        result = self.dims.index(self.data, indices, self.dtype)
+        result = self._index(indices)
         fill(result, value)
 
     @jit('Array[dtype, dims] -> int64 -> dtype -> void')
@@ -67,7 +67,23 @@ class Array(object):
     def __len__(self):
         return self.dims.extent
 
-    # ---------------------------------------
+    @jit
+    def getshape(self):
+        # TODO: properties
+        return _getshape(self.dims)
+
+    @jit
+    def getsteps(self):
+        # TODO: properties
+        return _getsteps(self.dims)
+
+    # -- Private -- #
+
+    @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
+    def _index(self, indices):
+        return self.dims.index(self.data, indices, self.dtype)
+
+    # -- Numba <-> Python -- #
 
     @classmethod
     def fromobject(cls, ndarray, ty):
@@ -84,7 +100,6 @@ class Array(object):
 #===------------------------------------------------------------------===
 # Indexing
 #===------------------------------------------------------------------===
-
 
 @sjit('Dimension[base]')
 class Dimension(object):
