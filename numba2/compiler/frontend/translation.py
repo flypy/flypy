@@ -686,6 +686,30 @@ class Translate(object):
         tos = self.pop()
         self.call(operator.getitem, args=(tos, self.slice(start, stop)))
 
+    def op_STORE_SLICE_0(self, inst):
+        tos = self.pop()
+        val = self.pop()
+        self.call_pop(operator.setitem, args=(tos, self.slice(), val))
+
+    def op_STORE_SLICE_1(self, inst):
+        start = self.pop()
+        tos = self.pop()
+        val = self.pop()
+        self.call_pop(operator.setitem, args=(tos, self.slice(start=start), val))
+
+    def op_STORE_SLICE_2(self, inst):
+        stop = self.pop()
+        tos = self.pop()
+        val = self.pop()
+        self.call_pop(operator.setitem, args=(tos, self.slice(stop=stop), val))
+
+    def op_STORE_SLICE_3(self, inst):
+        stop = self.pop()
+        start = self.pop()
+        tos = self.pop()
+        val = self.pop()
+        self.call_pop(operator.setitem, args=(tos, self.slice(start, stop), val))
+
     def op_BUILD_SLICE(self, inst):
         argc = inst.arg
         tos = [self.pop() for _ in range(argc)]

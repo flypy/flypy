@@ -58,6 +58,10 @@ class Array(object):
     def __setitem__(self, item, value):
         self[(item,)] = value
 
+    @jit('Array[dtype, dims] -> Slice[start, stop, step] -> dtype -> void')
+    def __setitem__(self, item, value):
+        self[(item,)] = value
+
     @jit #('Array[a, n] -> Iterable[a]')
     def __iter__(self):
         for i in range(len(self)):
@@ -70,12 +74,12 @@ class Array(object):
     @jit
     def getshape(self):
         # TODO: properties
-        return _getshape(self.dims)
+        return getshape(self.dims)
 
     @jit
     def getsteps(self):
         # TODO: properties
-        return _getsteps(self.dims)
+        return getsteps(self.dims)
 
     # -- Private -- #
 
@@ -96,6 +100,25 @@ class Array(object):
     def toobject(cls, obj, ty):
         dtype, dimtype = ty.parameters
         return tonumpy(obj, dtype)
+
+# ------------- Helpers ------------- #
+
+@jit('Dimension[base] -> a')
+def getshape(dim):
+    return StaticTuple(dim.extent, getshape(dim.base))
+
+@jit('EmptyDim[] -> a')
+def getshape(dim):
+    return EmptyTuple()
+
+
+@jit('Dimension[base] -> a')
+def getsteps(dim):
+    return StaticTuple(dim.stride, getsteps(dim.base))
+
+@jit('EmptyDim[] -> a')
+def getsteps(dim):
+    return EmptyTuple()
 
 #===------------------------------------------------------------------===
 # Indexing
