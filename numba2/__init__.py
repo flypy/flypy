@@ -29,6 +29,9 @@ from .runtime import mathlib
 from .pipeline.passes import translate
 from .errors import error, InferError, SpecializeError
 
+# Initialize non-core data structures
+from .lib import extended
+
 __version__ = '0.1'
 
 # ______________________________________________________________________

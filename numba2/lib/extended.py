@@ -5,8 +5,7 @@ Re-export extended objects not defined in core
 from __future__ import print_function, division, absolute_import
 
 from .pyobject import Object
-from . import exceptions
-from .arrayobject import Array
+from .arrays.arrayobject import Array, Dimension, EmptyDim
 try:
     from .decimalobject import decimal
 except ImportError:

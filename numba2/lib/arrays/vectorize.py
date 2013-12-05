@@ -7,7 +7,7 @@ numba.vectorize().
 from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof, parse
-from numba2.runtime.obj.arrayobject import Array, Dimension, EmptyDim
+from .arrayobject import Array, Dimension, EmptyDim
 
 def vectorize(py_func, signatures, **kwds):
     signature = parse(signatures[0])

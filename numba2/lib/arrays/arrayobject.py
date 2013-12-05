@@ -10,11 +10,10 @@ import numba2
 from numba2 import jit, sjit, ijit, typeof
 from numba2.support import numpy_support
 from numba2.conversion import fromobject, toobject
-from .core import Type, Pointer, StaticTuple, address, Buffer, Slice, NoneType
-from .extended import Object
-from .bufferobject import fromseq
-from .tupleobject import head, tail, EmptyTuple
-from ..lib import libcpy
+from numba2.runtime.obj.core import (Type, Pointer, StaticTuple, address,
+                                     Buffer, Slice, NoneType,
+                                     fromseq, head, tail, EmptyTuple)
+from numba2.runtime.lib import libcpy
 
 import numpy as np
 

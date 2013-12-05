@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from numba2 import jit
-from numba2.runtime.operators.vectorize import broadcast
+from numba2.lib.arrays.vectorize import broadcast
 
 import numpy as np
 
