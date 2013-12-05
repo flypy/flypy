@@ -45,13 +45,13 @@ def _broadcast(a, b, array1, array2):
 def _broadcast(a, b, array1, array2):
     # LHS has more dims, patch RHS with extra dimensions
     dims2 = raise_level(array2.dims, a)
-    return (array1, Array(array2.data, dims2))
+    return (array1, Array(array2.data, dims2, array2.dtype))
 
 @jit('EmptyDim[] -> Dimension[base] -> a -> b ->r')
 def _broadcast(a, b, array1, array2):
     # RHS has more dims, patch LHS with extra dimensions
     dims1 = raise_level(array1.dims, b)
-    return (Array(array1.data, dims1), array2)
+    return (Array(array1.data, dims1, array1.dtype), array2)
 
 # -- broadcast helper -- #
 

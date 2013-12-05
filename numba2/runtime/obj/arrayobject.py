@@ -30,14 +30,15 @@ class Array(object):
 
     layout = [
         ('data', 'Pointer[a]'),
-        ('dims', 'dims')
+        ('dims', 'dims'),
+        ('dtype', 'Type[a]'),
     ]
 
     # ---------------------------------------
 
     @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
     def __getitem__(self, indices):
-        result = self.dims.index(self.data, indices)
+        result = self.dims.index(self.data, indices, self.dtype)
         result = _unpack(result)
         return result
 
@@ -51,7 +52,7 @@ class Array(object):
 
     @jit('Array[dtype, dims] -> StaticTuple[a, b] -> dtype -> void')
     def __setitem__(self, indices, value):
-        result = self.dims.index(self.data, indices)
+        result = self.dims.index(self.data, indices, self.dtype)
         fill(result, value)
 
     @jit('Array[dtype, dims] -> int64 -> dtype -> void')
@@ -72,7 +73,7 @@ class Array(object):
     @classmethod
     def fromobject(cls, ndarray, ty):
         if isinstance(ndarray, np.ndarray):
-            return fromnumpy(ndarray)
+            return fromnumpy(ndarray, ty)
         else:
             raise NotImplementedError("Array.fromobject(%s, %s)" % (ndarray, ty))
 
@@ -112,17 +113,18 @@ class Dimension(object):
 
     layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
 
-    @jit('Dimension[base] -> Pointer[a] -> StaticTuple[x : integral, y] -> r')
-    def index(self, p, indices):
+    @jit('Dimension[base] -> Pointer[a] -> '
+         'StaticTuple[x : integral, y] -> Type[a] -> r')
+    def index(self, p, indices, dtype):
         idx = head(indices)
         #if idx < 0 or idx > self.extent:
         #    print("Index out of bounds!")
         #    return self.base.index(p, tail(indices))
-        return self.base.index(p + idx * self.stride, tail(indices))
+        return self.base.index(p + idx * self.stride, tail(indices), dtype)
 
     @jit('Dimension[base] -> Pointer[a] -> '
-         'StaticTuple[Slice[start, stop, step], y] -> r')
-    def index(self, p, indices):
+         'StaticTuple[Slice[start, stop, step], y] -> Type[a] -> r')
+    def index(self, p, indices, dtype):
         # TODO: wraparound
         s = head(indices)
 
@@ -159,21 +161,23 @@ class Dimension(object):
         if s.step is not None:
             stride *= step
 
-        array = self.base.index(data, tail(indices))
+        array = self.base.index(data, tail(indices), dtype)
         dims = Dimension(array.dims, extent, stride)
-        return Array(array.data, dims)
+        return Array(array.data, dims, dtype)
 
-    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> r')
-    def index(self, p, indices):
-        return Array(p, self)
+    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Type[a] -> r')
+    def index(self, p, indices, dtype):
+        return Array(p, self, dtype)
+
 
 @sjit
 class EmptyDim(object):
     layout = []
 
-    @jit('empty -> Pointer[a] -> EmptyTuple[] -> Array[a, empty]')
-    def index(self, p, indices):
-        return Array(p, self)
+    @jit('empty -> Pointer[a] -> EmptyTuple[] -> Type[a] -> Array[a, empty]')
+    def index(self, p, indices, dtype):
+        return Array(p, self, dtype)
+
 
 @sjit('BoundsCheck[base]')
 class BoundsCheck(object):
@@ -184,10 +188,10 @@ class BoundsCheck(object):
     layout = [('base', 'base')]
 
     @jit
-    def index(self, p, indices):
+    def index(self, p, indices, dtype):
         idx = head(indices)
         if 0 <= idx < self.base.extent:
-            return self.base.index(p, indices)
+            return self.base.index(p, indices, dtype)
 
         # TODO: Exceptions
         print("Index out of bounds: index", end="")
@@ -196,7 +200,7 @@ class BoundsCheck(object):
 
     #@jit('BoundsCheck[EmptyTuple[]] -> a -> b -> c')
     #def index(self, p, indices):
-    #    return self.base.index(p, indices)
+    #    return self.base.index(p, indices, dtype)
 
     # TODO: Support properties to allow composing BoundsCheck/WrapAround
 
@@ -235,14 +239,14 @@ def fill(array, value):
 def fill(array, value):
     """Fill an ND-array with N > 0"""
     for i in range(len(array)):
-        subarray = array.dims.index(array.data, (i,))
+        subarray = array.dims.index(array.data, (i,), array.dtype)
         fill(subarray, value)
 
 #===------------------------------------------------------------------===
 # Conversion
 #===------------------------------------------------------------------===
 
-def fromnumpy(ndarray, boundscheck=False):
+def fromnumpy(ndarray, ty, boundscheck=False):
     """Build an Array from a numpy ndarray"""
     # Compute steps
     itemsize = ndarray.dtype.itemsize
@@ -271,7 +275,8 @@ def fromnumpy(ndarray, boundscheck=False):
         if boundscheck:
             dims = BoundsCheck(dims)
 
-    return Array(data, dims)
+    base_type = ty.parameters[0]
+    return Array(data, dims, base_type)
 
 def tonumpy(arr, dtype):
     """Build an Array from a numpy ndarray"""
