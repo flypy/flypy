@@ -31,7 +31,7 @@ def rewrite_calls(func, env):
 
             # Retrieve typed function from the given arg types
             argtypes = [context[a] for a in args]
-            typed_func, _, _ = infer_call(f, signature, argtypes)
+            typed_func, _, _ = infer_call(f, signature, argtypes, env)
 
             if is_method(signature):
                 # Insert self in args list

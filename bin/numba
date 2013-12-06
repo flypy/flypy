@@ -19,10 +19,10 @@ from pykit.ir.verification import verify
 # ______________________________________________________________________
 
 def run(filename, cmdopts):
-    root_env = dict(environment.root_env)
+    root_env = dict(environment.cpu_env)
     root_env['numba.cmdopts'].update(cmdopts)
     root_env['numba.script'] = True
-    environment.root_env = utils.FrozenDict(root_env)
+    environment.cpu_env = utils.FrozenDict(root_env)
 
     modname, ext = splitext(dirname(filename))
     globals = { '__file__': '__main__', '__name__': modname }

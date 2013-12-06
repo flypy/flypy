@@ -89,63 +89,72 @@ class FunctionWrapper(object):
 
     def translate(self, argtypes, target='cpu'):
 
-        key = tuple(argtypes)
+        key = tuple(argtypes), target
         if key in self.ctypes_funcs:
             env = self.envs[key]
             return self.ctypes_funcs[key], env["numba.typing.restype"]
 
         # Translate
-        llvm_func, env = self.do_lower(target, argtypes)
+        llvm_func, env = self._do_lower(target, argtypes)
         cfunc = env["codegen.llvm.ctypes"]
 
         # Cache
         self.llvm_funcs[key] = llvm_func
-        self.ctypes_funcs[key] = cfunc
+        if cfunc is not None:
+            self.ctypes_funcs[key] = cfunc
         self.envs[key] = env
 
         return cfunc, env["numba.typing.restype"]
 
-    def do_lower(self, target, argtypes):
+    def _do_lower(self, target, argtypes):
         from .pipeline import phase, environment
-
-        # TODO refactor this to a separate system for easier target extension
-        if target == 'cpu':
-            env = environment.fresh_env(self, argtypes)
-            llvm_func, env = phase.codegen(self, env)
-        elif target == 'dpp':
-            env = environment.fresh_dpp_env(self, argtypes)
-            llvm_func, env = phase.dpp_codegen(self, env)
+        env = environment.fresh_env(self, argtypes, target)
+        llvm_func, env = phase.codegen(self, env)
         return llvm_func, env
 
     def link(self, argtypes, target):
-        key = tuple(argtypes)
+        key = tuple(argtypes), target
         env = self.envs[key]
-        llvm_func = self.do_linkage(env)
-        return llvm_func
+        module = self._do_linkage(env)
+        return module
 
-    def do_linkage(self, env):
+    def _do_linkage(self, env):
         target = env["numba.target"]
+        envs = env["numba.state.envs"]
         thismod = env["codegen.llvm.module"]
-        dependences = env["numba.dependences"]
-        for dep in dependences:
+        depfuncs= env["numba.dependences"]
+        depenvs = [envs[f] for f in depfuncs]
+        for dep in depenvs:
             if dep["numba.target"] != target:
                 raise AssertionError("Mismatching target")
 
-        depmods = [dep["codegen.llvm.module"]
-                   for dep in dependences]
+        depmods = []
+        for dep in depenvs:
+            fw = dep['numba.state.function_wrapper']
+            if fw is not self:
+                mod = fw._do_linkage(dep)
+                depmods.append(mod)
 
+        # Link every dependence module
         for m in depmods:
-            if m is not thismod:
-                thismod.link_in(m, preserve=True)
+            thismod.link_in(m, preserve=True)
+
         thismod.verify()
+        return thismod
+
+    def static_compile(self, argtypes, target):
+        self.translate(argtypes, target='dpp')
+        module = self.link(argtypes, 'dpp')
+        return module
 
     def overload(self, py_func, signature, **kwds):
         overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
 
-    def get_llvm_func(self, argtypes):
+    def get_llvm_func(self, argtypes, target):
         """Get the LLVM function object for the argtypes.
         """
-        return self.llvm_funcs[tuple(argtypes)]
+        key = tuple(argtypes), target
+        return self.llvm_funcs[key]
 
     @property
     def signatures(self):

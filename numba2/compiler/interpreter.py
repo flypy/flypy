@@ -53,7 +53,7 @@ def op_call(run_phase, typeof_func, interp, func, args):
             argtypes.append(typeof(arg))
 
         # Compile function
-        env = environment.fresh_env(func, argtypes)
+        env = environment.fresh_env(func, argtypes, target="cpu")
 
         if wrapper.opaque and run_phase == phase.translation:
             func = implement(wrapper, wrapper.py_func, tuple(argtypes), env)
@@ -186,7 +186,7 @@ def interpret(nb_func, run_phase, args, debug=False, tracer=None):
     """Interpret and return result"""
     # Translate numba function
     argtypes = [typeof(arg) for arg in args]
-    env = environment.fresh_env(nb_func, argtypes)
+    env = environment.fresh_env(nb_func, argtypes, target="cpu")
     f, env = run_phase(nb_func, env)
 
     if debug:

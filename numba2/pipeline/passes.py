@@ -6,7 +6,9 @@ Numba passes that perform translation, type inference, code generation, etc.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
+from numba2.compiler.backend import (lltyping, llvm, lowering,
+                                     rewrite_lowlevel_constants)
+from numba2.compiler.analysis import dependence_analysis
 from numba2.compiler.frontend import translate, simplify_exceptions, scoping
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
@@ -58,16 +60,19 @@ typing = [
     rewrite_externs,
     rewrite_constants,
     rewrite_obj_return,
+    dependence_analysis,
 ]
 
 optimizations = [
     dce,
     #dataflow,
     optimize,
+    dependence_analysis,
 ]
 
 prelowering = [
     lltyping,
+    dependence_analysis,
 ]
 
 lowering = [
@@ -76,6 +81,7 @@ lowering = [
     throwing.rewrite_local_exceptions,
     rewrite_lowlevel_constants,
     #lowering.lower_fields,
+    dependence_analysis,
 ]
 
 backend_init = [

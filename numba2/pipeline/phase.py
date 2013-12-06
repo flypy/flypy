@@ -65,8 +65,8 @@ def starcompose(f, g):
 def _cache_key(func, env):
     return (func, tuple(env["numba.typing.argtypes"]))
 
-def _deps(func):
-    return callgraph.callgraph(func).node
+#def _deps(func):
+#    return callgraph.callgraph(func).node
 
 # ______________________________________________________________________
 # Individual phases
@@ -111,7 +111,7 @@ def typing_phase(func, env, passes=typing):
 def optimization_phase(func, env, passes=optimizations, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
-        dependences = _deps(func)
+        dependences = env["numba.dependences"]
 
     for f in dependences:
         if f != func:
@@ -124,7 +124,7 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
 def prelowering_phase(func, env, passes=prelowering, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
-        dependences = _deps(func)
+        dependences = env["numba.dependences"]
 
     for f in dependences:
         if f != func:
@@ -137,7 +137,7 @@ def prelowering_phase(func, env, passes=prelowering, dependences=None):
 def lowering_phase(func, env, passes=lowering, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
-        dependences = _deps(func)
+        dependences = env["numba.dependences"]
 
     for f in dependences:
         if f != func:
@@ -147,13 +147,15 @@ def lowering_phase(func, env, passes=lowering, dependences=None):
     return func, env
 
 def codegen_phase(func, env):
+    assert env['numba.target'] == 'cpu'
     cache = env['numba.codegen.cache']
     envs = env["numba.state.envs"]
 
     if func in cache:
         return cache[func]
 
-    dependences = [d for d in _deps(func) if d not in cache]
+    dependences = [d for d in env['numba.dependences']
+                   if d not in cache]
 
     for f in dependences:
         run_pipeline(f, envs[f], backend_init)
@@ -163,6 +165,7 @@ def codegen_phase(func, env):
         e = envs[f]
         lfunc = e["numba.state.llvm_func"]
         run_pipeline(lfunc, envs[f], backend_finalize)
+
         cache.insert(f, (lfunc, e))
 
     return env["numba.state.llvm_func"], env
@@ -202,25 +205,26 @@ typing = phasecompose(typing_phase, translation)
 opt = phasecompose(optimization_phase, typing)
 prelower = phasecompose(prelowering_phase, opt)
 lower = phasecompose(lowering_phase, prelower)
-codegen = phasecompose(codegen_phase, lower)
+cpu_codegen = phasecompose(codegen_phase, lower)
 
 # ______________________________________________________________________
 # Data Parallel Python Specifics
 
 def dpp_codegen_phase(func, env):
     from pykit.codegen.llvm import llvm_utils
+    assert env['numba.target'] == 'dpp'
     cache = env['numba.codegen.cache']
     envs = env["numba.state.envs"]
 
     if func in cache:
         return cache[func]
 
-    dependences = [d for d in _deps(func) if d not in cache]
+    dependences = [d for d in env['numba.dependences']
+                   if d not in cache]
 
     for f in dependences:
         localenv = envs[f]
         localenv['codegen.llvm.module'] = llvm_utils.module("tmp.%x" % id(f))
-        localenv["numba.target"] = "dpp"   # TODO should go earlier
         run_pipeline(f, envs[f], backend_init)
 
     for f in dependences:
@@ -232,10 +236,9 @@ def dpp_codegen_phase(func, env):
         run_pipeline(lfunc, envs[f], dpp_backend_finalize)
         cache.insert(f, (lfunc, e))
 
-    env["numba.dependences"] = [envs[f] for f in dependences]
     return env["numba.state.llvm_func"], env
 
-dpp_lower = phasecompose(lowering_phase, prelower)
+dpp_lower = lower  # share cpu lowering for now
 dpp_codegen = phasecompose(dpp_codegen_phase, dpp_lower)
 
 
@@ -248,7 +251,7 @@ phases = {
     "typing":       typing,
     "opt":          opt,
     "lower":        lower,
-    "codegen":      codegen,
+    "codegen":      cpu_codegen,
 }
 
 # ______________________________________________________________________
@@ -257,3 +260,15 @@ phases = {
 def apply_phase(phase, nb_func, argtypes):
     env = fresh_env(nb_func, argtypes)
     return phase(nb_func, env)
+
+# ______________________________________________________________________
+# Codegen
+
+_target_codegen_map = {
+    'cpu': cpu_codegen,
+    'dpp': dpp_codegen,
+}
+
+def codegen(func, env):
+    return _target_codegen_map[env['numba.target']](func, env)
+

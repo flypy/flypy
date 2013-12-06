@@ -137,7 +137,7 @@ def infer(cache, func, env, argtypes):
     if env["numba.state.opaque"]:
         ctx = infer_opaque(func, env, argtypes)
     else:
-        ctx = infer_function(cache, func, argtypes)
+        ctx = infer_function(cache, func, argtypes, env)
 
     # -------------------------------------------------
     # Cache result
@@ -162,7 +162,7 @@ def infer_opaque(func, env, argtypes):
     envs[func] = env
     return ctx
 
-def infer_function(cache, func, argtypes):
+def infer_function(cache, func, argtypes, env):
     # -------------------------------------------------
     # Build template
 
@@ -177,7 +177,7 @@ def infer_function(cache, func, argtypes):
     # Infer typing context
 
     seed_context(ctx, argtypes)
-    infer_graph(cache, ctx)
+    infer_graph(cache, ctx, env)
     return ctx
 
 # ______________________________________________________________________
@@ -363,7 +363,7 @@ class ConstraintGenerator(object):
 
 # ______________________________________________________________________
 
-def infer_graph(cache, ctx):
+def infer_graph(cache, ctx, env):
     """
     infer_graph(G, context, constraints)
 
@@ -377,6 +377,8 @@ def infer_graph(cache, ctx):
         Γ mapping Ops to type sets
     constraints: dict
         maps nodes (Ops) from the graph to the constraints the node represents
+    env : dict
+        compiler environment
 
     Constaints include:
 
@@ -391,12 +393,12 @@ def infer_graph(cache, ctx):
 
     while W:
         node = W.popleft()
-        changed = infer_node(cache, ctx, node)
+        changed = infer_node(cache, ctx, node, env)
         if changed:
             for neighbor in ctx.graph.neighbors(node):
                 W.appendleft(neighbor)
 
-def infer_node(cache, ctx, node):
+def infer_node(cache, ctx, node, env):
     """Infer types for a single node"""
     changed = False
     C = ctx.constraints.get(node, 'flow')
@@ -460,7 +462,8 @@ def infer_node(cache, ctx, node):
                     key = (node, func_type, tuple(arg_types))
                     if key not in processed:
                         processed.add(key)
-                        _, signature, result = infer_call(func, func_type, arg_types)
+                        _, signature, result = infer_call(func, func_type,
+                                                          arg_types, env)
                         if isinstance(result, TypeVar):
                             raise TypeError("Expected a concrete type result, "
                                             "not a type variable! (%s)" % (func,))
