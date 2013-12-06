@@ -111,7 +111,7 @@ def typing_phase(func, env, passes=typing):
 def optimization_phase(func, env, passes=optimizations, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
-        dependences = env["numba.dependences"]
+        dependences = env["numba.state.dependences"]
 
     for f in dependences:
         if f != func:
@@ -124,7 +124,7 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
 def prelowering_phase(func, env, passes=prelowering, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
-        dependences = env["numba.dependences"]
+        dependences = env["numba.state.dependences"]
 
     for f in dependences:
         if f != func:
@@ -137,7 +137,7 @@ def prelowering_phase(func, env, passes=prelowering, dependences=None):
 def lowering_phase(func, env, passes=lowering, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
-        dependences = env["numba.dependences"]
+        dependences = env["numba.state.dependences"]
 
     for f in dependences:
         if f != func:
@@ -154,7 +154,7 @@ def codegen_phase(func, env):
     if func in cache:
         return cache[func]
 
-    dependences = [d for d in env['numba.dependences']
+    dependences = [d for d in env['numba.state.dependences']
                    if d not in cache]
 
     for f in dependences:
@@ -219,7 +219,7 @@ def dpp_codegen_phase(func, env):
     if func in cache:
         return cache[func]
 
-    dependences = [d for d in env['numba.dependences']
+    dependences = [d for d in env['numba.state.dependences']
                    if d not in cache]
 
     for f in dependences:

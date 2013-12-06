@@ -41,6 +41,7 @@ _cpu_env = {
     'numba.state.copies':       None,
     'numba.state.crnt_func':    None,
     'numba.state.options':      None,
+    'numba.state.dependence':   None,
 
     # GC
     'numba.gc.impl':            "boehm",

@@ -122,8 +122,10 @@ class FunctionWrapper(object):
         target = env["numba.target"]
         envs = env["numba.state.envs"]
         thismod = env["codegen.llvm.module"]
-        depfuncs= env["numba.dependences"]
+        thisfunc = env["numba.state.llvm_func"]
+        depfuncs= env["numba.state.dependences"]
         depenvs = [envs[f] for f in depfuncs]
+
         for dep in depenvs:
             if dep["numba.target"] != target:
                 raise AssertionError("Mismatching target")
@@ -135,11 +137,20 @@ class FunctionWrapper(object):
                 mod = fw._do_linkage(dep)
                 depmods.append(mod)
 
+        # TODO the following are LLVM specific
         # Link every dependence module
         for m in depmods:
             thismod.link_in(m, preserve=True)
 
+        # Fix linkage
+        import llvm.core as lc
+        for f in thismod.functions:
+            if f is not thisfunc:
+                f.linkage = lc.LINKAGE_LINKONCE_ODR
+
         thismod.verify()
+        print('=' * 80)
+        print(thismod)
         return thismod
 
     def static_compile(self, argtypes, target):
