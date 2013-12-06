@@ -14,11 +14,17 @@ from pykit.transform import inline
 # Pass
 #===------------------------------------------------------------------===
 
-def inliner(func, env):
+def run(func, env):
     """
     Inline numba functions with 'inline=True'
     """
+    changed = True
+    while changed:
+        changed = inliner(func, env)
+
+def inliner(func, env):
     envs = env['numba.state.envs']
+    changed = False
 
     for op in func.ops:
         if op.opcode == 'call':
@@ -31,6 +37,9 @@ def inliner(func, env):
                 if options.get('inline'):
                     valuemap = inline.inline(func, op)
                     update_context(env, e, valuemap)
+                    changed = True
+
+    return changed
 
 def update_context(env, callee_env, valuemap):
     """
@@ -46,6 +55,3 @@ def update_context(env, callee_env, valuemap):
     for const, type in callee_context.iteritems():
         if not isinstance(const, Op):
             context[const] = type
-
-
-run = inliner

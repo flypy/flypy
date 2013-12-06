@@ -6,9 +6,11 @@ Numba compiler phases (groupings of passes).
 
 from __future__ import print_function, division, absolute_import
 
+import os
 from functools import partial, wraps
 
 from numba2.compiler.overloading import best_match
+from numba2.viz.viz import dump
 from .pipeline import run_pipeline
 from .passes import (frontend, typing, optimizations, lowering, backend_init,
                      backend_run, backend_finalize)
@@ -64,8 +66,17 @@ def starcompose(f, g):
 def _cache_key(func, env):
     return (func, tuple(env["numba.typing.argtypes"]))
 
-def _deps(func):
-    return callgraph.callgraph(func).node
+def _deps(func, debug=False):
+    graph = callgraph.callgraph(func)
+    if debug:
+        import networkx as nx
+        G = nx.DiGraph()
+        for src in graph.node:
+            for dst in graph.neighbors(src):
+                G.add_edge(src.name, dst.name)
+        dump(G, os.path.expanduser("~/callgraph.dot"))
+
+    return graph.node
 
 # ______________________________________________________________________
 # Individual phases
@@ -125,9 +136,12 @@ def lowering_phase(func, env, passes=lowering, dependences=None):
     if dependences is None:
         dependences = _deps(func)
 
+    # Lower all dependences
     for f in dependences:
         if f != func:
             lowering_phase(f, envs[f], passes, [])
+
+    # Lower function
     run_pipeline(func, env, passes)
 
     return func, env
@@ -139,7 +153,7 @@ def codegen_phase(func, env):
     if func in cache:
         return cache[func]
 
-    dependences = [d for d in _deps(func) if d not in cache]
+    dependences = [d for d in _deps(func, debug=True) if d not in cache]
 
     for f in dependences:
         run_pipeline(f, envs[f], backend_init)
