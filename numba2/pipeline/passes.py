@@ -111,4 +111,3 @@ dpp_backend_finalize = [
 all_passes = [frontend, typing, optimizations, lowering,
               backend_init, backend_run]
 passes = sum(all_passes, [])
-

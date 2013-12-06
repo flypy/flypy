@@ -218,18 +218,21 @@ def dpp_codegen_phase(func, env):
     dependences = [d for d in _deps(func) if d not in cache]
 
     for f in dependences:
-        print('dependency', f)
         localenv = envs[f]
-        localenv['codegen.llvm.module'] = llvm_utils.module("tmp")
+        localenv['codegen.llvm.module'] = llvm_utils.module("tmp.%x" % id(f))
+        localenv["numba.target"] = "dpp"   # TODO should go earlier
         run_pipeline(f, envs[f], backend_init)
+
     for f in dependences:
         run_pipeline(f, envs[f], dpp_backend_run)
+
     for f in dependences:
         e = envs[f]
         lfunc = e["numba.state.llvm_func"]
         run_pipeline(lfunc, envs[f], dpp_backend_finalize)
         cache.insert(f, (lfunc, e))
 
+    env["numba.dependences"] = [envs[f] for f in dependences]
     return env["numba.state.llvm_func"], env
 
 dpp_lower = phasecompose(lowering_phase, prelower)

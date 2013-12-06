@@ -117,6 +117,28 @@ class FunctionWrapper(object):
             llvm_func, env = phase.dpp_codegen(self, env)
         return llvm_func, env
 
+    def link(self, argtypes, target):
+        key = tuple(argtypes)
+        env = self.envs[key]
+        llvm_func = self.do_linkage(env)
+        return llvm_func
+
+    def do_linkage(self, env):
+        target = env["numba.target"]
+        thismod = env["codegen.llvm.module"]
+        dependences = env["numba.dependences"]
+        for dep in dependences:
+            if dep["numba.target"] != target:
+                raise AssertionError("Mismatching target")
+
+        depmods = [dep["codegen.llvm.module"]
+                   for dep in dependences]
+
+        for m in depmods:
+            if m is not thismod:
+                thismod.link_in(m, preserve=True)
+        thismod.verify()
+
     def overload(self, py_func, signature, **kwds):
         overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
 
