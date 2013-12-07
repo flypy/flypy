@@ -13,6 +13,7 @@ from itertools import starmap
 from numba2.rules import typeof
 from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
                                          flatargs)
+from numba2.linker import llvmlinker
 
 # TODO: Reuse numba.numbawrapper.pyx for autojit Python entry points
 
@@ -30,6 +31,7 @@ class FunctionWrapper(object):
 
         self.llvm_funcs = {}
         self.ctypes_funcs = {}
+        self.link_state = {}
         self.envs = {}
 
         self.opaque = opaque
@@ -120,15 +122,20 @@ class FunctionWrapper(object):
 
     def _do_linkage(self, env):
         target = env["numba.target"]
-        envs = env["numba.state.envs"]
         thismod = env["codegen.llvm.module"]
         thisfunc = env["numba.state.llvm_func"]
+        cachekey = target, thisfunc
+        if self.link_state.get(cachekey):
+            return thismod
+
+        envs = env["numba.state.envs"]
         depfuncs= env["numba.state.dependences"]
         depenvs = [envs[f] for f in depfuncs]
 
-        for dep in depenvs:
-            if dep["numba.target"] != target:
-                raise AssertionError("Mismatching target")
+        if __debug__:
+            for dep in depenvs:
+                if dep["numba.target"] != target:
+                    raise AssertionError("Mismatching target")
 
         depmods = []
         for dep in depenvs:
@@ -137,20 +144,13 @@ class FunctionWrapper(object):
                 mod = fw._do_linkage(dep)
                 depmods.append(mod)
 
-        # TODO the following are LLVM specific
-        # Link every dependence module
+        linker = llvmlinker.Linker(thismod)
         for m in depmods:
-            thismod.link_in(m, preserve=True)
-
-        # Fix linkage
-        import llvm.core as lc
-        for f in thismod.functions:
-            if f is not thisfunc:
-                f.linkage = lc.LINKAGE_LINKONCE_ODR
-
+            linker.add_module(m)
+        linker.link()
         thismod.verify()
-        print('=' * 80)
-        print(thismod)
+
+        self.link_state[cachekey] = True
         return thismod
 
     def static_compile(self, argtypes, target):
