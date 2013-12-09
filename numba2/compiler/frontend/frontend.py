@@ -13,7 +13,7 @@ from pykit.ir import Builder
 # Entrypoint
 #===------------------------------------------------------------------===
 
-def translate(py_func, env=None):
+def translate(py_func, env):
     """
     Entry point.
 
@@ -29,7 +29,7 @@ def translate(py_func, env=None):
     # -------------------------------------------------
     # Translate
 
-    t = Translate(py_func)
+    t = Translate(py_func, env)
     t.initialize()
     t.interpret()
     func = t.dst

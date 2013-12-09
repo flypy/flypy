@@ -32,6 +32,7 @@ _env = {
     'numba.state.func_code':    None,
     'numba.state.callgraph':    None,
     'numba.state.opaque':       False,  # Whether the function is opaque
+    'numba.state.generator':    0,      # Counts the number of 'yield' exprs
     'numba.state.phase':        None,
     'numba.state.copies':       None,
     'numba.state.crnt_func':    None,

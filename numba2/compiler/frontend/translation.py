@@ -54,8 +54,9 @@ class Translate(object):
     Translate bytecode to untypes pykit IR.
     """
 
-    def __init__(self, func):
+    def __init__(self, func, env):
         self.func = func
+        self.env = env
         self.bytecode = ByteCode(func)
 
         # -------------------------------------------------
@@ -737,6 +738,13 @@ class Translate(object):
             self.predecessors[except_block].add(self.curblock)
 
         self.insert('exc_throw', *args)
+
+    # ------- Generators ------- #
+
+    def op_YIELD_VALUE(self, inst):
+        val = self.pop()
+        self.push_insert('yield', val)
+        self.env['numba.state.generator'] += 1
 
     # ------- Blocks ------- #
 
