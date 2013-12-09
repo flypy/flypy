@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Handle calling conventions for objections.
+Handle calling conventions for objects.
 """
 
 from __future__ import print_function, division, absolute_import
@@ -37,12 +37,14 @@ class StackVar(object):
             return cty._type_
         return cty
 
+def should_skip(env):
+    return env['numba.state.opaque'] or env['numba.state.generator']
 
 def rewrite_obj_return(func, env):
     """
     Handle returning stack-allocated objects.
     """
-    if env['numba.state.opaque']:
+    if should_skip(env):
         return
 
     context = env['numba.typing.context']
@@ -82,7 +84,7 @@ def rewrite_obj_return(func, env):
             ty = context[op]
             if conversion.byref(ty):
                 f, args = op.args
-                if not is_numba_cc(f) or envs[f]['numba.state.opaque']:
+                if not is_numba_cc(f) or should_skip(envs[f]):
                     continue
 
                 builder.position_before(op)

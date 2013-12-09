@@ -7,17 +7,17 @@ Numba passes that perform translation, type inference, code generation, etc.
 from __future__ import print_function, division, absolute_import
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
-from numba2.compiler.frontend import translate, simplify_exceptions, scoping
+from numba2.compiler.frontend import translate, simplify_exceptions, checker
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
 from numba2.compiler.optimizations import (dataflow, optimize, inlining,
-                                           throwing, deadblocks)
+                                           throwing, deadblocks, reg2mem)
 from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
                                    conversion, rewrite_obj_return, allocator,
-                                   rewrite_externs)
+                                   rewrite_externs, generators)
 from numba2.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.transform import dce
@@ -36,7 +36,7 @@ frontend = [
     simplification.rewrite_overlays,
     deadblocks,
     dataflow,
-    scoping,
+    checker,
 ]
 
 typing = [
@@ -49,8 +49,13 @@ typing = [
     # numba.compiler.lower.*
     rewrite_calls,
     rewrite_raise_exc_type,
-    rewrite_constructors,
-    allocator,
+
+    generators.identify_consumers,          # generators
+    reg2mem,
+    generators.fuse_generators,             # generators
+    generators.rewrite_general_generators,  # generators
+    rewrite_constructors,                   # constructors
+    allocator,                              # allocation
     rewrite_optional_args,
     explicit_coercions,
     conversion,
@@ -61,7 +66,7 @@ typing = [
 
 optimizations = [
     dce,
-    #dataflow,
+    dataflow,
     optimize,
     lltyping,
 ]

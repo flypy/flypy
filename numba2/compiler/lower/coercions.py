@@ -37,6 +37,8 @@ def explicit_coercions(func, env):
     for op in func.ops:
         if op.opcode == 'call':
             coercer.coerce_to_parameters(op)
+        elif op.opcode == 'store':
+            coercer.coerce_to_var(op)
         elif op.opcode == 'setfield':
             coercer.coerce_to_field_setting(op)
         elif op.opcode == 'phi':
@@ -46,7 +48,6 @@ def explicit_coercions(func, env):
         elif op.opcode == 'cbranch':
             coercer.coerce_to_conditional(op)
 
-        # TODO: return, phi
 
 class Coercion(object):
 
@@ -81,6 +82,12 @@ class Coercion(object):
         newargs.extend(args[len(newargs):])
 
         op.set_args([f, newargs])
+
+    def coerce_to_var(self, op):
+        val, var = op.args
+        if self.context[val] != self.context[var]:
+            newval = self.convert(val, self.context[var], op)
+            op.set_args([newval, var])
 
     def coerce_to_field_setting(self, op):
         """

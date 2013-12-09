@@ -11,11 +11,11 @@ from blaze.error import UnificationError
 from numba2.pipeline import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
-from numba2.types import Type, Constructor, ForeignFunction, Function
+from numba2.types import Type, Constructor, ForeignFunction, Function, void
 from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
-from pykit import ir
+from pykit import ir, types
 
 #===------------------------------------------------------------------===
 # Function call typing
@@ -195,3 +195,7 @@ def resolve_restype(func, env):
             "Undetermined return type for function %s" % (func.name,))
 
     env['numba.typing.restype'] = restype
+
+    if restype == void or env['numba.state.generator']:
+        _, argtypes, varargs = func.type
+        func.type = types.Function(types.Void, argtypes, varargs)

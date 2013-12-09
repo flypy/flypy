@@ -75,9 +75,10 @@ def verbose(p, func, env):
     if not debug_print(func, env):
         return pipeline.apply_transform(p, func, env)
 
+    restype  = env['numba.typing.restype']
     argtypes = env['numba.typing.argtypes']
-    title = "%s [ %s(%s) ]" % (_passname(p), _funcname(func),
-                               ", ".join(map(str, argtypes)))
+    title = "%s [ %s %s(%s) ]" % (_passname(p), restype, _funcname(func),
+                                  ", ".join(map(str, argtypes)))
 
     print(title.center(60).center(90, "-"))
 

@@ -32,6 +32,11 @@ class Iterator(Iterable):
     def __next__(self):
         raise NotImplementedError
 
+    @jit
+    def next(self):
+        return next(self)
+
+
 @abstract('Sequence[X]')
 class Sequence(Iterable):
     """Interface for iterables"""

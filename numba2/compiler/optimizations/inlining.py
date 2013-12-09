@@ -10,6 +10,8 @@ from __future__ import print_function, division, absolute_import
 from pykit.ir import Function, Op
 from pykit.transform import inline
 
+from .utils import update_context
+
 #===------------------------------------------------------------------===
 # Pass
 #===------------------------------------------------------------------===
@@ -35,23 +37,13 @@ def inliner(func, env):
                 e = envs[f]
                 options = e['numba.state.options']
                 if options.get('inline'):
-                    valuemap = inline.inline(func, op)
-                    update_context(env, e, valuemap)
+                    inline_callee(func, op, env, e)
                     changed = True
 
     return changed
 
-def update_context(env, callee_env, valuemap):
-    """
-    Update our typing context with the types of the new inlined operations.
-    """
-    context = env['numba.typing.context']
-    callee_context = callee_env['numba.typing.context']
 
-    for old_op, new_op in valuemap.iteritems():
-        if old_op in callee_context:
-            context[new_op] = callee_context[old_op]
-
-    for const, type in callee_context.iteritems():
-        if not isinstance(const, Op):
-            context[const] = type
+def inline_callee(func, call, env, callee_env):
+    valuemap = inline.inline(func, call)
+    update_context(env, callee_env, valuemap)
+    return valuemap
