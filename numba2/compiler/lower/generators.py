@@ -18,17 +18,23 @@ from pykit.analysis import loop_detection
 from pykit.utils import listify
 
 #===------------------------------------------------------------------===
+# Driver
+#===------------------------------------------------------------------===
+
+def generator_fusion(func, env):
+    consumers = True
+    while consumers:
+        consumers = identify_consumers(func, env)
+        fuse_generators(func, env, consumers)
+
+#===------------------------------------------------------------------===
 # Consumer Identification
 #===------------------------------------------------------------------===
 
 Consumer = namedtuple('Consumer', ['generator', 'iter', 'next', 'loop'])
 
-def identify_consumers(func, env):
-    env['numba.generator.consumers'] = _identify_consumers(func, env)
-    #print("consumers", func.name, consumers)
-
 @listify
-def _identify_consumers(func, env):
+def identify_consumers(func, env):
     """
     Identify consumers of generators, that is find the loops that iterate
     over a generator.
@@ -76,26 +82,23 @@ def expect_single_call(func, env, defining_op, numba_func):
     uses = func.uses[defining_op]
     if len(uses) == 1:
         [op] = uses
-        f, args = op.args
-        envs = env['numba.state.envs']
-        e = envs[f]
-        if e['numba.state.function_wrapper'] == numba_func:
-            return op
+        if op.opcode == 'call':
+            f, args = op.args
+            envs = env['numba.state.envs']
+            e = envs[f]
+            if e['numba.state.function_wrapper'] == numba_func:
+                return op
 
 #===------------------------------------------------------------------===
 # Generator Fusion
 #===------------------------------------------------------------------===
 
-#def prepare_fusion(func, env):
-#    return reg2mem.run(func, env)
-
-def fuse_generators(func, env):
+def fuse_generators(func, env, consumers):
     """
     Rewrite straightforward uses of generators, i.e. where a generator is
     allocated and consumed by a single consumer loop.
     """
     envs = env['numba.state.envs']
-    consumers = env['numba.generator.consumers']
 
     for consumer in consumers:
         generator_func = consumer.generator.args[0]
@@ -193,6 +196,7 @@ def consume_yields(func, consumer, generator_func, valuemap):
                     b.position_at_end(blocks[-1])
                     b.jump(resume)
 
+                    # We just introduced a bunch of copied blocks
                     func.reset_uses()
 
                     # Update phis with new predecessor

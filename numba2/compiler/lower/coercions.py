@@ -86,8 +86,11 @@ class Coercion(object):
     def coerce_to_var(self, op):
         val, var = op.args
         if self.context[val] != self.context[var]:
-            newval = self.convert(val, self.context[var], op)
-            op.set_args([newval, var])
+            if isinstance(val, Undef):
+                self.context[val] = self.context[var]
+            else:
+                newval = self.convert(val, self.context[var], op)
+                op.set_args([newval, var])
 
     def coerce_to_field_setting(self, op):
         """

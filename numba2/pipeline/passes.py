@@ -50,10 +50,9 @@ typing = [
     rewrite_calls,
     rewrite_raise_exc_type,
 
-    generators.identify_consumers,          # generators
     reg2mem,
-    generators.fuse_generators,             # generators
-    generators.rewrite_general_generators,  # generators
+    generators.generator_fusion,            # generators
+    #generators.rewrite_general_generators,  # generators
     rewrite_constructors,                   # constructors
     allocator,                              # allocation
     rewrite_optional_args,
