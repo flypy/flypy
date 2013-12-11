@@ -5,6 +5,7 @@ Numba passes that perform translation, type inference, code generation, etc.
 """
 
 from __future__ import print_function, division, absolute_import
+from functools import partial
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
 from numba2.compiler.frontend import translate, simplify_exceptions, checker
@@ -65,7 +66,7 @@ typing = [
 
 optimizations = [
     dce,
-    dataflow,
+    dataflow.dataflow,
     optimize,
     lltyping,
 ]
