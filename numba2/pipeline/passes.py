@@ -50,10 +50,16 @@ typing = [
     # numba.compiler.lower.*
     rewrite_calls,
     rewrite_raise_exc_type,
+]
 
+generators = [
     reg2mem,
     generators.generator_fusion,            # generators
     #generators.rewrite_general_generators,  # generators
+
+]
+
+lowering = [
     rewrite_constructors,                   # constructors
     allocator,                              # allocation
     rewrite_optional_args,
@@ -71,7 +77,7 @@ optimizations = [
     lltyping,
 ]
 
-lowering = [
+ll_lowering = [
     inlining,
     dataflow,
     throwing.rewrite_local_exceptions,

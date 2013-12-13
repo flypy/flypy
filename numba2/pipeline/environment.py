@@ -21,8 +21,10 @@ _env = {
     'numba.frontend.cache':     Cache(),
     'numba.typing.cache':       TypingCache(),
     'numba.inference.cache':    InferenceCache(),
-    'numba.opt.cache':          Cache(),
+    'numba.generators.cache':   Cache(),
     'numba.lowering.cache':     Cache(),
+    'numba.opt.cache':          Cache(),
+    'numba.ll_lowering.cache':  Cache(),
     'numba.codegen.cache':      Cache(),
 
     # General state

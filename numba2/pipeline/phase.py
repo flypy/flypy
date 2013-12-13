@@ -12,8 +12,7 @@ from functools import partial, wraps
 from numba2.compiler.overloading import best_match
 from numba2.viz.viz import dump
 from .pipeline import run_pipeline
-from .passes import (frontend, typing, optimizations, lowering, backend_init,
-                     backend_run, backend_finalize)
+from . import passes
 from .environment import fresh_env
 
 from pykit.analysis import callgraph
@@ -105,7 +104,7 @@ def setup_phase(func, env):
     return py_func, env
 
 @cached('numba.frontend')
-def translation_phase(func, env, passes=frontend):
+def translation_phase(func, env, passes=passes.frontend):
     if env["numba.state.opaque"]:
         return func, env
     new_func, new_env = run_pipeline(func, env, passes)
@@ -114,11 +113,31 @@ def translation_phase(func, env, passes=frontend):
     return new_func, new_env
 
 @cached('numba.typing', key=_cache_key)
-def typing_phase(func, env, passes=typing):
+def typing_phase(func, env, passes=passes.typing):
+    return run_pipeline(func, env, passes)
+
+@cached('numba.generators', key=_cache_key)
+def generator_phase(func, env, passes=passes.generators, dependences=None):
+    if dependences is None:
+        dependences = _deps(func)
+    envs = env["numba.state.envs"]
+    for f in dependences:
+        if f != func:
+            generator_phase(f, envs[f], passes, [])
+    return run_pipeline(func, env, passes)
+
+@cached('numba.lowering', key=_cache_key)
+def lowering_phase(func, env, passes=passes.lowering, dependences=None):
+    if dependences is None:
+        dependences = _deps(func)
+    envs = env["numba.state.envs"]
+    for f in dependences:
+        if f != func:
+            lowering_phase(f, envs[f], passes, [])
     return run_pipeline(func, env, passes)
 
 @cached('numba.opt')
-def optimization_phase(func, env, passes=optimizations, dependences=None):
+def optimization_phase(func, env, passes=passes.optimizations, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
         dependences = _deps(func)
@@ -130,8 +149,8 @@ def optimization_phase(func, env, passes=optimizations, dependences=None):
 
     return func, env
 
-@cached('numba.lowering')
-def lowering_phase(func, env, passes=lowering, dependences=None):
+@cached('numba.ll_lowering')
+def ll_lowering_phase(func, env, passes=passes.ll_lowering, dependences=None):
     envs = env["numba.state.envs"]
     if dependences is None:
         dependences = _deps(func)
@@ -139,7 +158,7 @@ def lowering_phase(func, env, passes=lowering, dependences=None):
     # Lower all dependences
     for f in dependences:
         if f != func:
-            lowering_phase(f, envs[f], passes, [])
+            ll_lowering_phase(f, envs[f], passes, [])
 
     # Lower function
     run_pipeline(func, env, passes)
@@ -156,13 +175,13 @@ def codegen_phase(func, env):
     dependences = [d for d in _deps(func, debug=True) if d not in cache]
 
     for f in dependences:
-        run_pipeline(f, envs[f], backend_init)
+        run_pipeline(f, envs[f], passes.backend_init)
     for f in dependences:
-        run_pipeline(f, envs[f], backend_run)
+        run_pipeline(f, envs[f], passes.backend_run)
     for f in dependences:
         e = envs[f]
         lfunc = e["numba.state.llvm_func"]
-        run_pipeline(lfunc, envs[f], backend_finalize)
+        run_pipeline(lfunc, envs[f], passes.backend_finalize)
         cache.insert(f, (lfunc, e))
 
     return env["numba.state.llvm_func"], env
@@ -199,9 +218,11 @@ def phasecompose(phase1, phase2):
 setup = setup_phase
 translation = phasecompose(translation_phase, setup)
 typing = phasecompose(typing_phase, translation)
-opt = phasecompose(optimization_phase, typing)
-lower = phasecompose(lowering_phase, opt)
-codegen = phasecompose(codegen_phase, lower)
+generators = phasecompose(generator_phase, typing)
+lower = phasecompose(lowering_phase, generators)
+opt = phasecompose(optimization_phase, lower)
+ll_lower = phasecompose(ll_lowering_phase, opt)
+codegen = phasecompose(codegen_phase, ll_lower)
 
 # ______________________________________________________________________
 # Naming
@@ -210,8 +231,10 @@ phases = {
     "setup":        setup,
     "translation":  translation,
     "typing":       typing,
-    "opt":          opt,
+    "generators":   generators,
     "lower":        lower,
+    "opt":          opt,
+    "ll_lower":     ll_lower,
     "codegen":      codegen,
 }
 
