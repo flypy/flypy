@@ -109,6 +109,6 @@ backend_finalize = [
     llvm.get_ctypes,
 ]
 
-all_passes = [frontend, typing, optimizations, hl_lowering,
-              backend_init, backend_run]
+all_passes = [frontend, typing, generators, optimizations, hl_lowering,
+              backend_init, backend_run, backend_finalize]
 passes = sum(all_passes, [])

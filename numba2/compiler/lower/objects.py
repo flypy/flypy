@@ -38,7 +38,7 @@ class StackVar(object):
         return cty
 
 def should_skip(env):
-    return env['numba.state.opaque'] or env['numba.state.generator']
+    return env['numba.state.opaque']
 
 def rewrite_obj_return(func, env):
     """
@@ -65,8 +65,10 @@ def rewrite_obj_return(func, env):
     func.type = types.Function(func.type.restype, (opaque_t,) * len(func.args),
                                False)
 
+    is_generator = env['numba.state.generator']
     for op in func.ops:
-        if op.opcode == 'ret' and op.args[0] is not None and stack_alloc:
+        if (op.opcode == 'ret' and op.args[0] is not None and
+                stack_alloc and not is_generator):
             # ret val =>
             #     store (load val) out ; ret void
             [val] = op.args
