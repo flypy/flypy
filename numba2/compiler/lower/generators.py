@@ -14,7 +14,7 @@ from numba2.runtime import builtins
 from numba2.compiler.optimizations import inlining, reg2mem
 
 from pykit.ir import Builder, copying
-from pykit.analysis import loop_detection
+from pykit.analysis import loop_detection, callgraph
 from pykit.utils import listify
 
 #===------------------------------------------------------------------===
@@ -22,10 +22,17 @@ from pykit.utils import listify
 #===------------------------------------------------------------------===
 
 def generator_fusion(func, env):
-    consumers = True
-    while consumers:
-        consumers = identify_consumers(func, env)
-        fuse_generators(func, env, consumers)
+    changed = True
+    envs = env['numba.state.envs']
+    dependences = callgraph.callgraph(func).node
+    while changed:
+        changed = False
+        for f in dependences:
+            e = envs[f]
+            consumers = identify_consumers(f, e)
+            #print("consumers", f.name, consumers)
+            fuse_generators(f, e, consumers)
+            changed |= bool(consumers)
 
 #===------------------------------------------------------------------===
 # Consumer Identification
@@ -45,7 +52,8 @@ def identify_consumers(func, env):
         # We can stop now
         return
 
-    loops = loop_detection.find_natural_loops(func)
+    loop_forest = loop_detection.find_natural_loops(func)
+    loops = loop_detection.flatloops(loop_forest)
     heads = dict((loop.head, loop) for loop in loops)
 
     expect_call = partial(expect_single_call, func, env)
@@ -58,7 +66,6 @@ def identify_consumers(func, env):
         if iter and next and next.block in heads:
             loop = heads[next.block]
             yield Consumer(generator_obj, iter, next, loop)
-
 
 @listify
 def find_generators(func, env):

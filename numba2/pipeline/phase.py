@@ -188,7 +188,7 @@ frontend    = phase('frontend', passes.frontend, depend=initialize,
                     skip_opaque=True, all=False, key=cache_key_argtypes)
 typing      = phase('typing', passes.typing, depend=frontend, all=False,
                     key=cache_key_argtypes)
-generators  = phase('generators', passes.generators, depend=typing)
+generators  = phase('generators', passes.generators, depend=typing, all=False)
 hl_lower    = phase('hl_lower', passes.hl_lowering, depend=generators)
 opt         = phase('opt', passes.optimizations, depend=hl_lower)
 ll_lower    = phase('ll_lower', passes.ll_lowering, depend=opt)

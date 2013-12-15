@@ -54,12 +54,11 @@ typing = [
     # numba.compiler.lower.*
     rewrite_calls,
     rewrite_raise_exc_type,
+    reg2mem,
 ]
 
 generators = [
-    transition.single_copy,
-    reg2mem,
-    generators.generator_fusion,            # generators
+    generators.generator_fusion,             # generators
     #generators.rewrite_general_generators,  # generators
 
 ]
