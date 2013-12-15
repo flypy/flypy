@@ -55,7 +55,7 @@ def op_call(run_phase, typeof_func, interp, func, args):
         # Compile function
         env = environment.fresh_env(func, argtypes)
 
-        if wrapper.opaque and run_phase == phase.translation:
+        if wrapper.opaque and run_phase == phase.frontend:
             func = implement(wrapper, wrapper.py_func, tuple(argtypes), env)
         else:
             func, env = run_phase(func, env)
@@ -125,11 +125,13 @@ class Typer(object):
         self.context = context
 
         phases = {
-            phase.setup:        self.typeof_untyped,
-            phase.translation:  self.typeof_untyped,
+            phase.initialize:   self.typeof_untyped,
+            phase.frontend:     self.typeof_untyped,
             phase.typing:       self.typeof_typed,
+            phase.generators:   self.typeof_typed,
+            phase.hl_lower:     self.typeof_typed,
             phase.opt:          self.typeof_lltyped,
-            phase.lower:        self.typeof_lltyped,
+            phase.ll_lower:     self.typeof_lltyped,
             phase.codegen:      self.typeof_lltyped,
         }
         self.typeof = phases[run_phase]
@@ -168,7 +170,7 @@ def handlers(run_phase, env):
         'ptradd':   op_ptradd,
     }
 
-    if run_phase in (phase.translation,):
+    if run_phase in (phase.frontend,):
         handlers['getfield'] = partial(op_untyped_getfield, typeof_arg)
 
     return handlers

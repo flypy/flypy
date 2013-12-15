@@ -48,9 +48,9 @@ def rewrite_constructors(func, env):
         register_finalizer(obj.__del__)
 
     """
-    from numba2.pipeline import phase
-
+    phase = env['numba.state.phase']
     context = env['numba.typing.context']
+
     b = OpBuilder()
     caller = Caller(b, context)
 
@@ -72,7 +72,7 @@ def rewrite_constructors(func, env):
 
                 # Initialize object (call __init__)
                 # TODO: implement this on Type.__call__ when we support *args
-                initialize = caller.call(phase.typing, f, [obj] + op.args[1])
+                initialize = caller.call(phase, f, [obj] + op.args[1])
 
                 op.replace_uses(obj)
                 op.replace([obj, initialize, register_finalizer])

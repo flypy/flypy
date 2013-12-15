@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from functools import partial
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
-from numba2.compiler.frontend import translate, simplify_exceptions, checker
+from numba2.compiler.frontend import (translate, simplify_exceptions, checker, setup)
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
@@ -28,6 +28,10 @@ from pykit.codegen.llvm import verify, optimize, llvm_postpasses
 #===------------------------------------------------------------------===
 # Passes
 #===------------------------------------------------------------------===
+
+initialize = [
+    setup,
+]
 
 frontend = [
     translate,
@@ -53,13 +57,14 @@ typing = [
 ]
 
 generators = [
+    transition.single_copy,
     reg2mem,
     generators.generator_fusion,            # generators
     #generators.rewrite_general_generators,  # generators
 
 ]
 
-lowering = [
+hl_lowering = [
     rewrite_constructors,                   # constructors
     allocator,                              # allocation
     rewrite_optional_args,
@@ -104,6 +109,6 @@ backend_finalize = [
     llvm.get_ctypes,
 ]
 
-all_passes = [frontend, typing, optimizations, lowering,
+all_passes = [frontend, typing, optimizations, hl_lowering,
               backend_init, backend_run]
 passes = sum(all_passes, [])

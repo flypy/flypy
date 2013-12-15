@@ -14,7 +14,7 @@ from numba2.compiler import interpreter
 #===------------------------------------------------------------------===
 
 def run(f, expected, args):
-    interpreter.expect(jit(f), phase.translation, args, expected)
+    interpreter.expect(jit(f), phase.frontend, args, expected)
 
 #===------------------------------------------------------------------===
 # Tests

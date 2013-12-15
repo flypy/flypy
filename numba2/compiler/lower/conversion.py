@@ -19,6 +19,8 @@ def run(func, env):
     """
     from numba2.runtime.coercion import coerce
 
+    phase = env['numba.state.phase']
+
     if env['numba.state.opaque']:
         return # TODO: @no_opaque decorator...
 
@@ -42,6 +44,6 @@ def run(func, env):
             type_arg = OConst(dst_type)
             context[type_arg] = type_argtype
 
-            call = caller.call(numba2.phase.typing, coerce, [arg, type_arg],
+            call = caller.call(phase, coerce, [arg, type_arg],
                                result=op.result)
             op.replace(call)

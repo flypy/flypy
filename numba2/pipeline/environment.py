@@ -18,13 +18,14 @@ _env = {
     'numba.script':             False, # True when run from the numba script
 
     # Caching
+    'numba.initialize.cache':   Cache(),
     'numba.frontend.cache':     Cache(),
     'numba.typing.cache':       TypingCache(),
     'numba.inference.cache':    InferenceCache(),
     'numba.generators.cache':   Cache(),
-    'numba.lowering.cache':     Cache(),
+    'numba.hl_lower.cache':     Cache(),
     'numba.opt.cache':          Cache(),
-    'numba.ll_lowering.cache':  Cache(),
+    'numba.ll_lower.cache':     Cache(),
     'numba.codegen.cache':      Cache(),
 
     # General state

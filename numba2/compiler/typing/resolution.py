@@ -34,6 +34,8 @@ def infer_call(func, func_type, argtypes):
         2) Higher-order function
             This is already typed
         3) Method. We need to insert 'self' in the cartesian product
+
+    NOTE: This must only be called during the type inference phase !
     """
     is_const = isinstance(func, ir.Const)
     is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
