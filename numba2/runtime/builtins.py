@@ -130,6 +130,23 @@ def range(start, stop=0xdeadbeef, step=1):
 
     return Range(start, stop, step)
 
+@jit
+def zip(a, b):
+    it1 = iter(a)
+    it2 = iter(b)
+    try:
+        while True:
+            yield next(it1), next(it2)
+    except StopIteration:
+        pass
+
+@jit
+def enumerate(it):
+    i = 0
+    for x in it:
+        yield i, x
+        i += 1
+
 # ____________________________________________________________
 
 # TODO: Overloading on arity: slice(start) -> slice(None, start, None)
@@ -164,6 +181,8 @@ overlay(builtins.float, float)
 overlay(builtins.complex, complex)
 overlay(builtins.abs, abs)
 overlay(builtins.slice, slice)
+#overlay(builtins.zip, zip) # TODO: try/except
+overlay(builtins.enumerate, enumerate)
 overlay(builtins.range, range)
 overlay(builtins.xrange, range)
 overlay(builtins.list, list)
