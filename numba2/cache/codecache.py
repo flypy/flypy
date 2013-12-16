@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
+r"""
 Persistent cache for IR.
 
 Fine-grained Caching
@@ -61,9 +61,15 @@ model, based on modules:
 
     Module
     ======
-    module_id   filename       modification_time    code_block
-    ----------------------------------------------------------
-    0x5         '/home/...'    Mon 2013..           '\x.....'
+    module_id   filename       modification_time
+    --------------------------------------------
+    0x5         '/home/...'    Mon 2013..
+
+    ModuleIR
+    ========
+    module_id    code_block
+    -----------------------
+    0x5          '\x.....'
 
     ModuleDeps
     ==========
@@ -145,3 +151,169 @@ We may need an additional table:
 """
 
 from __future__ import print_function, division, absolute_import
+
+import os
+from os.path import expanduser, join
+import sqlite3 as db
+
+from . import keys
+
+db_file = expanduser(join('~', 'example.db'))
+
+def open_cache(db_file):
+    conn = db.connect(db_file)
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.commit()
+    return CodeCache(db_file, conn)
+
+def delete_cache(db_file):
+    os.remove(db_file)
+
+class CodeCache(object):
+
+    def __init__(self, db_file, conn):
+        self.db_file = db_file
+        self.conn = conn
+        self._version_id = None
+
+    def setup_tables(self):
+        """Initialize db tables"""
+        self.conn.execute("""
+            CREATE TABLE Version (
+                id INTEGER PRIMARY KEY autoincrement,
+                versions TEXT
+            )""")
+
+        self.conn.execute("""
+            CREATE TABLE Function (
+                id INTEGER PRIMARY KEY autoincrement,
+                version_id INTEGER,
+                module_name TEXT,
+                qualified_name TEXT,
+                bytecode BLOB,
+                mtime TIMESTAMP,
+
+                FOREIGN KEY(version_id) REFERENCES Version(id) ON DELETE CASCADE
+            )""")
+
+        self.conn.execute("""
+            CREATE TABLE Dependence (
+                func_id INTEGER,
+                dep_func_id INTEGER,
+                stage TEXT,
+
+                FOREIGN KEY(func_id) REFERENCES Functions(id) ON DELETE CASCADE,
+                FOREIGN KEY(dep_func_id) REFERENCES Functions(id) ON DELETE CASCADE
+            )""")
+
+        self.conn.execute("""
+            CREATE TABLE Code (
+                func_id INTEGER,
+                stage TEXT,
+                ir BLOB,
+                env BLOB,
+
+                FOREIGN KEY(func_id) REFERENCES Functions(func_id) ON DELETE CASCADE
+            )""")
+
+        self.conn.commit()
+
+    def lookup(self, py_func, argtypes, stage):
+        """
+        Look up a cached version for (py_func, argtypes) for the given
+        compilation phase.
+        """
+        func_id = self.func_id(py_func, argtypes)
+        if func_id is None:
+            return None
+
+        self.conn.execute("""
+            SELECT ir, env FROM Code
+            WHERE (func_id = ? AND stage = ?)""", func_id, stage)
+        return self.conn.fetchone()
+
+    def insert(self, py_func, argtypes, stage, code, env):
+        """
+        Cache IR (`code`) and an environment (`env`) for (py_func, argtypes)
+        for the given phase.
+        """
+        func_id = self.func_id(py_func, argtypes)
+        assert self.lookup(py_func, argtypes, stage) is None
+        self.conn.execute("""
+            INSERT INTO Code
+            VALUES (?, ?, ?, ?)""",
+            func_id, stage, serialize_code(code, stage), serialize_env(env, stage))
+        self.conn.commit()
+
+    @property
+    def version_id(self):
+        """
+        Get the current version identifier for our compiler infrastructure.
+        """
+        if self._version_id is None:
+            result = get_version_id(self.conn)
+            if result is None:
+                update_version_id(self.conn)
+                result = get_version_id(self.conn)
+            self._version_id = result
+
+        return self._version_id
+
+    def func_id(self, py_func, argtypes):
+        """
+        Retrieve the function ID for this (py_func, argtypes) combination
+        from the db.
+        """
+        # TODO: check modification times of each type implementation in
+        # `argtypes`
+        blob = self.blobify(py_func, argtypes)
+        self.conn.execute("""
+            SELECT id FROM Function
+            WHERE (version_id = ? AND bytecode = ?)""", self.version_id, blob)
+        return self.conn.fetchone()
+
+    def blobify(self, py_func, argtypes):
+        """Create a structural representation for the python function"""
+        # TODO: Cache blobs
+        return keys.make_code_blob(py_func, argtypes)
+
+
+def get_version_id(conn):
+    conn.execute("""SELECT id FROM Version WHERE (versions = ?)""",
+                 version_tuple())
+
+    return conn.fetchone()
+
+def update_version_id(conn):
+    conn.execute("""
+        INSERT INTO Version (versions)
+        VALUES  (?)""", version_tuple())
+    conn.commit()
+
+#===------------------------------------------------------------------===
+# Versioning
+#===------------------------------------------------------------------===
+
+def version_tuple():
+    return str((py_version(), numba_version(),
+                pykit_version(), llvmpy_version()))
+
+def py_version():
+    return '0'
+
+def numba_version():
+    return '0'
+
+def pykit_version():
+    return '0'
+
+def llvmpy_version():
+    return '0'
+
+#===------------------------------------------------------------------===
+# Test
+#===------------------------------------------------------------------===
+
+delete_cache(db_file)
+cache = open_cache(db_file)
+cache.setup_tables()
