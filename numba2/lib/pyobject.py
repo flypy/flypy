@@ -9,7 +9,7 @@ import ctypes
 
 import numba2
 from numba2 import jit, ijit, typeof
-from numba2 import Void, Pointer
+from numba2.coretypes import Void, Pointer
 from numba2.runtime.lib import librt as lib
 
 import cffi

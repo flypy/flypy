@@ -6,7 +6,7 @@ Basic NumPy support.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, overlay, sizeof
+from numba2 import jit, overlay
 
 from numba2.runtime import cast
 from numba2.runtime.gc import boehm as gc
