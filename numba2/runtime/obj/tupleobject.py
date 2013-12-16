@@ -97,7 +97,15 @@ class StaticTuple(Tuple):
 
     @jit('a -> str')
     def __repr__(self):
-        return '(%s)' % ", ".join(map(str, self))
+        result = []
+        t = self
+        while not isinstance(t.tl, EmptyTuple):
+            result.append(t.hd)
+            t = t.tl
+
+        result.append(t.hd)
+        return repr(tuple(result))
+        #return '(%s)' % ", ".join(map(str, self))
 
     def element_type(self):
         if self.hd is None:

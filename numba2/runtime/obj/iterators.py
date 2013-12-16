@@ -22,6 +22,8 @@ class CountingIterator(Iterator):
             return result
         raise StopIteration
 
+    next = __next__
+
     def __str__(self):
         return "counting_iterator(idx=%d, length=%d)" % (self.idx, self.length)
 
