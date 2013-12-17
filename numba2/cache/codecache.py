@@ -154,20 +154,34 @@ from __future__ import print_function, division, absolute_import
 
 import os
 from os.path import expanduser, join
+import sys
 import sqlite3 as db
 
-from . import keys
+import numba2
+from . import keys, serializers
+
+import pykit
+import llvm
 
 db_file = expanduser(join('~', 'example.db'))
 
 def open_cache(db_file):
+    cache = connect_cache(db_file)
+    cache.setup_tables()
+    serializers.register(cache)
+    return cache
+
+def connect_cache(db_file):
     conn = db.connect(db_file)
     conn.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
     return CodeCache(db_file, conn)
 
 def delete_cache(db_file):
-    os.remove(db_file)
+    try:
+        os.remove(db_file)
+    except EnvironmentError:
+        pass
 
 class CodeCache(object):
 
@@ -175,6 +189,9 @@ class CodeCache(object):
         self.db_file = db_file
         self.conn = conn
         self._version_id = None
+
+        self.serializers = {}
+        self.deserializers = {}
 
     def setup_tables(self):
         """Initialize db tables"""
@@ -210,6 +227,7 @@ class CodeCache(object):
             CREATE TABLE Code (
                 func_id INTEGER,
                 stage TEXT,
+                symname TEXT,
                 ir BLOB,
                 env BLOB,
 
@@ -217,6 +235,11 @@ class CodeCache(object):
             )""")
 
         self.conn.commit()
+
+    def add_serializers(self, stage, serializer, deserializer):
+        assert stage not in self.serializers, stage
+        self.serializers[stage] = serializer
+        self.deserializers[stage] = deserializer
 
     def lookup(self, py_func, argtypes, stage):
         """
@@ -228,9 +251,19 @@ class CodeCache(object):
             return None
 
         self.conn.execute("""
-            SELECT ir, env FROM Code
+            SELECT symname, ir, env FROM Code
             WHERE (func_id = ? AND stage = ?)""", func_id, stage)
-        return self.conn.fetchone()
+        result = self.conn.fetchone()
+
+        if result:
+            symname, ir_blob, env_blob = result
+            # De-serialize
+            deserializer = self.serializers[stage]
+            code = deserializer.serialize_code(ir_blob, symname, stage)
+            env  = deserializer.serialize_env(env_blob, stage)
+            return code, env
+        else:
+            return None
 
     def insert(self, py_func, argtypes, stage, code, env):
         """
@@ -239,10 +272,18 @@ class CodeCache(object):
         """
         func_id = self.func_id(py_func, argtypes)
         assert self.lookup(py_func, argtypes, stage) is None
+
+        symname = code.name
+
+        # Serialize code
+        serializer = self.serializers[stage]
+        code_blob = serializer.serialize_code(code, symname, stage)
+        env_blob  = serializer.serialize_env(env, stage)
+
         self.conn.execute("""
             INSERT INTO Code
-            VALUES (?, ?, ?, ?)""",
-            func_id, stage, serialize_code(code, stage), serialize_env(env, stage))
+            VALUES (?, ?, ?, ?, ?)""",
+            func_id, stage, symname, code_blob, env_blob)
         self.conn.commit()
 
     @property
@@ -295,25 +336,30 @@ def update_version_id(conn):
 #===------------------------------------------------------------------===
 
 def version_tuple():
-    return str((py_version(), numba_version(),
-                pykit_version(), llvmpy_version()))
+    return str((py_version(), numba_version(), pykit_version(),
+                llvmpy_version(), llvm_version()))
 
 def py_version():
-    return '0'
+    return tuple(sys.version_info[:3])
 
 def numba_version():
-    return '0'
+    return numba2.__version__
 
 def pykit_version():
-    return '0'
+    return pykit.__version__
 
 def llvmpy_version():
-    return '0'
+    return llvm.__version__
+
+def llvm_version():
+    return llvm.version
 
 #===------------------------------------------------------------------===
-# Test
+# Example
 #===------------------------------------------------------------------===
 
-delete_cache(db_file)
-cache = open_cache(db_file)
-cache.setup_tables()
+def example_db():
+    db_file = expanduser(join('~', 'example.db'))
+    delete_cache(db_file)
+    cache = open_cache(db_file)
+    return cache
