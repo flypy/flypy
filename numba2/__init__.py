@@ -4,6 +4,10 @@ from os.path import dirname, abspath
 import sys
 import unittest
 
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 from pykit.utils.pattern import match as pyoverload
 
 from .entrypoints import jit, ijit, sjit, abstract
@@ -31,8 +35,6 @@ from .errors import error, InferError, SpecializeError
 
 # Initialize non-core data structures
 from .lib import extended, nplib
-
-__version__ = '0.1'
 
 # ______________________________________________________________________
 # numba.test()
