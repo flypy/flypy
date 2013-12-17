@@ -70,6 +70,16 @@ class TestArrayIndexing(unittest.TestCase):
         index(a)
         self.assertEqual(a[6], 14)
 
+    def test_1d_array_setitem_x(self):
+        @jit
+        def index(a, i):
+            a[i] = 14
+
+        for i in [0, 1, 8, 9]:
+            a = np.arange(10)
+            index(a, i)
+            self.assertEqual(a[i], 14, "1D array getitem(%d)" % i)
+
     def test_2d_array_setitem(self):
         @jit
         def index(a):
@@ -78,6 +88,29 @@ class TestArrayIndexing(unittest.TestCase):
         a = np.arange(8 * 12).reshape(8, 12)
         index(a)
         self.assertEqual(a[6, 9], 14)
+
+    def test_2d_array_setitem_x(self):
+        @jit
+        def index(a, i, j):
+            a[i, j] = 14
+
+        x = [0, 1, 6, 7]
+        y = [0, 1, 10, 11]
+        for i in x:
+            for j in y:
+                a = np.arange(8 * 12).reshape(8, 12)
+                index(a, i, j)
+                self.assertEqual(a[i, j], 14, "2D array getitem(%d, %d)" %
+                                              (i, j))
+
+    def test_2d_array_setitem_0index(self):
+        @jit
+        def index(a):
+            a[0, 0] = 14
+
+        a = np.arange(8 * 12).reshape(8, 12)
+        index(a)
+        self.assertEqual(a[0, 0], 14)
 
     def test_nd_array_setitem(self):
         @jit
