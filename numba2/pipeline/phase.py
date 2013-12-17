@@ -167,7 +167,7 @@ def codegen_phase(func, env):
     if func in cache:
         return cache[func]
 
-    dependences = [d for d in _deps(func, debug=True) if d not in cache]
+    dependences = [d for d in _deps(func, debug=False) if d not in cache]
 
     for f in dependences:
         run_pipeline(f, envs[f], passes.backend_init)
