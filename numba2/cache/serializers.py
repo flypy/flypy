@@ -5,6 +5,8 @@ IR and native code serializers.
 """
 
 from __future__ import print_function, division, absolute_import
+import io
+import pickle
 
 import llvm.core as lc
 
@@ -24,10 +26,10 @@ class Serializer(object):
 class DeSerializer(object):
     """De-serialize IR and a compilation environment"""
 
-    def deserialize_code(self, code, symname, stage):
+    def deserialize_code(self, code_blob, symname, stage):
         raise NotImplementedError
 
-    def deserialize_env(self, env, stage):
+    def deserialize_env(self, env_blob, stage):
         raise NotImplementedError
 
 #===------------------------------------------------------------------===
@@ -41,16 +43,22 @@ class LLVMSerializer(object):
         return bitcode
 
     def serialize_env(self, env, stage):
-        raise NotImplementedError
+        return ""
+        #return pickle.dumps(env)
 
 class LLVMDeSerializer(object):
 
     def deserialize_code(self, bitcode, symname, stage):
-        module = lc.Module.from_bitcode(bitcode)
-        return module.get_function_named(symname)
+        f = io.BytesIO()
+        f.write(str(bitcode))
+        f.seek(0)
 
-    def deserialize_env(self, env, stage):
-        raise NotImplementedError
+        module = lc.Module.from_bitcode(f)
+        return module, module.get_function_named(symname)
+
+    def deserialize_env(self, env_blob, stage):
+        #return pickle.loads(env_blob)
+        return ""
 
 #===------------------------------------------------------------------===
 # Registration

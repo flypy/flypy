@@ -188,6 +188,7 @@ class CodeCache(object):
     def __init__(self, db_file, conn):
         self.db_file = db_file
         self.conn = conn
+        self.cursor = conn.cursor()
         self._version_id = None
 
         self.serializers = {}
@@ -195,43 +196,43 @@ class CodeCache(object):
 
     def setup_tables(self):
         """Initialize db tables"""
-        self.conn.execute("""
+        self.cursor.execute("""
             CREATE TABLE Version (
-                id INTEGER PRIMARY KEY autoincrement,
-                versions TEXT
+                id INTEGER PRIMARY KEY autoincrement NOT NULL,
+                versions TEXT NOT NULL
             )""")
 
-        self.conn.execute("""
+        self.cursor.execute("""
             CREATE TABLE Function (
-                id INTEGER PRIMARY KEY autoincrement,
-                version_id INTEGER,
-                module_name TEXT,
-                qualified_name TEXT,
-                bytecode BLOB,
-                mtime TIMESTAMP,
+                id INTEGER PRIMARY KEY autoincrement NOT NULL,
+                version_id INTEGER NOT NULL,
+                module_name TEXT NOT NULL,
+                qname TEXT NOT NULL,
+                key BLOB NOT NULL,
+                mtime TIMESTAMP NOT NULL,
 
                 FOREIGN KEY(version_id) REFERENCES Version(id) ON DELETE CASCADE
             )""")
 
-        self.conn.execute("""
+        self.cursor.execute("""
             CREATE TABLE Dependence (
-                func_id INTEGER,
-                dep_func_id INTEGER,
-                stage TEXT,
+                func_id INTEGER NOT NULL,
+                dep_func_id INTEGER NOT NULL,
+                stage TEXT NOT NULL,
 
-                FOREIGN KEY(func_id) REFERENCES Functions(id) ON DELETE CASCADE,
-                FOREIGN KEY(dep_func_id) REFERENCES Functions(id) ON DELETE CASCADE
+                FOREIGN KEY(func_id) REFERENCES Function(id) ON DELETE CASCADE,
+                FOREIGN KEY(dep_func_id) REFERENCES Function(id) ON DELETE CASCADE
             )""")
 
-        self.conn.execute("""
+        self.cursor.execute("""
             CREATE TABLE Code (
-                func_id INTEGER,
-                stage TEXT,
-                symname TEXT,
-                ir BLOB,
-                env BLOB,
+                func_id INTEGER NOT NULL,
+                stage TEXT NOT NULL,
+                symname TEXT NOT NULL,
+                ir BLOB NOT NULL,
+                env BLOB NOT NULL
 
-                FOREIGN KEY(func_id) REFERENCES Functions(func_id) ON DELETE CASCADE
+                -- FOREIGN KEY(func_id) REFERENCES Function(func_id) ON DELETE CASCADE
             )""")
 
         self.conn.commit()
@@ -250,40 +251,48 @@ class CodeCache(object):
         if func_id is None:
             return None
 
-        self.conn.execute("""
+        self.cursor.execute("""
             SELECT symname, ir, env FROM Code
-            WHERE (func_id = ? AND stage = ?)""", func_id, stage)
-        result = self.conn.fetchone()
+            WHERE (func_id = ? AND stage = ?)""", (func_id, stage))
+        result = fetchone(self.cursor)
 
         if result:
-            symname, ir_blob, env_blob = result
+            symname, ir_blob, env_blob = map(str, result)
+
             # De-serialize
-            deserializer = self.serializers[stage]
-            code = deserializer.serialize_code(ir_blob, symname, stage)
-            env  = deserializer.serialize_env(env_blob, stage)
-            return code, env
+            deserializer = self.deserializers[stage]
+            mod, func = deserializer.deserialize_code(ir_blob, symname, stage)
+            env  = deserializer.deserialize_env(env_blob, stage)
+            return mod, func, env
         else:
             return None
 
-    def insert(self, py_func, argtypes, stage, code, env):
+    def insert(self, py_func, argtypes, stage, code, env, mtime):
         """
         Cache IR (`code`) and an environment (`env`) for (py_func, argtypes)
         for the given phase.
         """
         func_id = self.func_id(py_func, argtypes)
-        assert self.lookup(py_func, argtypes, stage) is None
 
+        # -- Insert (py_func, argtypes) in Function if not present -- #
+        if func_id is None:
+            self.insert_func(py_func, argtypes, env, mtime)
+            func_id = self.func_id(py_func, argtypes)
+        else:
+            assert self.lookup(py_func, argtypes, stage) is None
+
+        assert func_id is not None
         symname = code.name
 
-        # Serialize code
+        # -- Persist IR in Code -- #
         serializer = self.serializers[stage]
         code_blob = serializer.serialize_code(code, symname, stage)
         env_blob  = serializer.serialize_env(env, stage)
 
-        self.conn.execute("""
+        self.cursor.execute("""
             INSERT INTO Code
             VALUES (?, ?, ?, ?, ?)""",
-            func_id, stage, symname, code_blob, env_blob)
+            (func_id, stage, symname, buffer(code_blob), buffer(env_blob)))
         self.conn.commit()
 
     @property
@@ -292,10 +301,10 @@ class CodeCache(object):
         Get the current version identifier for our compiler infrastructure.
         """
         if self._version_id is None:
-            result = get_version_id(self.conn)
+            result = get_version_id(self.cursor)
             if result is None:
                 update_version_id(self.conn)
-                result = get_version_id(self.conn)
+                result = get_version_id(self.cursor)
             self._version_id = result
 
         return self._version_id
@@ -308,10 +317,21 @@ class CodeCache(object):
         # TODO: check modification times of each type implementation in
         # `argtypes`
         blob = self.blobify(py_func, argtypes)
-        self.conn.execute("""
+        self.cursor.execute("""
             SELECT id FROM Function
-            WHERE (version_id = ? AND bytecode = ?)""", self.version_id, blob)
-        return self.conn.fetchone()
+            WHERE (version_id = ? AND key = ?)""", (self.version_id, blob))
+        return fetchone(self.cursor)
+
+    def insert_func(self, py_func, argtypes, env, mtime):
+        self.cursor.execute("""
+            INSERT INTO Function (version_id, module_name, qname,
+                                  key, mtime)
+            VALUES (?, ?, ?, ?, ?)
+            """, (self.version_id, env['numba.state.func_module'],
+                  env['numba.state.func_qname'],
+                  self.blobify(py_func, argtypes), mtime))
+        self.conn.commit()
+
 
     def blobify(self, py_func, argtypes):
         """Create a structural representation for the python function"""
@@ -319,16 +339,16 @@ class CodeCache(object):
         return keys.make_code_blob(py_func, argtypes)
 
 
-def get_version_id(conn):
-    conn.execute("""SELECT id FROM Version WHERE (versions = ?)""",
-                 version_tuple())
+def get_version_id(cursor):
+    cursor.execute("""SELECT id FROM Version WHERE (versions = ?)""",
+                   (version_tuple(),))
 
-    return conn.fetchone()
+    return fetchone(cursor)
 
 def update_version_id(conn):
     conn.execute("""
         INSERT INTO Version (versions)
-        VALUES  (?)""", version_tuple())
+        VALUES  (?)""", (version_tuple(),))
     conn.commit()
 
 #===------------------------------------------------------------------===
@@ -353,6 +373,16 @@ def llvmpy_version():
 
 def llvm_version():
     return llvm.version
+
+#===------------------------------------------------------------------===
+# Utils
+#===------------------------------------------------------------------===
+
+def fetchone(cursor):
+    result = cursor.fetchone()
+    if result is not None and len(result) == 1:
+        return result[0] # unpack single item
+    return result # row (tuple) or None
 
 #===------------------------------------------------------------------===
 # Example

@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
-
+import datetime
 import unittest
+
 from numba2 import int32, float64, jit
 from numba2.pipeline import phase, environment
 from numba2.cache import keys, codecache
+
+now = datetime.datetime.now()
 
 class TestCache(unittest.TestCase):
 
@@ -19,8 +22,9 @@ class TestCache(unittest.TestCase):
         argtypes = (float64, float64)
         e = environment.fresh_env(nb_func, argtypes)
         lfunc, env = phase.llvm(nb_func, e)
-        self.db.insert(py_func, argtypes, 'llvm', lfunc, None)
-        cached_lfunc, cached_env = self.db.lookup(py_func, argtypes, 'llvm')
+        self.db.insert(py_func, argtypes, 'llvm', lfunc, env, now)
+        cached_module, cached_lfunc, cached_env = self.db.lookup(
+            py_func, argtypes, 'llvm')
 
         self.assertEqual(str(lfunc), str(cached_lfunc))
 

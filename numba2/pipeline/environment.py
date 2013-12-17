@@ -30,11 +30,13 @@ _env = {
     'numba.codegen.cache':      Cache(),
 
     # General state
-    'numba.state.func_name':    None,
+    'numba.state.func_name':    None,   # Function name
+    'numba.state.modname':      None,   # Module name
+    'numba.state.qname':        None,   # Qualified name inside module
     'numba.state.py_func':      None,   # This value may be None
     'numba.state.func_globals': None,
     'numba.state.func_code':    None,
-    'numba.state.callgraph':    None,
+    'numba.state.callgraph':    None,   # TODO: unused ...
     'numba.state.opaque':       False,  # Whether the function is opaque
     'numba.state.generator':    0,      # Counts the number of 'yield' exprs
     'numba.state.phase':        None,
@@ -93,6 +95,9 @@ def fresh_env(func, argtypes, env=None):
     # State
     env["numba.state.function_wrapper"] = func
     env['numba.state.py_func'] = py_func
+    env['numba.state.func_name'] = py_func.__module__
+    env['numba.state.func_module'] = py_func.__module__
+    env['numba.state.func_qname'] = py_func.__name__
     env['numba.state.func_globals'] = py_func.__globals__
     env['numba.state.func_code'] = py_func.__code__
 
