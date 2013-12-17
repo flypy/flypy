@@ -160,7 +160,7 @@ def _deps(func, debug=False):
 # ______________________________________________________________________
 # phases
 
-def codegen_phase(func, env):
+def llvm_phase(func, env):
     cache = env['numba.codegen.cache']
     envs = env["numba.state.envs"]
 
@@ -192,4 +192,5 @@ generators  = phase('generators', passes.generators, depend=typing, all=False)
 hl_lower    = phase('hl_lower', passes.hl_lowering, depend=generators)
 opt         = phase('opt', passes.optimizations, depend=hl_lower)
 ll_lower    = phase('ll_lower', passes.ll_lowering, depend=opt)
-codegen     = phasecompose(codegen_phase, ll_lower)
+llvm        = phasecompose(llvm_phase, ll_lower)
+codegen     = phase('codegen', passes.codegen, depend=llvm, all=False)

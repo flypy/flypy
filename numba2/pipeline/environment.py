@@ -26,6 +26,7 @@ _env = {
     'numba.hl_lower.cache':     Cache(),
     'numba.opt.cache':          Cache(),
     'numba.ll_lower.cache':     Cache(),
+    'numba.llvm.cache':         Cache(),
     'numba.codegen.cache':      Cache(),
 
     # General state
