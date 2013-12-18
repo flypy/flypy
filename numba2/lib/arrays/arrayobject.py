@@ -22,8 +22,8 @@ import numpy as np
 # NumPy-like ndarray
 #===------------------------------------------------------------------===
 
-@sjit('Array[a, dims]')
-class Array(object):
+@sjit('NDArray[a, dims]')
+class NDArray(object):
     """
     N-dimensional NumPy-like array object.
     """
@@ -36,33 +36,33 @@ class Array(object):
 
     # ---------------------------------------
 
-    @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
+    @jit('NDArray[dtype, dims] -> StaticTuple[a, b] -> r')
     def __getitem__(self, indices):
         result = _unpack(self._index(indices))
         return result
 
-    @jit('Array[dtype, dims] -> int64 -> r')
+    @jit('NDArray[dtype, dims] -> int64 -> r')
     def __getitem__(self, item):
         return self[(item,)]
 
-    @jit('Array[dtype, dims] -> Slice[start, stop, step] -> r')
+    @jit('NDArray[dtype, dims] -> Slice[start, stop, step] -> r')
     def __getitem__(self, item):
         return self[(item,)]
 
-    @jit('Array[dtype, dims] -> StaticTuple[a, b] -> dtype -> void')
+    @jit('NDArray[dtype, dims] -> StaticTuple[a, b] -> dtype -> void')
     def __setitem__(self, indices, value):
         result = self._index(indices)
         fill(result, value)
 
-    @jit('Array[dtype, dims] -> int64 -> dtype -> void')
+    @jit('NDArray[dtype, dims] -> int64 -> dtype -> void')
     def __setitem__(self, item, value):
         self[(item,)] = value
 
-    @jit('Array[dtype, dims] -> Slice[start, stop, step] -> dtype -> void')
+    @jit('NDArray[dtype, dims] -> Slice[start, stop, step] -> dtype -> void')
     def __setitem__(self, item, value):
         self[(item,)] = value
 
-    @jit #('Array[a, n] -> Iterable[a]')
+    @jit #('NDArray[a, n] -> Iterable[a]')
     def __iter__(self):
         for i in range(len(self)):
             yield self[i]
@@ -83,7 +83,7 @@ class Array(object):
 
     # -- Private -- #
 
-    @jit('Array[dtype, dims] -> StaticTuple[a, b] -> r')
+    @jit('NDArray[dtype, dims] -> StaticTuple[a, b] -> r')
     def _index(self, indices):
         return self.dims.index(self.data, indices, self.dtype)
 
@@ -94,7 +94,7 @@ class Array(object):
         if isinstance(ndarray, np.ndarray):
             return fromnumpy(ndarray, ty)
         else:
-            raise NotImplementedError("Array.fromobject(%s, %s)" % (ndarray, ty))
+            raise NotImplementedError("NDArray.fromobject(%s, %s)" % (ndarray, ty))
 
     @classmethod
     def toobject(cls, obj, ty):
@@ -184,20 +184,20 @@ class Dimension(object):
 
         array = self.base.index(data, tail(indices), dtype)
         dims = Dimension(array.dims, extent, stride)
-        return Array(array.data, dims, dtype)
+        return NDArray(array.data, dims, dtype)
 
     @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Type[a] -> r')
     def index(self, p, indices, dtype):
-        return Array(p, self, dtype)
+        return NDArray(p, self, dtype)
 
 
 @sjit
 class EmptyDim(object):
     layout = []
 
-    @jit('empty -> Pointer[a] -> EmptyTuple[] -> Type[a] -> Array[a, empty]')
+    @jit('empty -> Pointer[a] -> EmptyTuple[] -> Type[a] -> NDArray[a, empty]')
     def index(self, p, indices, dtype):
-        return Array(p, self, dtype)
+        return NDArray(p, self, dtype)
 
 
 @sjit('BoundsCheck[base]')
@@ -241,22 +241,22 @@ class BoundsCheck(object):
 
 # Unpack the result for getitem
 
-@jit('Array[a, EmptyDim[]] -> a')
+@jit('NDArray[a, EmptyDim[]] -> a')
 def _unpack(array):
     return array.data[0]
 
-@jit('Array[a, dims] -> Array[a, dims]')
+@jit('NDArray[a, dims] -> NDArray[a, dims]')
 def _unpack(array):
     return array
 
 # Fill the array with `value`
 
-@jit('Array[dtype, EmptyDim[]] -> a -> void')
+@jit('NDArray[dtype, EmptyDim[]] -> a -> void')
 def fill(array, value):
     """Fill a 0D array"""
     array.data[0] = value
 
-@jit('Array[dtype, dims] -> a -> void')
+@jit('NDArray[dtype, dims] -> a -> void')
 def fill(array, value):
     """Fill an ND-array with N > 0"""
     for i in range(len(array)):
@@ -268,7 +268,7 @@ def fill(array, value):
 #===------------------------------------------------------------------===
 
 def fromnumpy(ndarray, ty, boundscheck=False):
-    """Build an Array from a numpy ndarray"""
+    """Build an NDArray from a numpy ndarray"""
     # Compute steps
     itemsize = ndarray.dtype.itemsize
     steps = tuple(stride // itemsize for stride in ndarray.strides)
@@ -297,10 +297,10 @@ def fromnumpy(ndarray, ty, boundscheck=False):
             dims = BoundsCheck(dims)
 
     base_type = ty.parameters[0]
-    return Array(data, dims, base_type)
+    return NDArray(data, dims, base_type)
 
 def tonumpy(arr, dtype):
-    """Build an Array from a numpy ndarray"""
+    """Build a NumPy array from an NDArray"""
     itemsize = numba2.sizeof_type(dtype)
     steps = np.array(_getsteps(arr.dims))
     shape = np.array(_getshape(arr.dims))
@@ -316,7 +316,7 @@ def tonumpy(arr, dtype):
 @typeof.case(np.ndarray)
 def typeof(array):
     # if array.flags['C_CONTIGUOUS']:
-    #     return ContigArray[typeof(array.dtype)]
+    #     return ContigNDArray[typeof(array.dtype)]
     # else:
     dtype = numpy_support.from_dtype(array.dtype)
 
@@ -324,14 +324,14 @@ def typeof(array):
     for i in range(array.ndim):
         dims = Dimension[dims]
 
-    return Array[dtype, dims]
+    return NDArray[dtype, dims]
 
-#@pyoverload(np.ndarray, Array)
+#@pyoverload(np.ndarray, NDArray)
 #def convert(ndarray):
 #    data = convert(ndarray.ctypes.data, 'Pointer[T]')
 #    shape = convert(ndarray.shape, 'Tuple[Int, n]')
 #    strides = convert(ndarray.strides, 'Tuple[Int, n]')
-#    return Array(data, shape, strides, ndarray)
+#    return NDArray(data, shape, strides, ndarray)
 
 # ------------- Helpers ------------- #
 

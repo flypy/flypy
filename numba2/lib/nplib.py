@@ -13,7 +13,7 @@ from numba2.runtime.gc import boehm as gc
 from numba2.runtime.obj.core import (Type, StaticTuple, EmptyTuple,
                                      head, tail, Pointer)
 from numba2.runtime.hacks import choose
-from .arrays.arrayobject import Array, Dimension, EmptyDim
+from .arrays.arrayobject import NDArray, Dimension, EmptyDim
 
 import numpy as np
 
@@ -21,7 +21,7 @@ import numpy as np
 # Constructors
 #===------------------------------------------------------------------===
 
-@jit('Array[dtype1, dims] -> x -> Array[dtype3, dims]')
+@jit('NDArray[dtype1, dims] -> x -> NDArray[dtype3, dims]')
 def empty_like(array, dtype=None):
     # TODO: Use normal malloc() for array data for primitives
     dtype = choose(array.dtype, dtype)
@@ -40,21 +40,21 @@ def ones_like(array, dtype=None):
     result[:] = 1
     return result
 
-@jit('shape -> Type[dtype] -> Array[dtype, dims]')
+@jit('shape -> Type[dtype] -> NDArray[dtype, dims]')
 def empty(shape, dtype):
     items = product(shape)
     p = gc.gc_alloc(items, dtype)
     data = cast(p, Pointer[dtype])
     dims = c_layout_from_shape(shape, dtype)
-    return Array(data, dims, dtype)
+    return NDArray(data, dims, dtype)
 
-@jit('shape -> Type[dtype] -> Array[dtype, dims]')
+@jit('shape -> Type[dtype] -> NDArray[dtype, dims]')
 def zeros(shape, dtype):
     result = empty(shape, dtype)
     result[:] = 0
     return result
 
-@jit('shape -> Type[dtype] -> Array[dtype, dims]')
+@jit('shape -> Type[dtype] -> NDArray[dtype, dims]')
 def ones(shape, dtype):
     result = empty(shape, dtype)
     result[:] = 0

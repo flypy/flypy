@@ -57,7 +57,7 @@ def jit_func(f, signature=None, **kwds):
 
 def jit_class(cls, signature=None, abstract=False, stackallocate=False, scope=None):
     """
-    @jit('Array[dtype, ndim]')
+    @jit('NDArray[dtype, ndim]')
     """
     from .runtime.classes import allocate_type_constructor, patch_class
     from .runtime.interfaces import copy_methods

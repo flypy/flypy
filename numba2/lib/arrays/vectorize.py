@@ -7,7 +7,7 @@ numba.vectorize().
 from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof, parse
-from .arrayobject import Array, Dimension, EmptyDim
+from .arrayobject import NDArray, Dimension, EmptyDim
 from numba2.runtime.obj.core import head, tail, NoneType, Type
 
 import numpy as np
@@ -32,7 +32,7 @@ def make_ndmap(py_func, nargs):
 # Broadcasting
 #===------------------------------------------------------------------===
 
-@jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> r')
+@jit('NDArray[dtype1, dims1] -> NDArray[dtype2, dims2] -> r')
 def broadcast(a, b):
     """Broadcast two arrays"""
     return _broadcast(a.dims, b.dims, a, b)
@@ -52,13 +52,13 @@ def _broadcast(a, b, array1, array2):
 def _broadcast(a, b, array1, array2):
     # LHS has more dims, patch RHS with extra dimensions
     dims2 = raise_level(array2.dims, a)
-    return (array1, Array(array2.data, dims2, array2.dtype))
+    return (array1, NDArray(array2.data, dims2, array2.dtype))
 
 @jit('EmptyDim[] -> Dimension[base] -> a -> b ->r')
 def _broadcast(a, b, array1, array2):
     # RHS has more dims, patch LHS with extra dimensions
     dims1 = raise_level(array1.dims, b)
-    return (Array(array1.data, dims1, array1.dtype), array2)
+    return (NDArray(array1.data, dims1, array1.dtype), array2)
 
 # -- broadcast helper -- #
 
@@ -81,7 +81,7 @@ def raise_level(dims, missing):
 
 # -- Some testing code -- #
 
-@jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> r')
+@jit('NDArray[dtype1, dims1] -> NDArray[dtype2, dims2] -> r')
 def add(a, b):
     arrays = broadcast(a, b)
     a = head(arrays)
@@ -90,7 +90,7 @@ def add(a, b):
     _add(a, b, out)
     return out
 
-@jit('Array[dtype1, dims1] -> Array[dtype2, dims2] -> Array[dtype3, dims3] -> void')
+@jit('NDArray[dtype1, dims1] -> NDArray[dtype2, dims2] -> NDArray[dtype3, dims3] -> void')
 def _add(a, b, out):
     for i in range(len(out)):
         _add(a[i], b[i], out[i])
