@@ -7,7 +7,7 @@ Number interfaces.
 from __future__ import print_function, division, absolute_import
 from functools import wraps
 
-from numba2 import abstract, jit
+from numba2 import abstract, jit, ijit
 from numba2.runtime.lowlevel_impls import add_impl_cls
 
 from pykit import types as ptypes
@@ -26,7 +26,7 @@ def ojit(signature):
         def wrapper(self, *args):
             args = [self.unwrap()] + [x.unwrap() for x in args]
             return self.wrap(f(*args))
-        return jit(signature, opaque=True)(wrapper)
+        return jit(signature, opaque=True, inline=True)(wrapper)
     return decorator
 
 

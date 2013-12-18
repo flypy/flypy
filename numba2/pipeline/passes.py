@@ -111,6 +111,9 @@ codegen = [
     llvm.get_ctypes,
 ]
 
-all_passes = [frontend, typing, generators, optimizations, hl_lowering,
-              backend_init, backend_run, backend_finalize, codegen]
+all_passes = [
+    frontend, typing, generators, hl_lowering, optimizations,
+    ll_lowering, backend_init, backend_run, backend_finalize,
+    codegen
+]
 passes = sum(all_passes, [])

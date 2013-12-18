@@ -6,10 +6,12 @@ Implement casting (cast function).
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit
+from numba2 import jit, ijit
 from numba2.compiler import lltype
 from numba2.runtime.lowlevel_impls import add_impl
 from numba2.runtime.obj.core import Int, Float, Type, Pointer
+
+jit = ijit
 
 #===------------------------------------------------------------------===
 # Python

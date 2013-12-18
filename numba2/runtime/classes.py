@@ -65,11 +65,11 @@ def patch_class(cls):
     """
     Patch a numba @jit class with a __init__ if not present.
     """
-    from ..entrypoints import jit
+    from ..entrypoints import ijit
 
     if '__init__' not in vars(cls):
         names = [name for name, type in cls.layout]
-        cls.__init__ = jit(fabricate_init(names))
+        cls.__init__ = ijit(fabricate_init(names))
 
 def fabricate_init(names):
     stmts = ["self.%s = %s" % (name, name) for name in names] or ["pass"]

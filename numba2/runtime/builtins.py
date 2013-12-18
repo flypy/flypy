@@ -14,6 +14,8 @@ from .casting import cast
 from numba2.types import int32, float64
 from . import ffi
 
+jit = ijit
+
 # ____________________________________________________________
 # Type checking
 
