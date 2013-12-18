@@ -7,11 +7,11 @@ Entry points for runtime code.
 from __future__ import print_function, division, absolute_import
 import sys
 import types
-from functools import partial
+from functools import partial, wraps
 
 from .functionwrapper import wrap
 from .typing import MetaType
-from .utils import applyable_decorator
+from .utils import applyable, applyable_decorator
 
 def jit(f, *args, **kwds):
     """
@@ -76,20 +76,29 @@ def jit_class(cls, signature=None, abstract=False, stackallocate=False, scope=No
 
     return MetaType(cls.__name__, cls.__bases__, dict(vars(cls)))
 
+def scoping_decorator(decorator):
+    @wraps(decorator)
+    def decorator_wrapper(*args, **kwargs):
+        scope = kwargs.pop('scope', sys._getframe(1).f_locals)
+        if applyable(args, kwargs):
+            return decorator(*args, scope=scope)
+        return lambda f: decorator(f, *args, scope=scope, **kwargs)
 
-@applyable_decorator
+    return decorator_wrapper
+
+@scoping_decorator
 def abstract(f, *args, **kwds):
     kwds['abstract'] = True
     return _jit(f, *args, **kwds)
 
 # --- shorthands
 
-@applyable_decorator
+@scoping_decorator
 def ijit(f, *args, **kwds):
     """@jit(inline=True)"""
     return _jit(f, *args, inline=True, **kwds)
 
-@applyable_decorator
+@scoping_decorator
 def sjit(cls, *args, **kwds):
     """@jit(stackallocate=True)"""
     if hasattr(cls, '__del__'):

@@ -18,6 +18,15 @@ except ImportError as e:
 # Decorators
 #===------------------------------------------------------------------===
 
+def applyable(args, kwargs):
+    if len(args) == 1 and not kwargs:
+            f = args[0]
+            if isinstance(f, (type, types.FunctionType, types.ClassType)):
+                from .coretypes import Mono
+                if not isinstance(f, Mono):
+                    return True
+    return False
+
 def applyable_decorator(decorator):
     """
     Construct an applyable decorator, that always calls the decorator
@@ -44,13 +53,8 @@ def applyable_decorator(decorator):
     """
     @functools.wraps(decorator)
     def decorator_wrapper(*args, **kwargs):
-        if len(args) == 1 and not kwargs:
-            f = args[0]
-            if isinstance(f, (type, types.FunctionType, types.ClassType)):
-                from .coretypes import Mono
-                if not isinstance(f, Mono):
-                    return decorator(args[0])
-
+        if applyable(args, kwargs):
+            return decorator(*args)
         return lambda f: decorator(f, *args, **kwargs)
 
     return decorator_wrapper
