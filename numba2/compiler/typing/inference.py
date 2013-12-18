@@ -116,7 +116,10 @@ def run(func, env):
             print(("Type context %s:" % (env['numba.state.func_name'],)).center(90))
             for op, typeset in ctx.context.iteritems():
                 print("%s%15s = %s" % (" " * 30, op, typeset))
-            pprint(ctx.context, indent=30)
+            try:
+                pprint(ctx.context, indent=30)
+            except ValueError:
+                print("unable to print context :((")
 
         return ctx.func, env
 
