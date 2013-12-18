@@ -9,9 +9,9 @@ from __future__ import print_function, division, absolute_import
 import operator
 
 from .obj.core import NoneType
-from .. import jit, ijit, typeof, overlay
+from .. import jit, ijit, cjit, typeof, overlay
 
-jit = ijit
+jit = cjit
 
 #===------------------------------------------------------------------===
 # Implementations

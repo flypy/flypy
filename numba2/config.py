@@ -8,4 +8,8 @@ class Config(object):
     # Terminal background colour ("light" or "dark")
     terminal_background = "dark"
 
+    # Whether to enable debug compilation. This does not inline methods
+    # annotated with `cjit`
+    debug = False
+
 config = Config()

@@ -7,7 +7,7 @@ Arrays and NumPy conversion.
 from __future__ import print_function, division, absolute_import
 
 import numba2
-from numba2 import jit, sjit, ijit, typeof
+from numba2 import jit, sjit, ijit, typeof, cjit
 from numba2.support import numpy_support
 from numba2.conversion import fromobject, toobject
 from numba2.runtime.obj.core import (Type, Pointer, StaticTuple, address,
@@ -18,7 +18,7 @@ from numba2.runtime.hacks import choose
 
 import numpy as np
 
-jit = ijit
+jit = cjit
 
 #===------------------------------------------------------------------===
 # NumPy-like ndarray

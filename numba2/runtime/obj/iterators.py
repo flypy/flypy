@@ -6,7 +6,7 @@ Counting iterators.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, sjit, ijit
+from numba2 import jit, sjit, ijit, cjit
 from ..interfaces import Sequence, Iterator
 
 @sjit('CountingIterator[obj]')
@@ -30,6 +30,6 @@ class CountingIterator(Iterator):
     __repr__ = __str__
 
 
-@jit('a -> CountingIterator[a]') # TODO: eat a Sequence[a]
+@cjit('a -> CountingIterator[a]') # TODO: eat a Sequence[a]
 def counting_iterator(obj):
     return CountingIterator(obj, 0, len(obj))

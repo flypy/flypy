@@ -7,14 +7,14 @@ try:
 except ImportError:
     import builtins
 
-from .. import jit, ijit, overlay, overload
+from .. import jit, ijit, overlay, overload, cjit
 from .interfaces import Sequence, Iterable, Iterator
 from .obj.core import Range, List, Type, Complex, Slice
 from .casting import cast
 from numba2.types import int32, float64
 from . import ffi
 
-jit = ijit
+jit = cjit
 
 # ____________________________________________________________
 # Type checking
@@ -40,7 +40,7 @@ def iter(x):
 def next(x):
     return x.__next__()
 
-@ijit #('Sequence[a] -> Py_ssize_t')
+@jit #('Sequence[a] -> Py_ssize_t')
 def len(x):
     return x.__len__()
 

@@ -9,6 +9,7 @@ import sys
 import types
 from functools import partial, wraps
 
+from numba2.config import config
 from .functionwrapper import wrap
 from .typing import MetaType
 from .utils import applyable, applyable_decorator
@@ -105,6 +106,12 @@ def sjit(cls, *args, **kwds):
         raise TypeError(
             "Cannot stack-allocate instances with __del__: %s" % (cls,))
     return jit_class(cls, *args, stackallocate=True, **kwds)
+
+# fast-compile jit
+if config.debug:
+    cjit = jit
+else:
+    cjit = ijit
 
 #ijit = partial(jit, inline=True)
 #sjit = partial(jit, stackallocate=True)

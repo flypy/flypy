@@ -6,9 +6,9 @@ Type coercion.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, ijit, Type, Pointer, void, cast
+from numba2 import jit, ijit, cjit, Type, Pointer, void, cast
 
-jit = ijit
+jit = cjit
 
 #===------------------------------------------------------------------===
 # coerce

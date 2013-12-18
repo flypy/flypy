@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 
 import numba2
-from numba2 import sjit, jit, ijit
+from numba2 import sjit, jit, ijit, cjit
 from numba2.compiler import representation_type
 from numba2.conversion import ctype
 from numba2.runtime import formatting
@@ -16,7 +16,7 @@ from ..lowlevel_impls import add_impl_cls
 
 from pykit import types as ptypes
 
-jit = ijit
+jit = cjit
 
 #===------------------------------------------------------------------===
 # Pointer
