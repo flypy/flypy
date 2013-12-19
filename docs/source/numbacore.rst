@@ -11,19 +11,11 @@ I believe we need the following features:
 
     * Methods on user-defined types with specified representations (structs or otherwise)
 
-        - Careful control over allocation, mutability and ownership
+        - Careful control over allocation and mutability
 
     * Polymorphism: Generic functions, subtyping, overloading
-
-        - Generic functions are specialized for the cartesian product of
-          input types
-        - Polymorphic code can be generated and implemented in a runtime
-          implementation (e.g. virtual method tables like numba's extension
-          classes)
-
     * User-defined typing rules
     * Careful control over inlining, unrolling and specialization
-    * Array oriented computing: map/reduce/scan/etc
     * Extension of the code generator
 
 Support for multi-stage programming would be nice, but is considered a bonus
@@ -37,7 +29,7 @@ prevent inintended use.
 
 Polymorphism is provided through:
 
-    - generic (monomorphized) functions (like C++ templates)
+    - generic functions
     - overloading
     - subtyping ("python classes")
 
@@ -219,11 +211,11 @@ which uses higher-level APIs that ultimately construct these types. E.g.:
 Supported forms of polymorphism are generic functions, overloading and
 subtyping.
 
-Generic Functions (@autojit)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Generic functions are like ``@autojit``, they provide specialized code for
-each unique combination of input types. They may be optionally typed and
-constrained (through classes or sets of types).
+Generic Functions
+~~~~~~~~~~~~~~~~~
+Generic functions allow code to operate over multiple types simultaneously.
+For instance, we can type the `map` function, specifying that it maps values
+of type `a` to type `b`.
 
 .. code-block:: python
 
@@ -231,27 +223,23 @@ constrained (through classes or sets of types).
     def map(f, xs):
         ...
 
-This specifies a map implementation that is specialized for each combination
-of type instances for type variables `a` and `b`. Type variables may be
-further constrained by sets of types or by abstract classes or interfaces,
+Type variables may be further constrained by sets of types or by classes,
 e.g.:
 
 .. code-block:: python
 
-    @jit('Array[A : Float] -> A')
+    @jit('Array[A : Float[nbits]] -> A')
     def sum(xs):
         ...
 
-Here ``Float`` is the unparameterized version of the the ``Float[nbits]`` class,
-which allows ``sum`` to accept any array with floating point numbers of any
-size.
-
-An other, perhaps more flexible, way to contrain type variables in generic
-functions is to use the subtype relation. By default, typed code will accept
+which allows ``sum`` to accept any array with floating point numbers or any
+subtype is Float. By default, typed code will accept
 subtypes, e.g. if we have a typed argument ``A``, then we will also accept
-a subtype ``B`` for that argument. With parameterized types, we have to be
-more careful. By default, we allow only invariant parameters, e.g.
-``B <: A`` does not imply ``C[B] <: C[A]``. That is, even though ``B``
+a subtype ``B`` for that argument.
+
+With parameterized types, we have to be more careful. By default, we allow
+only invariant parameters, e.g. ``B <: A`` does not imply ``C[B] <: C[A]``.
+That is, even though ``B``
 may be a subtype of ``A``, a class ``C`` parameterized by ``B`` is not a subtype
 of class ``C`` parameterized by ``A``. In generic functions, we may however
 indicate variance using ``+`` for `covariance` and ``-`` for `contra-variance`:
@@ -282,6 +270,9 @@ we cannot write a ``B`` into this array!
 Instead, this code must have a contra-variant parameter, that is, it may accept
 an array of ``B`` and an array of any super-type of ``B``.
 
+Generic functions may be specialized or generic, depending on the decorator
+used.
+
 Overloading and Multiple-dispatch
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 These mechanisms provide compile-time selection for our language.
@@ -290,7 +281,7 @@ necessary for many implementations, e.g.:
 
 .. code-block:: python
 
-    @jit('Int -> Int')
+    @jit('a : integral -> a')
     def int(x):
         return x
 
@@ -298,27 +289,6 @@ necessary for many implementations, e.g.:
     def int(x):
         return parse_int(x)
 
-Overloading is also provided for methods:
-
-.. code-block:: python
-
-    @jit
-    class SomeNeatClass(object):
-        @signature('Int -> Int')
-        def __add__(self, other):
-            return self.value + other
-
-        @signature('String -> Int')
-        def __add__(self, other):
-            return str(self.value) + other
-
-We further need a way to "overload" python functions to provide a way to
-provide alternative implementations or to type it. We can easily provide
-implementations for all builtins:
-
-.. code-block:: python
-
-    pytypedef(builtins.int, int)
 
 3. User-defined Typing Rules
 ----------------------------
@@ -416,19 +386,10 @@ rpython (``rpython/rlib/objectmodel.py``).
     and insert the result in the code stream. The result must have a type
     compatible with the signature.
 
-.. function:: specialize.generic()
-
-    Generate generic machine code instead of specialized code.
-
 These decorators should also be supported as extra arguments to ``@signature``
 etc.
 
-5. Data-parallel Operators
---------------------------
-Parakeet and copperhead do this really well. We need map, reduce, zip,
-list comprehensions, etc.
-
-6. Extension of the Code Generator
+5. Extension of the Code Generator
 ----------------------------------
 We can support an ``@opaque`` decorator that marks a function or method as
 "opaque", which means it must be resolved by the code generator. A decorator

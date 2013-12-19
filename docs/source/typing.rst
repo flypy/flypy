@@ -143,8 +143,7 @@ rules.
 Parameterization
 ----------------
 Types can only be parameterized by variables and user-defined or
-built-in types. Type variables may be constrained through traits (type
-sets can readily be constructed by implementing (empty) traits).
+built-in types.
 
 References
 ----------
