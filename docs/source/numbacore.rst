@@ -1,3 +1,5 @@
+.. core::
+
 Next iteration of Numba - The core language ideas
 =================================================
 
@@ -30,8 +32,9 @@ prevent inintended use.
 Polymorphism is provided through:
 
     - generic functions
-    - overloading
+    - multiple dispatch
     - subtyping ("python classes")
+    - coercion
 
 This language's goals are ultimate control over performance, and a language
 with a well-defined and easily understood subset for the GPU.
@@ -211,8 +214,12 @@ which uses higher-level APIs that ultimately construct these types. E.g.:
 Supported forms of polymorphism are generic functions, overloading and
 subtyping.
 
-Generic Functions
-~~~~~~~~~~~~~~~~~
+Generic Functions and Subtyping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For additional details, including implementation details, see
+:ref:`polymorphism`.
+
 Generic functions allow code to operate over multiple types simultaneously.
 For instance, we can type the `map` function, specifying that it maps values
 of type `a` to type `b`.
