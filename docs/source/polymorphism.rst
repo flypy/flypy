@@ -166,6 +166,8 @@ originate from specialized classes. Consider populating a list of an
 int, string and float. Generic wrappers are generated around the specialized
 methods, and a vtable is populated. The wrappers are implemented as follows:
 
+.. code-block:: python
+
     @gjit('a -> a -> bool')
     def wrapper_eq(int_a, int_b):
         return box(specialized_eq(unbox(a), unbox(b)))
