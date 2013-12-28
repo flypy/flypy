@@ -6,8 +6,8 @@ Type resolution and method resolution.
 
 from __future__ import print_function, division, absolute_import
 import inspect
-from blaze.error import UnificationError
 
+from numba2.errors import UnificationError
 from numba2.pipeline import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper

@@ -5,11 +5,16 @@ import sys
 
 from pykit.utils import hashable
 
-from blaze import datashape as ds
-from blaze.datashape import (TypeVar, TypeConstructor, dshape,
-                             coercion_cost as coerce, unify as blaze_unify,
-                             free, TypeSet)
-from blaze.error import UnificationError
+import datashape as ds
+from datashape import (TypeVar, TypeConstructor, dshape,
+                       coercion_cost as coerce, unify as blaze_unify,
+                       free, TypeSet)
+from datashape.error import UnificationError
+
+__all__ = [
+    'TypeVar', 'TypeConstructor', 'dshape', 'coerce', 'blaze_unify',
+    'free', 'TypeSet', 'UnificationError',
+]
 
 #===------------------------------------------------------------------===
 # Parsing
