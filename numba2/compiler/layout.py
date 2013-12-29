@@ -23,6 +23,12 @@ def representation_type(ty):
     =======
     The pykit type for the object layout.
     """
+    from numba2.runtime.obj import vectorobject
+
+    if ty.impl == vectorobject.Vector:
+        base, count = ty.parameters
+        return ptypes.Vector(representation_type(base), count)
+
     cty = conversion.ctype(ty)
     result_type = ctypes_support.from_ctypes_type(cty)
     if result_type.is_struct:
