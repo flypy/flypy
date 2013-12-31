@@ -52,7 +52,7 @@ def rewrite_constructors(func, env):
     context = env['numba.typing.context']
 
     b = OpBuilder()
-    caller = Caller(b, context)
+    caller = Caller(b, context, env)
 
     for op in func.ops:
         if op.opcode == 'call':

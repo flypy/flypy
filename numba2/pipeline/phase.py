@@ -101,8 +101,8 @@ def apply_all(phase, func, env, dependences=None):
 
     return phase.apply_single(func, env)
 
-def apply_phase(phase, nb_func, argtypes):
-    env = fresh_env(nb_func, argtypes)
+def apply_phase(phase, nb_func, argtypes, target):
+    env = fresh_env(nb_func, argtypes, target)
     return phase(nb_func, env)
 
 # ______________________________________________________________________
@@ -185,8 +185,9 @@ def llvm_phase(func, env):
 # ______________________________________________________________________
 # Data Parallel Python Specifics
 
-def dpp_codegen_phase(func, env):
+def dpp_llvm_phase(func, env):
     from pykit.codegen.llvm import llvm_utils
+
     cache = env['numba.codegen.cache']
     envs = env["numba.state.envs"]
 
@@ -196,22 +197,18 @@ def dpp_codegen_phase(func, env):
     dependences = [d for d in _deps(func) if d not in cache]
 
     for f in dependences:
-        print('dependency', f)
         localenv = envs[f]
         localenv['codegen.llvm.module'] = llvm_utils.module("tmp")
-        run_pipeline(f, envs[f], backend_init)
+        run_pipeline(f, envs[f], passes.backend_init)
     for f in dependences:
-        run_pipeline(f, envs[f], dpp_backend_run)
+        run_pipeline(f, envs[f], passes.dpp_backend_run)
     for f in dependences:
         e = envs[f]
         lfunc = e["numba.state.llvm_func"]
-        run_pipeline(lfunc, envs[f], dpp_backend_finalize)
+        run_pipeline(lfunc, envs[f], passes.dpp_backend_finalize)
         cache.insert(f, (lfunc, e))
 
     return env["numba.state.llvm_func"], env
-
-#dpp_lower = phasecompose(lowering_phase, prelower)
-#dpp_codegen = phasecompose(dpp_codegen_phase, dpp_lower)
 
 # ______________________________________________________________________
 # Apply
@@ -229,3 +226,13 @@ prelower    = phase('prelower', passes.prelowering, depend=opt)
 ll_lower    = phase('ll_lower', passes.ll_lowering, depend=prelower)
 llvm        = phasecompose(llvm_phase, ll_lower)
 codegen     = phase('codegen', passes.codegen, depend=llvm, all=False)
+
+dpp_llvm    = phasecompose(dpp_llvm_phase, ll_lower)
+dpp_codegen = phase('dpp_codegen', passes.codegen, depend=dpp_llvm, all=False)
+
+# ______________________________________________________________________
+
+target_codegens = {
+    'cpu': codegen,
+    'dpp': dpp_codegen,
+}

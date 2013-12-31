@@ -27,6 +27,7 @@ _env = {
     'numba.opt.cache':          Cache(),
     'numba.prelower.cache':     Cache(),
     'numba.ll_lower.cache':     Cache(),
+    'numba.dpp_codegen.cache':  Cache(),
     'numba.llvm.cache':         Cache(),
     'numba.codegen.cache':      Cache(),
 
@@ -78,9 +79,16 @@ root_env = FrozenDict(_env)
 # New envs
 #===------------------------------------------------------------------===
 
-def fresh_env(func, argtypes, env=None):
+def fresh_env(func, argtypes, target, env=None):
     """
     Allocate a new environment, optionally from a given environment.
+    """
+    fresh_env = target_envs[target]
+    return fresh_env(func, argtypes, env=env)
+
+def fresh_cpu_env(func, argtypes, env=None):
+    """
+    New environment for CPU targets.
     """
     if env is None:
         env = root_env
@@ -115,6 +123,13 @@ _dpp_env .update({
 })
 _dpp_env = FrozenDict(_dpp_env)
 
-def fresh_dpp_env(func, argtypes):
-    return fresh_env(func, argtypes, env=_dpp_env)
+def fresh_dpp_env(func, argtypes, env=None):
+    return fresh_env(func, argtypes, "cpu", env=_dpp_env)
 
+
+# -- dispatch -- #
+
+target_envs = {
+    "cpu": fresh_cpu_env,
+    "dpp": fresh_dpp_env,
+}

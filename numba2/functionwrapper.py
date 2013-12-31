@@ -88,6 +88,7 @@ class FunctionWrapper(object):
         return result_obj
 
     def translate(self, argtypes, target='cpu'):
+        from .pipeline import phase, environment
 
         key = tuple(argtypes)
         if key in self.ctypes_funcs:
@@ -95,7 +96,9 @@ class FunctionWrapper(object):
             return self.ctypes_funcs[key], env["numba.typing.restype"]
 
         # Translate
-        llvm_func, env = self.do_lower(target, argtypes)
+        env = environment.fresh_env(self, argtypes, self.target)
+        codegen = phase.target_codegens[self.target]
+        llvm_func, env = codegen(self, env)
         cfunc = env["codegen.llvm.ctypes"]
 
         # Cache
@@ -104,18 +107,6 @@ class FunctionWrapper(object):
         self.envs[key] = env
 
         return cfunc, env["numba.typing.restype"]
-
-    def do_lower(self, target, argtypes):
-        from .pipeline import phase, environment
-
-        # TODO refactor this to a separate system for easier target extension
-        if target == 'cpu':
-            env = environment.fresh_env(self, argtypes)
-            llvm_func, env = phase.codegen(self, env)
-        elif target == 'dpp':
-            env = environment.fresh_dpp_env(self, argtypes)
-            llvm_func, env = phase.dpp_codegen(self, env)
-        return llvm_func, env
 
     def overload(self, py_func, signature, **kwds):
         overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
@@ -160,7 +151,7 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False,
     else:
         dispatcher = Dispatcher()
         func = FunctionWrapper(dispatcher, py_func,
-                               abstract=abstract, opaque=opaque)
+                               abstract=abstract, opaque=opaque, target=target)
 
     func.overload(py_func, signature, inline=inline, opaque=opaque,
                   abstract=abstract, target=target, **kwds)

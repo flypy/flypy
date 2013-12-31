@@ -28,7 +28,7 @@ def run(func, env):
     envs = env["numba.state.envs"]
 
     builder = OpBuilder()
-    caller = Caller(builder, context)
+    caller = Caller(builder, context, env)
 
     for op in func.ops:
         if op.opcode == 'coerce':

@@ -69,7 +69,7 @@ def infer_function_call(func, func_type, argtypes):
     if len(func.overloads) == 1 and not func.opaque:
         argtypes = fill_missing_argtypes(func.py_func, tuple(argtypes))
 
-    env = fresh_env(func, argtypes)
+    env = fresh_env(func, argtypes, "cpu") # TODO: !
     func, env = phase.typing(func, env)
     # env["numba.typing.restype"]
     if func_type is None:
