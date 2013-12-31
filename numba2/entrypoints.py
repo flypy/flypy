@@ -14,7 +14,7 @@ from .functionwrapper import wrap
 from .typing import MetaType
 from .utils import applyable, applyable_decorator
 
-def jit(f, *args, **kwds):
+def jit(f=None, *args, **kwds):
     """
     @jit entry point:
 

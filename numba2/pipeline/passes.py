@@ -9,6 +9,9 @@ from functools import partial
 
 from numba2.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
 from numba2.compiler.frontend import (translate, simplify_exceptions, checker, setup)
+from numba2.compiler.backend import (lltyping, llvm, lowering,
+                                     rewrite_lowlevel_constants)
+from numba2.compiler.analysis import dependence_analysis
 from numba2.compiler import simplification, transition
 from numba2.compiler.typing import inference, typecheck
 from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
@@ -73,16 +76,19 @@ hl_lowering = [
     rewrite_externs,
     rewrite_constants,
     rewrite_obj_return,
+    dependence_analysis,
 ]
 
 optimizations = [
     dce,
     dataflow.dataflow,
     optimize,
+    dependence_analysis,
 ]
 
 prelowering = [
     lltyping,
+    dependence_analysis,
 ]
 
 ll_lowering = [
@@ -91,6 +97,7 @@ ll_lowering = [
     throwing.rewrite_local_exceptions,
     rewrite_lowlevel_constants,
     #lowering.lower_fields,
+    dependence_analysis,
 ]
 
 backend_init = [

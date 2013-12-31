@@ -188,7 +188,7 @@ def interpret(nb_func, run_phase, args, debug=False, tracer=None):
     """Interpret and return result"""
     # Translate numba function
     argtypes = [typeof(arg) for arg in args]
-    env = environment.fresh_env(nb_func, argtypes, "cpu")
+    env = environment.fresh_env(nb_func, argtypes, target="cpu")
     f, env = run_phase(nb_func, env)
 
     if debug:

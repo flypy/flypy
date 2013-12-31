@@ -12,7 +12,11 @@ from numba2.caching import Cache, InferenceCache, TypingCache
 from pykit import environment as pykit_env
 from pykit.codegen import llvm as llvm_codegen
 
-_env = {
+#===------------------------------------------------------------------===
+# CPU Environment
+#===------------------------------------------------------------------===
+
+_cpu_env = {
     # Command line args
     'numba.cmdopts':            {},
     'numba.script':             False, # True when run from the numba script
@@ -43,6 +47,7 @@ _env = {
     'numba.state.copies':       None,
     'numba.state.crnt_func':    None,
     'numba.state.options':      None,
+    'numba.state.dependence':   None,
 
     # GC
     'numba.gc.impl':            "boehm",
@@ -70,30 +75,49 @@ _env = {
     "codegen.llvm.ctypes":  None,
 }
 
-_env.update(pykit_env.fresh_env())
-llvm_codegen.install(_env)
+_cpu_env.update(pykit_env.fresh_env())
+llvm_codegen.install(_cpu_env)
 
-root_env = FrozenDict(_env)
+cpu_env = FrozenDict(_cpu_env)
+
+#===------------------------------------------------------------------===
+# Data Parallel Python Environment
+#===------------------------------------------------------------------===
+
+_dpp_env = dict(cpu_env)
+_dpp_env .update({
+    'numba.typing.cache':       TypingCache(),
+    'numba.inference.cache':    InferenceCache(),
+    'numba.opt.cache':          Cache(),
+    'numba.prelowering.cache':  Cache(),
+    'numba.lowering.cache':     Cache(),
+    'numba.codegen.cache':      Cache(),
+
+    "numba.target": "dpp",
+
+    "codegen.llvm.opt":     None,
+    "codegen.llvm.engine":  None,
+    "codegen.llvm.module":  None,
+    "codegen.llvm.machine": None,
+    "codegen.llvm.ctypes":  None,
+})
+dpp_env = FrozenDict(_dpp_env)
+
+
+_target_env_map = {
+    'cpu': cpu_env,
+    'dpp': dpp_env,
+}
 
 #===------------------------------------------------------------------===
 # New envs
 #===------------------------------------------------------------------===
 
-def fresh_env(func, argtypes, target, env=None):
+def fresh_env(func, argtypes, target="cpu"):
     """
-    Allocate a new environment, optionally from a given environment.
+    Allocate a new environment.
     """
-    fresh_env = target_envs[target]
-    return fresh_env(func, argtypes, env=env)
-
-def fresh_cpu_env(func, argtypes, env=None):
-    """
-    New environment for CPU targets.
-    """
-    if env is None:
-        env = root_env
-
-    env = dict(env)
+    env = dict(_target_env_map[target])
     py_func = func.py_func
 
     # Types
@@ -105,31 +129,10 @@ def fresh_cpu_env(func, argtypes, env=None):
     env['numba.state.func_globals'] = py_func.__globals__
     env['numba.state.func_code'] = py_func.__code__
 
+    # Copy
+    def copy(func1, argtypes1):
+        return fresh_env(func1, argtypes1, target)
+
+    env['numba.fresh_env'] = copy
+
     return env
-
-#===------------------------------------------------------------------===
-# Data Parallel Python Environment
-#===------------------------------------------------------------------===
-
-_dpp_env = dict(root_env)
-_dpp_env .update({
-    "numba.target": "dpp",
-
-    "codegen.llvm.opt":     None,
-    "codegen.llvm.engine":  None,
-    "codegen.llvm.module":  None,
-    "codegen.llvm.machine": None,
-    "codegen.llvm.ctypes":  None,
-})
-_dpp_env = FrozenDict(_dpp_env)
-
-def fresh_dpp_env(func, argtypes, env=None):
-    return fresh_env(func, argtypes, "cpu", env=_dpp_env)
-
-
-# -- dispatch -- #
-
-target_envs = {
-    "cpu": fresh_cpu_env,
-    "dpp": fresh_dpp_env,
-}

@@ -26,7 +26,7 @@ from pykit import ir, types
 def is_method(t):
     return type(t).__name__ == 'Method' # hargh
 
-def infer_call(func, func_type, argtypes):
+def infer_call(func, func_type, argtypes, env):
     """
     Infer a single call. We have three cases:
 
@@ -42,7 +42,7 @@ def infer_call(func, func_type, argtypes):
     is_class = isinstance(func_type, (type(Type.type), type(Constructor.type)))
 
     if is_method(func_type) or is_numba_func:
-        return infer_function_call(func, func_type, argtypes)
+        return infer_function_call(func, func_type, argtypes, env)
     elif is_class:
         return infer_class_call(func, func_type, argtypes)
     elif not isinstance(func, ir.Function):
@@ -50,7 +50,7 @@ def infer_call(func, func_type, argtypes):
     else:
         raise NotImplementedError(func, func_type)
 
-def infer_function_call(func, func_type, argtypes):
+def infer_function_call(func, func_type, argtypes, env):
     """
     Method call or numba function call.
     """
@@ -69,7 +69,7 @@ def infer_function_call(func, func_type, argtypes):
     if len(func.overloads) == 1 and not func.opaque:
         argtypes = fill_missing_argtypes(func.py_func, tuple(argtypes))
 
-    env = fresh_env(func, argtypes, "cpu") # TODO: !
+    env = env['numba.fresh_env'](func, argtypes)
     func, env = phase.typing(func, env)
     # env["numba.typing.restype"]
     if func_type is None:
