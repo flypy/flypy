@@ -13,7 +13,7 @@ from numba2.runtime.gc import boehm as gc
 from numba2.runtime.obj.core import (Type, StaticTuple, EmptyTuple,
                                      head, tail, Pointer)
 from numba2.runtime.hacks import choose
-from .arrays.arrayobject import NDArray, Dimension, EmptyDim
+from .arrays.ndarrayobject import NDArray, Dimension, EmptyDim
 
 import numpy as np
 

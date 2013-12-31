@@ -23,7 +23,7 @@ def representation_type(ty):
     =======
     The pykit type for the object layout.
     """
-    from numba2.runtime.obj import vectorobject
+    from numba2.lib import vectorobject
 
     if ty.impl == vectorobject.Vector:
         base, count = ty.parameters
