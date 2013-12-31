@@ -3,10 +3,10 @@ from __future__ import print_function, division, absolute_import
 
 from numba2.typing import resolve, to_blaze
 
-from blaze import overloading
-from blaze.function import lookup_previous
-from blaze.overloading import overload, Dispatcher
-from blaze.util import flatargs
+from blaze.compute import overloading
+from blaze.compute.function import lookup_previous
+from blaze.compute.overloading import overload, Dispatcher
+from blaze.compute.util import flatargs
 
 
 def overloadable(f):

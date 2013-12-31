@@ -4,5 +4,4 @@
 Frontend package providing translation from bytecode -> untyped pykit IR.
 """
 
-from .frontend import translate, simplify_exceptions
-from .interp import run as interpret, handlers as interp_handlers
+from .frontend import translate, simplify_exceptions, setup

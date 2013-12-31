@@ -80,14 +80,6 @@ class Complex(object):
         return builtins.complex(c.real, c.imag)
 
 
-@jit('a -> a -> Complex[a]')
-def complex(real, imag=0.0):
-    return Complex(real, imag)
-
 @typeof.case(builtins.complex)
 def typeof(pyval):
     return Complex[numba2.float64]
-
-# ____________________________________________________________
-
-overlay(builtins.complex, complex)

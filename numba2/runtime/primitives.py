@@ -9,7 +9,9 @@ from __future__ import print_function, division, absolute_import
 import operator
 
 from .obj.core import NoneType
-from .. import jit, typeof, overlay
+from .. import jit, ijit, cjit, typeof, overlay
+
+jit = cjit
 
 #===------------------------------------------------------------------===
 # Implementations
@@ -21,7 +23,7 @@ def is_(a, b):
 
 # TODO: Overload for variants !
 
-@jit('NoneType -> NoneType -> bool')
+@jit('NoneType[] -> NoneType[] -> bool')
 def is_(a, b):
     return True
 

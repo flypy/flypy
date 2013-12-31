@@ -113,10 +113,13 @@ def run(func, env):
         env['numba.typing.constraints'] = ctx.constraints
 
         if debug_print(func, env):
-            print("Type context:".center(90))
+            print(("Type context %s:" % (env['numba.state.func_name'],)).center(90))
             for op, typeset in ctx.context.iteritems():
                 print("%s%15s = %s" % (" " * 30, op, typeset))
-            pprint(ctx.context, indent=30)
+            try:
+                pprint(ctx.context, indent=30)
+            except ValueError:
+                print("unable to print context :((")
 
         return ctx.func, env
 
@@ -143,7 +146,15 @@ def infer(cache, func, env, argtypes):
     # Cache result
 
     typeset = ctx.context['return']
-    if typeset:
+
+    if env['numba.state.generator']:
+        from numba2.runtime.obj.generatorobject import Generator
+
+        element_type = reduce(typejoin, ctx.context['generator'])
+        restype = Generator[element_type, void]
+        typeset.clear()
+        typeset.add(restype)
+    elif typeset:
         restype = reduce(typejoin, typeset)
     else:
         restype = void
@@ -201,7 +212,7 @@ def build_graph(func):
 
 def initial_context(func):
     """Initialize context with argtypes"""
-    context = { 'return': set(), void: void, bool_: bool_}
+    context = { 'return': set(), 'generator': set(), void: void, bool_: bool_ }
     context['return'] = set()
     count = 0
 
@@ -247,6 +258,7 @@ class ConstraintGenerator(object):
         self.metadata = {}     # Node -> object
         self.allocas = {}     # Op -> node
         self.return_node = 'return'
+        self.generator   = 'generator'
 
     def op_alloca(self, op):
         """
@@ -352,6 +364,15 @@ class ConstraintGenerator(object):
         Γ ⊢ cbranch (x : bool)
         """
         self.G.add_edge(bool_, op.args[0])
+
+    def op_yield(self, op):
+        """
+        Γ ⊢      x : α
+        --------------------
+        Γ ⊢ (yield x) : void
+        """
+        self.G.add_edge(void, op)
+        self.G.add_edge(op.args[0] or void, self.generator)
 
     def op_ret(self, op):
         """

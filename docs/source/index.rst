@@ -16,6 +16,7 @@ Contents:
    fusion.rst
    typing.rst
    runtime.rst
+   polymorphism.rst
 
 Roadmap:
 

@@ -17,5 +17,5 @@
 #from .stringobject import String, from_cstring, as_cstring
 #from .exceptions import *
 #from .pyobject import Object
-#from .arrayobject import Array
+#from .arrayobject import NDArray
 #from .variantobject import make_variant

@@ -9,8 +9,8 @@ import ctypes
 
 import numba2
 from numba2 import jit, ijit, typeof
-from .core import Void, Pointer
-from ..lib import librt as lib
+from numba2.coretypes import Void, Pointer
+from numba2.runtime.lib import librt as lib
 
 import cffi
 
@@ -176,7 +176,7 @@ class Object(object):
 
         # Build numba String
         n = len(str_obj)
-        buf = numba2.Buffer(p, n + 1)
+        buf = numba2.Buffer(p, n + 1, False)
         return numba2.String(buf)
 
     @jit

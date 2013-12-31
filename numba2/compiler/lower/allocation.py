@@ -30,7 +30,7 @@ def allocator(func, env):
             stmts, newop = allocate_object(caller, b, context[op], env)
             newop.result = op.result
         elif op.opcode == 'register_finalizer':
-            stmts = register_finalizer(caller, b, context,
+            stmts = register_finalizer(caller, b, env, context,
                                        context[op.args[0]], gcmod, op.args[0])
         else:
             continue
@@ -63,8 +63,7 @@ def heap_allocate(caller, builder, type, env):
     """
     Heap allocate an object of type `type`
     """
-    from numba2.pipeline import phase
-
+    phase = env['numba.state.phase']
     # TODO: implement untyped pykit builder !
 
     # Put object on the heap: call gc.gc_alloc(nitems, type)
@@ -78,7 +77,7 @@ def heap_allocate(caller, builder, type, env):
     context[ty] = Type[type]
 
     # Type the gc_alloc function
-    p = caller.call(phase.typing, gcmod.gc_alloc, [n, ty])
+    p = caller.call(phase, gcmod.gc_alloc, [n, ty])
     obj = builder.convert(ptypes.Opaque, p)
 
     # Update type context
@@ -86,11 +85,12 @@ def heap_allocate(caller, builder, type, env):
 
     return [p, obj], obj
 
-def register_finalizer(caller, builder, context, type, gcmod, obj):
+def register_finalizer(caller, builder, env, context, type, gcmod, obj):
     """
     Register a finalizer for the object given as pointer `obj`.
     """
     from numba2.pipeline import phase
+    curphase = env['numba.state.phase']
 
     #(TODO: (indirect) allocation of a new object in __del__ will recurse
     # infinitely)
@@ -111,7 +111,7 @@ def register_finalizer(caller, builder, context, type, gcmod, obj):
         context[obj_p] = Pointer[void]
 
         # Call gc_add_finalizer with (obj, ptr)
-        result = caller.call(phase.typing, gcmod.gc_add_finalizer, [obj_p, ptr])
+        result = caller.call(curphase, gcmod.gc_add_finalizer, [obj_p, ptr])
         context[result] = void
 
         return [obj_p, result]

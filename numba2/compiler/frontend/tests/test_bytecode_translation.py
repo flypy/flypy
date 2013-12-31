@@ -6,7 +6,6 @@ import unittest
 from pykit.ir.interp import UncaughtException
 
 from numba2 import typeof, jit
-from numba2.compiler.frontend import translate, interp as frontend_interp
 from numba2.pipeline import environment, phase
 from numba2.compiler import interpreter
 
@@ -15,8 +14,7 @@ from numba2.compiler import interpreter
 #===------------------------------------------------------------------===
 
 def run(f, expected, args):
-    interpreter.expect(jit(f), phase.translation, args, expected,
-                       handlers=frontend_interp.handlers)
+    interpreter.expect(jit(f), phase.frontend, args, expected)
 
 #===------------------------------------------------------------------===
 # Tests

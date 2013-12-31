@@ -40,8 +40,8 @@ class FunctionWrapper(object):
         from numba2.representation import byref, stack_allocate
         from numba2.conversion import (
             toctypes, fromctypes, toobject, fromobject, ctype)
-        from numba2.support.ctypes_support import CTypesStruct
-        from numba2.types import Function
+        #from numba2.support.ctypes_support import CTypesStruct
+        #from numba2.types import Function
 
         # Keep this alive for the duration of the call
         keepalive = list(args) + list(kwargs.values())
@@ -117,6 +117,9 @@ class FunctionWrapper(object):
             llvm_func, env = phase.dpp_codegen(self, env)
         return llvm_func, env
 
+    def overload(self, py_func, signature, **kwds):
+        overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
+
     def get_llvm_func(self, argtypes):
         """Get the LLVM function object for the argtypes.
         """
@@ -133,8 +136,11 @@ class FunctionWrapper(object):
     def __str__(self):
         return "<numba function (%s)>" % str(self.dispatcher)
 
+    __repr__ = __str__
+
     def __get__(self, instance, owner=None):
         if instance is not None:
+            # TODO: return partial(self, instance)
             return partial(self.py_func, instance)
         return self
 
@@ -147,20 +153,15 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False,
     func = lookup_previous(py_func, [scope])
 
     if isinstance(func, FunctionWrapper):
-        func = func.dispatcher
+        pass
     elif isinstance(func, types.FunctionType) and func != py_func:
         raise TypeError(
             "Function %s in current scope is not overloadable" % (func,))
     else:
-        func = Dispatcher()
+        dispatcher = Dispatcher()
+        func = FunctionWrapper(dispatcher, py_func,
+                               abstract=abstract, opaque=opaque)
 
-    dispatcher = overload(signature, func=func, inline=inline, **kwds)(py_func)
-
-    if isinstance(py_func, types.FunctionType):
-        return FunctionWrapper(dispatcher, py_func,
-                               opaque=opaque, abstract=abstract,
-                               target=target)
-    else:
-        assert isinstance(py_func, FunctionWrapper), py_func
-        return py_func
-
+    func.overload(py_func, signature, inline=inline, opaque=opaque,
+                  abstract=abstract, target=target, **kwds)
+    return func

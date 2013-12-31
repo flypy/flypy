@@ -9,6 +9,8 @@ from numba2.runtime.obj.tupleobject import StaticTuple, EmptyTuple, NoneType
 from numba2.conversion import fromobject, toobject, toctypes
 from numba2.support.ctypes_support import CTypesStruct
 
+import numpy as np
+
 none = NoneType()
 
 def tonb(tup):
@@ -63,7 +65,7 @@ class TestSmallTuple(unittest.TestCase):
 
 class TestJitTuple(unittest.TestCase):
 
-    def test_jit_smalltup(self):
+    def test_getitem(self):
         @jit
         def f(a, b):
             t = (a, b)
@@ -71,21 +73,77 @@ class TestJitTuple(unittest.TestCase):
 
         self.assertEqual(f(5, 6), 6)
 
+    def test_getitem_slice(self):
+        @jit
+        def f(t, s):
+            return t[s]
+
+        def test(t, s):
+            self.assertEqual(f(t, s), t[s])
+
+        t = (1, 2, 3)
+
+        # Full
+        test(t, slice(None, None, None))
+
+        # TODO: implement tuple slicing
+
+        ## Start
+        #test(t, slice(1,    None, None))
+        #test(t, slice(3,    None, None))
+        #test(t, slice(10,   None, None))
+        #test(t, slice(-1,   None, None))
+        #test(t, slice(-6,   None, None))
+        #
+        ## Stop
+        #test(t, slice(None, 1,    None))
+        #test(t, slice(None, 3,    None))
+        #test(t, slice(None, 5,    None))
+        #test(t, slice(None, -1,   None))
+        #test(t, slice(None, -5,   None))
+        #
+        ## Step
+        #test(t, slice(None, None, 1))
+        #test(t, slice(None, None, 2))
+        #test(t, slice(None, None, 5))
+        #test(t, slice(None, None, -1))
+        #test(t, slice(None, None, -5))
+        #
+        ## Combination
+        #test(t, slice(1, 2, 1))
+        #test(t, slice(-2, None, None))
+        #test(t, slice(None, None, 5))
+        #test(t, slice(-1, -1, -1))
+
     def test_len(self):
-        raise unittest.SkipTest
         @jit
         def f(t):
             return len(t)
-        self.assertTrue(f(()), 0)
-        self.assertFalse(f((1, 2, 3)), 3)
+
+        self.assertEqual(f(()), 0)
+        self.assertEqual(f((1, 2, 3)), 3)
 
     def test_bool(self):
-        raise unittest.SkipTest
+        #raise unittest.SkipTest
         @jit
         def f(t):
             return bool(t)
-        self.assertTrue(f(()), False)
-        self.assertFalse(f((1, 2, 3)), True)
+
+        self.assertFalse(f(()))
+        self.assertTrue(f((1, 2, 3)))
+
+    def test_iter(self):
+        @jit
+        def f(t, array):
+            i = 0
+            for x in t:
+                array[i] = x
+                i += 1
+            return a
+
+        a = np.empty(3, dtype=np.int64)
+        result = f((4, 9, 17), a)
+        self.assertEqual(list(result), [4, 9, 17])
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ Number interfaces.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit
+from numba2 import jit, cjit
 from numba2.compiler import lltype
 from ..lowlevel_impls import add_impl_cls
 
@@ -35,7 +35,7 @@ def index_type(argtypes):
 class Type(object):
     layout = []
 
-    @jit('a -> bool')
+    @cjit('a -> bool')
     def __nonzero__(self):
         return True
 
@@ -48,12 +48,12 @@ class Type(object):
 class Constructor(object):
     layout = [] #('ctor', 'a')]
 
-    @jit('Constructor[a] -> Type[b] -> c',
-         opaque=True, infer_restype=index_type)
+    @cjit('Constructor[a] -> Type[b] -> c',
+          opaque=True, infer_restype=index_type)
     def __getitem__(self, item):
         raise NotImplementedError
 
-    @jit('a -> bool')
+    @cjit('a -> bool')
     def __nonzero__(self):
         return True
 

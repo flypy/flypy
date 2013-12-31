@@ -12,7 +12,7 @@ from numba2.representation import byref
 from numba2.conversion import ctype
 from .pointerobject import Pointer
 
-from blaze.datashape import Function as FunctionType
+from datashape import Function as FunctionType
 
 #===------------------------------------------------------------------===
 # Functions

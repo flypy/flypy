@@ -6,16 +6,16 @@ Type resolution and method resolution.
 
 from __future__ import print_function, division, absolute_import
 import inspect
-from blaze.error import UnificationError
 
+from numba2.errors import UnificationError
 from numba2.pipeline import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
-from numba2.types import Type, Constructor, ForeignFunction, Function
+from numba2.types import Type, Constructor, ForeignFunction, Function, void
 from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
-from pykit import ir
+from pykit import ir, types
 
 #===------------------------------------------------------------------===
 # Function call typing
@@ -34,6 +34,8 @@ def infer_call(func, func_type, argtypes):
         2) Higher-order function
             This is already typed
         3) Method. We need to insert 'self' in the cartesian product
+
+    NOTE: This must only be called during the type inference phase !
     """
     is_const = isinstance(func, ir.Const)
     is_numba_func = is_const and isinstance(func.const, FunctionWrapper)
@@ -91,7 +93,6 @@ def infer_foreign_call(func, func_type, argtypes):
     """
     Higher-order or foreign function call.
     """
-
     if isinstance(func_type, type(ForeignFunction.type)):
         restype = func_type.parameters[-1]
     else:
@@ -191,4 +192,12 @@ def resolve_restype(func, env):
                 "type %s for function %r: %s" % (
                     restype, inferred_restype, func.name, e))
 
+    if isinstance(restype, set):
+        raise TypeError(
+            "Undetermined return type for function %s" % (func.name,))
+
     env['numba.typing.restype'] = restype
+
+    if restype == void or env['numba.state.generator']:
+        _, argtypes, varargs = func.type
+        func.type = types.Function(types.Void, argtypes, varargs)

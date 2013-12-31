@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import
 from contextlib import contextmanager
 import sys
 
-from blaze.error import UnificationError
+from datashape.error import UnificationError
 
 class error(Exception):
     """Superclass of all numba exceptions"""
@@ -42,6 +42,8 @@ class _ErrorMsg(object):
             return self.format()
         except Exception, e:
             return str(e)
+
+    __repr__ = __str__
 
     def format(self, level=0):
         if self.pyfunc is not None:
@@ -87,6 +89,9 @@ def error_context(lineno=-1, during=None, pyfunc=None):
 def error_context_phase(env, phase):
     return error_context(during=phase, pyfunc=env['numba.state.py_func'])
 
+def error(env, phase, *msg):
+    with error_context_phase(env, phase):
+        raise CompileError(*msg)
 
 def _tell_func(pyfunc):
     code = pyfunc.func_code

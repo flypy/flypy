@@ -13,7 +13,32 @@ from pykit.ir import Builder
 # Entrypoint
 #===------------------------------------------------------------------===
 
-def translate(py_func, env=None):
+def setup(func, env):
+    from numba2.compiler.overloading import best_match
+
+    # -------------------------------------------------
+    # Find Python function implementation
+
+    argtypes = env["numba.typing.argtypes"]
+    py_func, signature, kwds = best_match(func, list(argtypes))
+
+    # -------------------------------------------------
+    # Update environment
+    env["numba.state.func_name"] = py_func.__name__
+    env["numba.state.function_wrapper"] = func
+    env["numba.state.opaque"] = func.opaque
+    env["numba.typing.restype"] = signature.restype
+    env["numba.typing.argtypes"] = signature.argtypes
+    env["numba.state.crnt_func"] = func
+    env["numba.state.options"] = dict(kwds)
+    env["numba.state.copies"] = {}
+
+    if kwds.get("infer_restype"):
+        env["numba.typing.restype"] = kwds["infer_restype"](argtypes)
+
+    return py_func, env
+
+def translate(py_func, env):
     """
     Entry point.
 
@@ -29,7 +54,7 @@ def translate(py_func, env=None):
     # -------------------------------------------------
     # Translate
 
-    t = Translate(py_func)
+    t = Translate(py_func, env)
     t.initialize()
     t.interpret()
     func = t.dst

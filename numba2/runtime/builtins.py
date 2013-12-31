@@ -7,12 +7,14 @@ try:
 except ImportError:
     import builtins
 
-from .. import jit, ijit, overlay, overload
+from .. import jit, ijit, overlay, overload, cjit
 from .interfaces import Sequence, Iterable, Iterator
-from .obj.core import Range, List, Type
+from .obj.core import Range, List, Type, Complex, Slice
 from .casting import cast
 from numba2.types import int32, float64
 from . import ffi
+
+jit = cjit
 
 # ____________________________________________________________
 # Type checking
@@ -38,7 +40,7 @@ def iter(x):
 def next(x):
     return x.__next__()
 
-@ijit #('Sequence[a] -> Py_ssize_t')
+@jit #('Sequence[a] -> Py_ssize_t')
 def len(x):
     return x.__len__()
 
@@ -81,13 +83,25 @@ else:
     def bool(x):
         return x.__bool__()
 
-@jit('a : numeric -> int32')
-def int(x):
-    return cast(x, int32)
+# TODO: integral | floating typeset
 
-@jit('a : numeric -> float64')
+@jit('a -> int64')
+def int(x):
+    return x.__int__()
+
+@jit('a : integral -> float64')
 def float(x):
     return cast(x, float64)
+
+@jit('a : floating -> float64')
+def float(x):
+    return cast(x, float64)
+
+# TODO: adjust type of constants depending on argtype
+
+@jit('a : numeric -> a -> Complex[a]')
+def complex(real, imag=0):
+    return Complex(real, imag)
 
 # ____________________________________________________________
 
@@ -118,7 +132,30 @@ def range(start, stop=0xdeadbeef, step=1):
 
     return Range(start, stop, step)
 
+@jit
+def zip(a, b):
+    it1 = iter(a)
+    it2 = iter(b)
+    try:
+        while True:
+            yield next(it1), next(it2)
+    except StopIteration:
+        pass
+
+@jit
+def enumerate(it):
+    i = 0
+    for x in it:
+        yield i, x
+        i += 1
+
 # ____________________________________________________________
+
+# TODO: Overloading on arity: slice(start) -> slice(None, start, None)
+
+@ijit
+def slice(start, stop, step):
+    return Slice(start, stop, step)
 
 @ijit('Iterable[x] -> List[x]')
 def list(value):
@@ -143,7 +180,12 @@ overlay(builtins.unicode, unicode)
 overlay(builtins.bool, bool)
 overlay(builtins.int, int)
 overlay(builtins.float, float)
+overlay(builtins.complex, complex)
 overlay(builtins.abs, abs)
+overlay(builtins.slice, slice)
+#overlay(builtins.zip, zip) # TODO: try/except
+overlay(builtins.enumerate, enumerate)
 overlay(builtins.range, range)
+overlay(builtins.xrange, range)
 overlay(builtins.list, list)
 overlay(builtins.print, print)

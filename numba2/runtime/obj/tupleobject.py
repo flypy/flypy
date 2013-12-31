@@ -6,11 +6,14 @@ tuple implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, sjit, abstract, typeof
+from numba2 import jit, sjit, ijit, cjit, abstract, typeof
 from numba2.conversion import fromobject, toobject
 from .noneobject import NoneType
+from .iterators import counting_iterator
 
-STATIC_THRESHOLD = 5
+STATIC_THRESHOLD = 8
+
+jit = cjit
 
 @abstract
 class Tuple(object):
@@ -50,6 +53,12 @@ class StaticTuple(Tuple):
         self.hd = hd
         self.tl = tl
 
+    @jit # slice
+    def __getitem__(self, item):
+        # TODO: implement
+        # TODO: variants
+        return self
+
     @jit('a -> b : integral -> c')
     def __getitem__(self, item):
         if item == 0:
@@ -57,11 +66,9 @@ class StaticTuple(Tuple):
         else:
             return self.tl[item - 1]
 
-    @jit('a -> Iterator[T]')
+    @jit #('a -> Iterator[T]')
     def __iter__(self):
-        yield self.hd
-        for x in self.tl:
-            yield x
+        return counting_iterator(self)
 
     @jit('a -> int64')
     def __len__(self):
@@ -90,13 +97,17 @@ class StaticTuple(Tuple):
     def __eq__(self, other):
         return self.hd == other.hd and self.tl == other.tl
 
-    @jit('a -> bool')
-    def __nonzero__(self):
-        return bool(len(self))
-
     @jit('a -> str')
     def __repr__(self):
-        return '(%s)' % ", ".join(map(str, self))
+        result = []
+        t = self
+        while not isinstance(t.tl, EmptyTuple):
+            result.append(t.hd)
+            t = t.tl
+
+        result.append(t.hd)
+        return repr(tuple(result))
+        #return '(%s)' % ", ".join(map(str, self))
 
     def element_type(self):
         if self.hd is None:
@@ -163,13 +174,13 @@ def tail(t):
 
 # TODO: Exceptions
 
-@jit('a -> b')
-def head(t):
-    return 0xdeadbeef
-
-@jit('a -> b')
-def tail(t):
-    return EmptyTuple()
+#@jit('a -> b')
+#def head(t):
+#    raise NotImplementedError
+#
+#@jit('a -> b')
+#def tail(t):
+#    raise NotImplementedError
 
 @typeof.case(tuple)
 def typeof(pyval):

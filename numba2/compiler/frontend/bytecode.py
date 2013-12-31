@@ -103,6 +103,10 @@ BYTECODES = [
     ('SLICE+1', 0),
     ('SLICE+2', 0),
     ('SLICE+3', 0),
+    ('STORE_SLICE+0', 0),
+    ('STORE_SLICE+1', 0),
+    ('STORE_SLICE+2', 0),
+    ('STORE_SLICE+3', 0),
     ('RAISE_VARARGS', 2),
     ('SETUP_EXCEPT', 2),
     ('END_FINALLY', 0),
@@ -111,6 +115,7 @@ BYTECODES = [
     ('BUILD_SLICE', 2),
     ('PRINT_ITEM', 0),
     ('PRINT_NEWLINE', 0),
+    ('YIELD_VALUE', 0),
     ('STOP_CODE', 0),
 ] + BYTECODE_VERSION_SPECIFIC
 

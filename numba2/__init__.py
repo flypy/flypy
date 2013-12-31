@@ -4,14 +4,19 @@ from os.path import dirname, abspath
 import sys
 import unittest
 
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 from pykit.utils.pattern import match as pyoverload
 
-from .entrypoints import jit, ijit, sjit, abstract, unijit
+from .entrypoints import jit, ijit, sjit, cjit, abstract, unijit
 from .compiler import (annotate, overload, overloadable)
 from .typing import (overlay, parse, unify, free, UnificationError)
 from .rules import typeof, convert, promote, typejoin, is_numba_type
 from .types import *
 from .conversion import toobject, fromobject, toctypes, fromctypes, ctype
+from .pipeline import passes, phase, environment
 from .runtime import cast
 from .runtime.interfaces.interface import implements
 from .runtime.ffi import sizeof, malloc, libc
@@ -28,7 +33,8 @@ from .runtime import mathlib
 from .pipeline.passes import translate
 from .errors import error, InferError, SpecializeError
 
-__version__ = '0.1'
+# Initialize non-core data structures
+from .lib import extended, nplib
 
 # ______________________________________________________________________
 # numba.test()

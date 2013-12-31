@@ -21,11 +21,10 @@ __all__ = [
 import struct
 import ctypes
 
-from blaze import dshape
-from blaze.datashape import free, TypeVar, TypeConstructor
-from blaze.datashape import Mono as Mono, Ellipsis as EllipsisT
-from blaze.datashape import (signed, unsigned, integral, floating, complexes,
-                             boolean, numeric, scalar)
+from datashape import free, TypeVar, TypeConstructor, dshape
+from datashape import Mono as Mono, Ellipsis as EllipsisT
+from datashape import (signed, unsigned, integral, floating, complexes,
+                       boolean, numeric, scalar)
 from .runtime.obj.core import Type, Constructor
 from .runtime.obj.core import (Function, Pointer, Bool, Int, Float, Complex,
                                Void, NoneType, Tuple, StaticTuple, String,

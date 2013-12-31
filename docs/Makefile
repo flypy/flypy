@@ -154,6 +154,7 @@ doctest:
 
 markdown:
 	pandoc -t markdown -s source/numbacore.rst >out.md
+	pandoc -t markdown -s source/polymorphism.rst >>out.md
 	pandoc -t markdown -s source/fusion.rst >>out.md
 	pandoc -t markdown -s source/typing.rst >>out.md
 	pandoc -t markdown -s source/runtime.rst >>out.md

@@ -6,12 +6,17 @@ Type coercions.
 
 from __future__ import print_function, division, absolute_import
 
+import numba2
+
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, Function, Op, Undef, ops
 
 #------------------------------------------------------------------------
 # Coercions -> Conversions
 #------------------------------------------------------------------------
+
+# TODO: In a later pass, we need to call builtins like int() and bool() or the
+# TODO: 'cast function to perform the coercions
 
 def explicit_coercions(func, env):
     """
@@ -32,14 +37,17 @@ def explicit_coercions(func, env):
     for op in func.ops:
         if op.opcode == 'call':
             coercer.coerce_to_parameters(op)
+        elif op.opcode == 'store':
+            coercer.coerce_to_var(op)
         elif op.opcode == 'setfield':
             coercer.coerce_to_field_setting(op)
         elif op.opcode == 'phi':
             coercer.coerce_to_phi(op)
         elif op.opcode == 'ret':
             coercer.coerce_to_restype(op)
+        elif op.opcode == 'cbranch':
+            coercer.coerce_to_conditional(op)
 
-        # TODO: return, phi
 
 class Coercion(object):
 
@@ -75,6 +83,15 @@ class Coercion(object):
 
         op.set_args([f, newargs])
 
+    def coerce_to_var(self, op):
+        val, var = op.args
+        if self.context[val] != self.context[var]:
+            if isinstance(val, Undef):
+                self.context[val] = self.context[var]
+            else:
+                newval = self.convert(val, self.context[var], op)
+                op.set_args([newval, var])
+
     def coerce_to_field_setting(self, op):
         """
         Promote values for field setting.
@@ -98,6 +115,13 @@ class Coercion(object):
         if retval is not None and self.context[retval] != restype:
             retval = self.convert(retval, restype, op)
             op.set_args([retval])
+
+    def coerce_to_conditional(self, op):
+        restype = numba2.bool_
+        cond, trueblock, falseblock = op.args
+        if self.context[cond] != restype:
+            retval = self.convert(cond, restype, op)
+            op.set_args([retval, trueblock, falseblock])
 
     def coerce_to_phi(self, op):
         """
@@ -153,7 +177,7 @@ class Coercion(object):
         if not conversion:
             isconst = isinstance(arg, (Undef, Const))
 
-            conversion = Op('convert', types.Opaque, [arg])
+            conversion = Op('coerce', types.Opaque, [arg])
             self.context[conversion] = ty
 
             if isconst:
