@@ -3,11 +3,9 @@ from __future__ import print_function, division, absolute_import
 
 from numba2.typing import resolve, to_blaze
 
-from blaze.compute import overloading
-from blaze.compute.function import lookup_previous
-from blaze.compute.overloading import overload, Dispatcher
-from blaze.compute.util import flatargs
-
+from datashape import overloading
+from datashape.overloading import lookup_previous
+from datashape.overloading import overload, Dispatcher, flatargs
 
 def overloadable(f):
     """
