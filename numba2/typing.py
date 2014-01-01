@@ -9,7 +9,7 @@ import datashape as ds
 from datashape import (TypeVar, TypeConstructor, dshape,
                        coercion_cost as coerce, unify as blaze_unify,
                        free, TypeSet)
-from datashape.error import UnificationError
+from datashape.error import UnificationError, CoercionError
 
 __all__ = [
     'TypeVar', 'TypeConstructor', 'dshape', 'coerce', 'blaze_unify',
@@ -271,6 +271,19 @@ def resolve_simple(defining_type, type):
     we must resolve B as a class in the scope `C` is defined in.
     """
     return resolve(type, defining_type.scope, defining_type.bound)
+
+
+def can_coerce(src_type, dst_type):
+    """
+    Check whether we can coerce a value of type `src_type` to a value
+    of type `dst_type`
+    """
+    try:
+        coerce(to_blaze(src_type), to_blaze(dst_type))
+    except CoercionError:
+        return False
+    else:
+        return True
 
 #===------------------------------------------------------------------===
 # Registry

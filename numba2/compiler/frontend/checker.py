@@ -6,7 +6,7 @@ Frontend IR checker.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2.errors import error_context_phase, CompileError
+from numba2.errors import errctx, CompileError
 
 from pykit.ir import Undef
 from pykit.utils import flatten
@@ -34,6 +34,6 @@ def check_generators(func, env):
 def run(func, env):
     from numba2.pipeline import phase
 
-    with error_context_phase(env, phase.typing):
+    with errctx(env):
         check_scoping(func, env)
         check_generators(func, env)

@@ -51,3 +51,22 @@ def coerce(x, ty):
 @jit('Pointer[a] -> Type[Pointer[void]] -> Pointer[void]')
 def coerce(x, ty):
     return cast(x, ty)
+
+
+#===------------------------------------------------------------------===
+# helper functions
+#===------------------------------------------------------------------===
+
+def can_coerce(src_type, dst_type):
+    """
+    Check whether we can coerce a value of type `src_type` to a value
+    of type `dst_type`
+    """
+    from numba2.compiler.overloading import best_match
+
+    try:
+        best_match(coerce, [src_type, Type[dst_type]])
+    except TypeError:
+        return False
+    else:
+        return True

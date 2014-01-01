@@ -12,7 +12,7 @@ from __future__ import print_function, division, absolute_import
 from . import pyoverload
 from numba2.typing import unify, free, to_blaze, resolve_type
 
-from blaze import datashape as ds
+import datashape as ds
 
 #===------------------------------------------------------------------===
 # User-defined typing rules

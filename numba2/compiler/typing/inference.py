@@ -31,7 +31,7 @@ import collections
 from itertools import product
 
 from numba2 import promote, typeof, parse, typejoin
-from numba2.errors import InferError, error_context_phase
+from numba2.errors import InferError, errctx
 from numba2.types import Mono, Function, Pointer, bool_, void
 from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
@@ -103,7 +103,7 @@ class Context(object):
 #===------------------------------------------------------------------===
 
 def run(func, env):
-    with error_context_phase(env, "Type inference"):
+    with errctx(env):
         cache = env['numba.inference.cache']
         argtypes = env['numba.typing.argtypes']
         ctx, signature = infer(cache, func, env, argtypes)

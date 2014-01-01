@@ -7,6 +7,7 @@ Type coercions.
 from __future__ import print_function, division, absolute_import
 
 import numba2
+from numba2 import errors
 
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, Function, Op, Undef, ops
@@ -34,19 +35,20 @@ def explicit_coercions(func, env):
     b = Builder(func)
     coercer = Coercion(func, b, context, envs, conversions, env)
 
-    for op in func.ops:
-        if op.opcode == 'call':
-            coercer.coerce_to_parameters(op)
-        elif op.opcode == 'store':
-            coercer.coerce_to_var(op)
-        elif op.opcode == 'setfield':
-            coercer.coerce_to_field_setting(op)
-        elif op.opcode == 'phi':
-            coercer.coerce_to_phi(op)
-        elif op.opcode == 'ret':
-            coercer.coerce_to_restype(op)
-        elif op.opcode == 'cbranch':
-            coercer.coerce_to_conditional(op)
+    with errors.errctx(env):
+        for op in func.ops:
+            if op.opcode == 'call':
+                coercer.coerce_to_parameters(op)
+            elif op.opcode == 'store':
+                coercer.coerce_to_var(op)
+            elif op.opcode == 'setfield':
+                coercer.coerce_to_field_setting(op)
+            elif op.opcode == 'phi':
+                coercer.coerce_to_phi(op)
+            elif op.opcode == 'ret':
+                coercer.coerce_to_restype(op)
+            elif op.opcode == 'cbranch':
+                coercer.coerce_to_conditional(op)
 
 
 class Coercion(object):
@@ -173,8 +175,14 @@ class Coercion(object):
         op: Op
             insert conversion before this op
         """
+        from numba2.typing import can_coerce
+
         conversion = self.conversions.get((arg, ty))
         if not conversion:
+            src_type = self.context[arg]
+            #if not can_coerce(src_type, ty):
+            #    raise TypeError("Cannot coerce %s to %s" % (src_type, ty))
+
             isconst = isinstance(arg, (Undef, Const))
 
             conversion = Op('coerce', types.Opaque, [arg])

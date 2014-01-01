@@ -86,11 +86,13 @@ def error_context(lineno=-1, during=None, pyfunc=None):
         raise exc, None, sys.exc_info()[2]
 
 
-def error_context_phase(env, phase):
-    return error_context(during=phase, pyfunc=env['numba.state.py_func'])
+def errctx(env, op=None):
+    phase = env['numba.state.phase']
+    phase_name = getattr(phase, '__name__', phase)
+    return error_context(during=phase_name, pyfunc=env['numba.state.py_func'])
 
 def error(env, phase, *msg):
-    with error_context_phase(env, phase):
+    with errctx(env):
         raise CompileError(*msg)
 
 def _tell_func(pyfunc):

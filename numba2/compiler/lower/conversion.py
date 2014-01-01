@@ -7,6 +7,7 @@ Lower conversion operations.
 from __future__ import print_function, division, absolute_import
 
 import numba2
+from numba2 import errors
 from numba2.pipeline import environment
 from ..utils import Caller
 
@@ -17,6 +18,10 @@ def run(func, env):
     """
     Turn `convert` ops into calls to coerce().
     """
+    with errors.errctx(env):
+        lower_coerce(func, env)
+
+def lower_coerce(func, env):
     from numba2.runtime.coercion import coerce
 
     phase = env['numba.state.phase']
