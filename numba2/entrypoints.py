@@ -14,7 +14,7 @@ from .functionwrapper import wrap
 from .typing import MetaType
 from .utils import applyable, applyable_decorator
 
-def jit(f, *args, **kwds):
+def jit(f=None, *args, **kwds):
     """
     @jit entry point:
 
@@ -106,6 +106,13 @@ def sjit(cls, *args, **kwds):
         raise TypeError(
             "Cannot stack-allocate instances with __del__: %s" % (cls,))
     return jit_class(cls, *args, stackallocate=True, **kwds)
+
+@applyable_decorator
+def unijit(f, *args, **kwds):
+    """@jit(target='uni')
+    Compile into universal representation
+    """
+    return _jit(f, *args, target="uni", **kwds)
 
 # fast-compile jit
 if config.debug:

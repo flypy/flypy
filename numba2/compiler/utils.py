@@ -13,9 +13,10 @@ class Caller(object):
     Utility to call functions.
     """
 
-    def __init__(self, builder, context):
+    def __init__(self, builder, context, env):
         self.builder = builder
         self.context = context
+        self.env = env
 
     def call(self, phase_to_run, nb_func, args, argtypes=None, result=None):
         from numba2.pipeline import phase
@@ -23,7 +24,9 @@ class Caller(object):
         # Apply phase
         if argtypes is None:
             argtypes = tuple(self.context[arg] for arg in args)
-        f, env = phase.apply_phase(phase_to_run, nb_func, argtypes)
+
+        target = self.env['numba.target']
+        f, env = phase.apply_phase(phase_to_run, nb_func, argtypes, target)
 
         # Generate call
         result = self.builder.call(ptypes.Opaque, f, args, result=result)

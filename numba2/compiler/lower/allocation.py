@@ -21,7 +21,7 @@ from pykit.ir import Builder, OpBuilder, Const
 def allocator(func, env):
     context = env['numba.typing.context']
     b = OpBuilder()
-    caller = Caller(b, context)
+    caller = Caller(b, context, env)
     gcmod = gc.gc_impl(env["numba.gc.impl"])
 
     for op in func.ops:
@@ -98,7 +98,8 @@ def register_finalizer(caller, builder, env, context, type, gcmod, obj):
     if '__del__' in type.fields:
         # Compile __del__
         __del__ = type.fields['__del__']
-        lfunc, env = phase.apply_phase(phase.codegen, __del__, (type,))
+        lfunc, env = phase.apply_phase(phase.codegen, __del__, (type,),
+                                       env['numba.target'])
 
         # Retrieve function address of __del__
         cfunc = env["codegen.llvm.ctypes"]

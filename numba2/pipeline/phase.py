@@ -101,8 +101,8 @@ def apply_all(phase, func, env, dependences=None):
 
     return phase.apply_single(func, env)
 
-def apply_phase(phase, nb_func, argtypes):
-    env = fresh_env(nb_func, argtypes)
+def apply_phase(phase, nb_func, argtypes, target):
+    env = fresh_env(nb_func, argtypes, target)
     return phase(nb_func, env)
 
 # ______________________________________________________________________
@@ -181,6 +181,39 @@ def llvm_phase(func, env):
 
     return env["numba.state.llvm_func"], env
 
+# Data Parallel Python Specifics
+
+def dpp_llvm_phase(func, env):
+    from pykit.codegen.llvm import llvm_utils
+    assert env['numba.target'] == 'dpp'
+
+    cache = env['numba.codegen.cache']
+    envs = env["numba.state.envs"]
+
+    if func in cache:
+        return cache[func]
+
+    dependences = [d for d in env['numba.state.dependences']
+                   if d not in cache]
+
+    for f in dependences:
+        localenv = envs[f]
+        localenv['codegen.llvm.module'] = llvm_utils.module("tmp.%x" % id(f))
+        run_pipeline(f, envs[f], passes.backend_init)
+
+    for f in dependences:
+        run_pipeline(f, envs[f], passes.dpp_backend_run)
+
+    for f in dependences:
+        e = envs[f]
+        lfunc = e["numba.state.llvm_func"]
+        run_pipeline(lfunc, envs[f], passes.dpp_backend_finalize)
+        cache.insert(f, (lfunc, e))
+
+    return env["numba.state.llvm_func"], env
+
+# ______________________________________________________________________
+# Apply
 
 initialize  = phase('initialize', passes.initialize, all=False,
                     key=cache_key_argtypes)
@@ -191,6 +224,21 @@ typing      = phase('typing', passes.typing, depend=frontend, all=False,
 generators  = phase('generators', passes.generators, depend=typing, all=False)
 hl_lower    = phase('hl_lower', passes.hl_lowering, depend=generators)
 opt         = phase('opt', passes.optimizations, depend=hl_lower)
-ll_lower    = phase('ll_lower', passes.ll_lowering, depend=opt)
+prelower    = phase('prelower', passes.prelowering, depend=opt)
+ll_lower    = phase('ll_lower', passes.ll_lowering, depend=prelower)
 llvm        = phasecompose(llvm_phase, ll_lower)
-codegen     = phase('codegen', passes.codegen, depend=llvm, all=False)
+cpu_codegen = phase('codegen', passes.codegen, depend=llvm, all=False)
+
+dpp_llvm    = phasecompose(dpp_llvm_phase, ll_lower)
+dpp_codegen = phase('dpp_codegen', passes.codegen, depend=dpp_llvm, all=False)
+
+# ______________________________________________________________________
+# Codegen
+
+_target_codegen_map = {
+    'cpu': cpu_codegen,
+    'dpp': dpp_codegen,
+}
+
+def codegen(func, env):
+    return _target_codegen_map[env['numba.target']](func, env)

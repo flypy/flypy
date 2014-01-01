@@ -22,7 +22,7 @@ int32 = Int[32, False]
 
 def get(f, argtypes):
     f = jit(f)
-    env = environment.fresh_env(f, argtypes)
+    env = environment.fresh_env(f, argtypes, "cpu")
     func, env = phase.typing(f, env)
     context = env['numba.typing.context']
     signature = env['numba.typing.signature']

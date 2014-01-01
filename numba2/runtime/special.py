@@ -34,7 +34,7 @@ def make_typeof(py_func, argtypes):
     def typeof_impl(obj):
         return type
 
-    env = fresh_env(typeof_impl, tuple(argtypes))
+    env = fresh_env(typeof_impl, tuple(argtypes), "cpu")
     func, env = phase.opt(typeof_impl, env)
     return func
 

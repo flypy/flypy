@@ -46,11 +46,9 @@ class Cache(object):
 class TypingCache(Cache):
 
     def lookup(self, key):
-        func, argtypes = key
         return Cache.lookup(self, key)
 
     def insert(self, key, value):
-        func, argtypes = key
         Cache.insert(self, key, value)
 
 #===------------------------------------------------------------------===
@@ -88,7 +86,7 @@ class InferenceCache(object):
 #===------------------------------------------------------------------===
 
 def lookup(cache, func, root_env=None):
-    root_env = root_env or numba2.pipeline.root_env
+    root_env = root_env or numba2.pipeline.cpu_env
     envs = root_env['numba.state.envs']
     env = envs[func]
     return cache.lookup((func, env['numba.typing.argtypes']))
