@@ -57,7 +57,7 @@ def zeros(shape, dtype):
 @jit('shape -> Type[dtype] -> NDArray[dtype, dims]')
 def ones(shape, dtype):
     result = empty(shape, dtype)
-    result[:] = 0
+    result[:] = 1
     return result
 
 #===------------------------------------------------------------------===
