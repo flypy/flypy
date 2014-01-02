@@ -37,7 +37,7 @@ from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
 from numba2.viz.prettyprint import debug_print
 from numba2.errors import error_context
-from .resolution import infer_call
+from .resolution import infer_call, Method, make_method, infer_getattr
 from .. import opaque
 
 import pykit.types
@@ -57,9 +57,6 @@ def view(G):
     import matplotlib.pyplot as plt
     networkx.draw(G)
     plt.show()
-
-Method = TypeConstructor("Method", 2, [{'coercible': True}] * 2)
-#Method = type(parse("Method[func, self]"))
 
 #===------------------------------------------------------------------===
 # Inference structures
@@ -382,7 +379,10 @@ class ConstraintGenerator(object):
         """
         self.G.add_edge(op.args[0] or void, self.return_node)
 
-# ______________________________________________________________________
+
+#===------------------------------------------------------------------===
+# Inference on Graph
+#===------------------------------------------------------------------===
 
 def infer_graph(cache, ctx, env):
     """
@@ -443,7 +443,14 @@ def infer_node(cache, ctx, node, env, processed):
         inferer = inference_table[C]
         return inferer(ctx, env, node, processed, incoming, typeset, changed)
 
+### *** type inference rules *** ###
+
 def infer_pointer(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer pointer creation:
+
+        alloca var
+    """
     for neighbor in incoming:
         for type in ctx.context[neighbor]:
             #result = Pointer[type]
@@ -454,6 +461,11 @@ def infer_pointer(ctx, env, node, processed, incoming, typeset, changed):
     return changed
 
 def infer_flow(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer data flow:
+
+        a = b
+    """
     for neighbor in incoming:
         for type in ctx.context[neighbor]:
             changed |= type not in typeset
@@ -462,17 +474,20 @@ def infer_flow(ctx, env, node, processed, incoming, typeset, changed):
     return changed
 
 def infer_attr(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer attributes:
+
+        obj.a
+    """
     [neighbor] = incoming
     attr = ctx.metadata[node]['attr']
     for type in ctx.context[neighbor]:
         if attr in type.fields:
-            value = type.fields[attr]
-            func, self = value, type
-            result = Method(func, self)
+            result = make_method(type, attr)
         elif attr in type.layout:
             result = type.resolved_layout[attr]
         elif '__getattr__' in type.fields:
-            pass
+            _, _, result = infer_getattr(type, env)
         elif '__getattribute__' in type.fields:
             raise InferError("__getattribute__ note supported")
         else:
@@ -484,6 +499,11 @@ def infer_attr(ctx, env, node, processed, incoming, typeset, changed):
     return changed
 
 def infer_appl(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer function application:
+
+        f(a)
+    """
     func = ctx.metadata[node]['func']
     func_types = ctx.context[func]
     arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]

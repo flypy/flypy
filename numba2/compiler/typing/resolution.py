@@ -12,6 +12,7 @@ from numba2.pipeline import fresh_env
 from numba2 import promote, unify, typejoin
 from numba2.functionwrapper import FunctionWrapper
 from numba2.types import Type, Constructor, ForeignFunction, Function, void
+from numba2.typing import TypeConstructor
 from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
@@ -21,10 +22,16 @@ from pykit import ir, types
 # Function call typing
 #===------------------------------------------------------------------===
 
-# TODO: Move this function to a third module
+Method = TypeConstructor("Method", 2, [{'coercible': True}] * 2)
 
 def is_method(t):
-    return type(t).__name__ == 'Method' # hargh
+    return isinstance(t, Method)
+
+def make_method(type, attr):
+    value = type.fields[attr]
+    func, self = value, type
+    return Method(func, self)
+
 
 def infer_call(func, func_type, argtypes, env):
     """
@@ -49,6 +56,19 @@ def infer_call(func, func_type, argtypes, env):
         return infer_foreign_call(func, func_type, argtypes)
     else:
         raise NotImplementedError(func, func_type)
+
+def infer_getattr(type, env):
+    """
+    Infer a call of obj.__getattr__(attr)
+    """
+    from numba2.runtime.obj.core import String
+
+    func_type = make_method(type, '__getattr__')
+    func = func_type.parameters[0]
+
+    self_type = type
+    attr_type = String[()]
+    return infer_call(func, func_type, [self_type, attr_type], env)
 
 def infer_function_call(func, func_type, argtypes, env):
     """
