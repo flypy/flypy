@@ -22,6 +22,7 @@ from pykit import ir, types
 # Function call typing
 #===------------------------------------------------------------------===
 
+# Method(func, self_type)
 Method = TypeConstructor("Method", 2, [{'coercible': True}] * 2)
 
 def is_method(t):

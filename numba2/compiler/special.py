@@ -45,3 +45,16 @@ def lookup_special(func):
     """Look up a special method name for an operator.* function"""
     operator = defs.operator2opcode[func]
     return special[operator]
+
+#===------------------------------------------------------------------===
+# Numba-specific special methods
+#===------------------------------------------------------------------===
+
+# We don't assume __setattr__ since there is no good way to implement them
+# with python semantics right now (e.g. using super()), and we do want
+# attributes to work properly in Python land.
+
+# __setattribute__ semantics is that when an attribute is missing,
+# __setattribute__ will be called to set it. It's not invoked when an
+# attribute is listed in 'layout'
+SETATTR = '__setattribute__' # numba-specific __setattr__

@@ -7,7 +7,9 @@ Type resolution and method resolution.
 from __future__ import print_function, division, absolute_import
 
 import numba2
-from ..typing.resolution import infer_call, is_method, get_remaining_args, infer_getattr
+from numba2.compiler.special import SETATTR
+from ..typing.resolution import (infer_call, is_method, get_remaining_args,
+                                 infer_getattr, make_method)
 
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
@@ -15,6 +17,8 @@ from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
 #===------------------------------------------------------------------===
 # Call rewrites
 #===------------------------------------------------------------------===
+
+# TODO: Implement rewrite engine
 
 def rewrite_getattr(func, env):
     """
@@ -52,6 +56,41 @@ def rewrite_getattr(func, env):
                 context[op] = func_type
                 context[attr_string] = attr_type
                 context[call] = restype
+
+
+def rewrite_setattr(func, env):
+    """
+    Resolve missing attributes through __setattr__
+    """
+    context = env['numba.typing.context']
+
+    b = Builder(func)
+
+    for op in func.ops:
+        if op.opcode == 'setfield':
+            obj, attr, value = op.args
+            obj_type = context[obj]
+            attr_type = numba2.String[()]
+
+            if attr not in obj_type.fields and attr not in obj_type.layout:
+                assert SETATTR in obj_type.fields, attr
+
+                b.position_after(op)
+
+                # Construct attribute string
+                attr_string = OConst(attr)
+
+                # call(getfield(obj, '__setattr__'), ['attr', value])
+                method_type = make_method(obj_type, SETATTR)
+                method = b.getfield(types.Opaque, obj, SETATTR)
+                call = b.call(types.Opaque, method, [attr_string, value])
+                op.delete()
+
+                # Update context
+                del context[op]
+                context[method] = method_type
+                context[call] = numba2.Void[()]
+                context[attr_string] = attr_type
 
 
 def rewrite_calls(func, env):
