@@ -63,9 +63,10 @@ class Object(object):
         attr = as_cstring(attr)
         return wrap(lib.getfield(self.ptr, attr))
 
-    #@jit("a -> a -> a -> a")
-    #def __setattr__(self, attr, value):
-    #    check(lib.setfield(self, attr, value))
+    @jit("a -> String[] -> a -> void")
+    def __setattribute__(self, attr, value):
+        attr = as_cstring(attr)
+        check(lib.setfield(self.ptr, attr, value.ptr))
 
     @jit("a -> a -> a")
     def __getitem__(self, idx):

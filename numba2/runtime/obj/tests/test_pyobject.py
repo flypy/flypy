@@ -39,6 +39,17 @@ class TestObjects(unittest.TestCase):
             return obj.value
         self.assertEqual(f(C(5)), 5)
 
+    def test_set_attribute(self):
+        @jit
+        def f(obj1, obj2):
+            obj1.foo = obj2
+
+        obj1 = C(5)
+        obj2 = C(6)
+        f(obj1, obj2)
+        self.assertEqual(obj1.foo.value, 6)
+
+
     def test_add(self):
         @jit
         def f(a, b):
