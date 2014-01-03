@@ -33,6 +33,12 @@ def typeof(value):
 
 class TestObjects(unittest.TestCase):
 
+    def test_get_attribute(self):
+        @jit
+        def f(obj):
+            return obj.value
+        self.assertEqual(f(C(5)), 5)
+
     def test_add(self):
         @jit
         def f(a, b):

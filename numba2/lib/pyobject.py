@@ -9,7 +9,8 @@ import ctypes
 
 import numba2
 from numba2 import jit, ijit, typeof
-from numba2.coretypes import Void, Pointer
+from numba2.runtime.obj.stringobject import as_cstring
+from numba2.coretypes import Void, Pointer, String
 from numba2.runtime.lib import librt as lib
 
 import cffi
@@ -57,10 +58,11 @@ class Object(object):
     def __next__(self):
         return wrap(lib.next(self.ptr))
 
-    #@jit("a -> a -> a")
-    #def __getattr__(self, attr):
-    #    return wrap(lib.getfield(self, attr))
-    #
+    @jit("a -> String[] -> a")
+    def __getattr__(self, attr):
+        attr = as_cstring(attr)
+        return wrap(lib.getfield(self.ptr, attr))
+
     #@jit("a -> a -> a -> a")
     #def __setattr__(self, attr, value):
     #    check(lib.setfield(self, attr, value))
