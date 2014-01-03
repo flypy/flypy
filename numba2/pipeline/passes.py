@@ -18,6 +18,7 @@ from numba2.compiler.typing.resolution import (resolve_context, resolve_restype)
 from numba2.compiler.optimizations import (dataflow, optimize, inlining,
                                            throwing, deadblocks, reg2mem)
 from numba2.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
+                                   rewrite_getattr,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
                                    conversion, rewrite_obj_return, allocator,
@@ -56,6 +57,7 @@ typing = [
     resolve_restype,
     typecheck,
     # numba.compiler.lower.*
+    rewrite_getattr,
     rewrite_calls,
     rewrite_raise_exc_type,
     reg2mem,

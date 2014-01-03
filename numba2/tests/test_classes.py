@@ -30,6 +30,13 @@ class C(object):
     def method(self, other):
         return self.x * other.x
 
+    @jit
+    def __getattr__(self, attr):
+        if attr == "spam":
+            return "spam and eggs"
+        else:
+            return "just eggs then"
+
 @jit('Composed[a]')
 class Composed(object):
     layout = [('obj', 'a')]
@@ -85,6 +92,14 @@ class TestClasses(unittest.TestCase):
         obj = return_obj(10)
         self.assertIsInstance(obj, C)
         self.assertEqual(obj.x, 10)
+
+    def test_getattr(self):
+        @jit
+        def f():
+            c = C(10)
+            return (c.spam, c.eggs)
+
+        self.assertEqual(f(), ("spam and eggs", "just eggs then"))
 
 
 class TestParameterized(unittest.TestCase):
