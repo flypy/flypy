@@ -66,9 +66,8 @@ def infer_getattr(type, env):
     func_type = make_method(type, '__getattr__')
     func = func_type.parameters[0]
 
-    self_type = type
     attr_type = String[()]
-    return infer_call(func, func_type, [self_type, attr_type], env)
+    return infer_call(func, func_type, [attr_type], env)
 
 def infer_function_call(func, func_type, argtypes, env):
     """

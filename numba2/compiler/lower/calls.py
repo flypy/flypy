@@ -6,14 +6,53 @@ Type resolution and method resolution.
 
 from __future__ import print_function, division, absolute_import
 
-from ..typing.resolution import infer_call, is_method, get_remaining_args
+import numba2
+from ..typing.resolution import infer_call, is_method, get_remaining_args, infer_getattr
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function, Op
+from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
 
 #===------------------------------------------------------------------===
 # Call rewrites
 #===------------------------------------------------------------------===
+
+def rewrite_getattr(func, env):
+    """
+    Resolve missing attributes through __getattr__
+    """
+    context = env['numba.typing.context']
+
+    b = OpBuilder()
+    builder = Builder(func)
+
+    for op in func.ops:
+        if op.opcode == 'getfield':
+            value, attr = op.args
+            obj_type = context[value]
+            attr_type = numba2.String[()]
+
+            if attr not in obj_type.fields and attr not in obj_type.layout:
+                assert '__getattr__' in obj_type.fields
+
+                op.set_args([value, '__getattr__'])
+
+                # Construct attribute string
+                attr_string = OConst(attr)
+
+                # Retrieve __getattr__ function and type
+                getattr_func, func_type, restype = infer_getattr(obj_type, env)
+
+                # call(getfield(obj, '__getattr__'), ['attr'])
+                call = b.call(op.type, op, [attr_string])
+                op.replace_uses(call)
+                builder.position_after(op)
+                builder.emit(call)
+
+                # Update context
+                context[op] = func_type
+                context[attr_string] = attr_type
+                context[call] = restype
+
 
 def rewrite_calls(func, env):
     """
