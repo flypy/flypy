@@ -6,9 +6,26 @@ from numba2 import jit
 
 range = lambda *args: list(xrange(*args))
 
-class TestList(unittest.TestCase):
+class TestListCreation(unittest.TestCase):
 
-    # ---- Special methods ---- #
+    def test_empty(self):
+        @jit
+        def empty():
+            return []
+
+        self.assertEqual(empty(), [])
+
+    def test_creation(self):
+        raise unittest.SkipTest
+
+        @jit
+        def create():
+            return [1, 2, 3]
+
+        self.assertEqual(create(), [1, 2, 3])
+
+
+class TestListSpecialMethods(unittest.TestCase):
 
     def test_getitem(self):
         @jit
@@ -45,7 +62,8 @@ class TestList(unittest.TestCase):
         raise unittest.SkipTest
         self.assertEqual(add(range(10), range(10, 20)), range(20))
 
-    # ---- List Methods ---- #
+
+class TestListMethods(unittest.TestCase):
 
     def test_append1(self):
         @jit

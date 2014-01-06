@@ -12,7 +12,7 @@ from .floatobject import Float
 from .complexobject import Complex
 from .sliceobject import Slice
 from .tupleobject import Tuple, StaticTuple, GenericTuple, head, tail, EmptyTuple
-from .listobject import List
+from .listobject import List, EmptyList
 from .rangeobject import Range
 from .noneobject import NoneType, NoneValue
 from .structobject import struct_
