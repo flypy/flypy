@@ -16,11 +16,17 @@ __all__ = ['typeof']
 
 @jit('a -> Type[a]', opaque=True)
 def typeof(obj):
+    """
+    Take the type of a given object. This first executes the sub-expression!
+    """
     raise NotImplementedError("Not implemented at the python level")
 
-@jit('a -> Pointer[void]', opaque=True)
-def addressof(func):
-    raise NotImplementedError("Not implemented at the python level")
+#@jit('a -> Pointer[void]', opaque=True)
+#def addressof(func):
+#    """
+#    Take the address of a given function.
+#    """
+#    raise NotImplementedError("Not implemented at the python level")
 
 #===------------------------------------------------------------------===
 # Low-level implementations
@@ -43,10 +49,10 @@ opaque.implement_opaque(typeof, make_typeof)
 
 ## addressof()
 
-def impl_addressof(builder, argtypes, obj):
-    builder.ret(builder.addressof(obj))
-
-lowlevel_impls.add_impl(addressof, "addressof", impl_addressof)
+#def impl_addressof(builder, argtypes, obj):
+#    builder.ret(builder.addressof(obj))
+#
+#lowlevel_impls.add_impl(addressof, "addressof", impl_addressof)
 
 ## Overlays
 
