@@ -12,6 +12,7 @@ from .casting import cast
 from .obj.core import Type, Pointer, Void
 from .lib import libc
 from .lowlevel_impls import add_impl
+from numba2.compiler import lltype
 
 from pykit import ir
 from pykit import types as ptypes
@@ -67,3 +68,23 @@ def implement_sizeof(builder, argtypes, obj):
     return builder.ret(result)
 
 add_impl(sizeof, "sizeof", implement_sizeof, ptypes.Int64)
+
+#======= UNDEF ==================================================
+
+@jit('Type[base] -> base', opaque=True)
+def undef(type):
+    raise NotImplementedError("Not implemented at the python level")
+
+def implement_undef(builder, argtypes, obj):
+    restype = restype_undef(argtypes)
+    result = ir.Undef(restype)
+    return builder.ret(result)
+
+def restype_undef(argtypes):
+    (type,) = argtypes[0]
+    assert type.impl == Type
+    (restype,) = type.parameters
+    t = lltype(restype)
+    return t
+
+add_impl(undef, "undef", implement_undef, restype_func=restype_undef)
