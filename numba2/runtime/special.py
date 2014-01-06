@@ -6,7 +6,8 @@ Special numba functions.
 
 from __future__ import print_function, division, absolute_import
 
-from numba2 import jit, Type, Pointer
+import numba2
+from numba2 import jit, Type, Pointer, overlay
 from numba2.pipeline import fresh_env, phase
 from numba2.runtime import lowlevel_impls
 from numba2.compiler import opaque
@@ -35,7 +36,7 @@ def make_typeof(py_func, argtypes):
         return type
 
     env = fresh_env(typeof_impl, tuple(argtypes), "cpu")
-    func, env = phase.opt(typeof_impl, env)
+    func, env = phase.ll_lower(typeof_impl, env)
     return func
 
 opaque.implement_opaque(typeof, make_typeof)
@@ -46,3 +47,8 @@ def impl_addressof(builder, argtypes, obj):
     builder.ret(builder.addressof(obj))
 
 lowlevel_impls.add_impl(addressof, "addressof", impl_addressof)
+
+## Overlays
+
+# make numba.typeof() available in numba code
+overlay(numba2.typeof, typeof)

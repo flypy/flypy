@@ -138,6 +138,7 @@ dpp_backend_finalize = [
 
 all_passes = [
     frontend, typing, generators, hl_lowering, optimizations,
+    prelowering,
     ll_lowering, backend_init, backend_run, backend_finalize,
     codegen, dpp_backend_run, dpp_backend_finalize,
 ]

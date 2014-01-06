@@ -4,16 +4,47 @@ import ctypes
 
 import unittest
 
-from numba2 import jit, Type
-from numba2.runtime.special import typeof, addressof
+from numba2 import jit, Type, int32, float64, typeof, addressof
+
+## Test helpers
+
+@jit
+class C(object):
+    layout = [('ran', 'bool')]
+
+    @jit
+    def method(self):
+        self.ran = True
+        return 12.0
+
+##
 
 class TestSpecial(unittest.TestCase):
 
-    #def test_typeof(self):
-    #    @jit
-    #    def f(x):
-    #        return typeof(x)
-    #    print(f(10))
+    def test_typeof1(self):
+        @jit('int32 -> Type[int32]')
+        def f(x):
+            return typeof(x)
+
+        self.assertEqual(f(10), int32)
+
+    def test_execute_subexpr_typeof(self):
+        @jit
+        class C(object):
+            layout = [('ran', 'bool')]
+
+            @jit
+            def method(self):
+                self.ran = True
+                return 12.0
+
+        @jit
+        def f():
+            obj = C(False)
+            restype = typeof(obj.method())
+            return obj.ran, restype
+
+        self.assertEqual(f(), (True, float64))
 
     def test_addressof(self):
         @jit
