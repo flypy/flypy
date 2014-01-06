@@ -10,7 +10,7 @@ from numba2 import sjit, jit
 import numba2
 from .core import Type, Pointer
 
-@jit('Buffer[a]')
+@sjit('Buffer[a]')
 class Buffer(object):
     layout = [
         ('p', 'Pointer[a]'),

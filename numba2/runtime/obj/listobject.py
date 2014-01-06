@@ -190,6 +190,12 @@ class List(object):
             self.buf.resize(int(SHRINK * self.size))
 
     @jit
+    def accommodate(self, n):
+        """Accommodate for an additional N objects"""
+        if self.size + n >= len(self.buf):
+            self.buf.resize(int(self.size + n))
+
+    @jit
     def _grow(self):
         if self.size >= len(self.buf):
             self.buf.resize(int(self.size * GROW))
