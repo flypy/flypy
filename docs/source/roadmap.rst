@@ -14,22 +14,52 @@ Compiler
 
 See ``numba/compiler``. Items are listed in order of urgency.
 
-Local Exception Rewriting
-~~~~~~~~~~~~~~~~~~~~~~~~~
-Rewrite 'try/except' with a 'raise' in the 'try' to a jump.
+Varargs and Unpacking
+~~~~~~~~~~~~~~~~~~~~~
+Support for ``def f(*args):`` and support for (static tuple) unpacking in calls.
+This is useful to make termeval work for n-ary blaze functions:
 
-Constant Specialization
-~~~~~~~~~~~~~~~~~~~~~~~
-Accepting a constant as function argument and specializing for it.
+    https://github.com/ContinuumIO/blaze/blob/termeval/blaze/bkernel/termeval.py
+
+Higher-order functions
+~~~~~~~~~~~~~~~~~~~~~~
+Support higher-order functions. Initially using restrictions similar to HM:
+
+.. code-block:: python
+
+    @jit('(a -> b) -> [a] -> [b]')
+
+where we can immediately infer the type of the function.
+Implement the optimization ``call(getptr(f, signature) [args]) -> call(f, [args])``.
+
+The following is not allowed initially:
+
+.. code-block:: python
+
+    @jit('(a -> b) -> c')
+
+Later we can implement passing specializations by inferring the uses of the passed
+function, and splitting the argument ``f`` into N specialized parameters ``f0, ..., fn-1``.
+In generic code this is simply handled by runtime dispatch.
+
+Modular Codegen
+~~~~~~~~~~~~~~~
+Modular code generation for fast load and compile times.
+
+    - don’t insert runtime pointers
+    - reconstruct immutable constants
+        - insert external symbols for FFI calls
+    - aggregate (specialized) code into compiled modules
+    - insert IR globals to pre-specialized code
+    - finish one LLVM module per function
+    - save metadata regarding specializations (types etc)
+    - save metadata regarding module and function dependencies, modification time, etc
+    - implement loader
+        - load compiled code and attach pointers to IR globals
 
 Constant Folding and Propagation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This should include ``isinstance``.
-
-Unrolling
-~~~~~~~~~
-Unroll static iterables. Very important for partial evaluation, and for
-optimizations such as efficient array indexing.
 
 Inference <-> Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,14 +68,9 @@ type inference. For instance, type inference can resolve ``isinstance``,
 which can prune branches which would otherwise generate superfluous types
 that are merged at subsequent join points, making the types too general.
 
-Type Lattice
-~~~~~~~~~~~~
+Subtyping at Type level
+~~~~~~~~~~~~~~~~~~~~~~~
 Implement a type join that finds the most general type between two types.
-
-Generator Fusion
-~~~~~~~~~~~~~~~~
-Fusion of generators into consumers when there is "static control flow" between
-the consumer and producer.
 
 Escape Analysis & Stack Allocation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,60 +81,26 @@ Runtime
 
 See ``numba/runtime``. Items are listed in order of urgency.
 
-Pointers
+DyND Support
+~~~~~~~~~~~~
+Support the DyND array structure natively.
+
+Vectorized Programming
+~~~~~~~~~~~~~~~~~~~~~~
+Support a Vector and Array data type of a bound-number of stack-allocated values.
+
+C++
+~~~
+Allow building numba objects in C++ using generated C++ classes. See ``numba2.cppgen``
+
+Datetime
 ~~~~~~~~
-Simple addition and subtraction.
+Port datetime support from numba.
 
-Conversions
-~~~~~~~~~~~
-Conversion mechanism, that invokes the overloaded ``convert`` function.
-Generate a simple Python function:
+Decimals
+--------
+Finish decimalobject.py
 
-.. code-block:: python
-
-    def make_convert(f):
-        nargs = len(inspect.getarg(f).args)
-        py_result = make_function_that_call_f(nargs)
-        return jit(Object(*[Object] * nargs)(py_result)
-
-Implement further Object -> Numba conversion and vice versa for Array, Int, etc.
-
-Arrays
-~~~~~~
-Start with just allocation and indexing. This needs pointer support, and
-NumPy -> Numba conversion.
-
-Iterators
-~~~~~~~~~
-Needed for ``for`` loops, e.g. over ``range`` etc. This is mostly implemented,
-perhaps with the biggest piece missing a combination of inlining + local
-exception rewriting.
-
-CFFI/Ctypes Support
-~~~~~~~~~~~~~~~~~~~
-Needed to implement a fast and simple minimal array runtime (allocation, etc).
-
-Variants
-~~~~~~~~
-This may likely need some special support in the compiler as well. The
-actual type implementation can be a binary tree like ``StaticTuple``, that
-supports the intersection of operations. Pay special attention to ``None``.
-
-Tuples
-~~~~~~
-Implement static tuples (static size and types), as cons cells. This needs
-variants (e.g. ``T | None``). Switch to generic types with generic types.
-
-Objects
-~~~~~~~
-Miscellaneous things. Implement this is a class that calls functions in
-``libcpy.pyx`` via CFFI. Performance is not an issue.
-
-Garbage Collector
-~~~~~~~~~~~~~~~~~
-Implement a simple GC. Start with Boehm.
-
-Mutable User-defined Types
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-Allow mutation of objects. This needs a GC to support shared data.
-
+String
+------
+Add string methods, such as `split` etc.

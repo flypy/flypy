@@ -172,15 +172,6 @@ def head(t):
 def tail(t):
     return t.tl
 
-# TODO: Exceptions
-
-#@jit('a -> b')
-#def head(t):
-#    raise NotImplementedError
-#
-#@jit('a -> b')
-#def tail(t):
-#    raise NotImplementedError
 
 @typeof.case(tuple)
 def typeof(pyval):

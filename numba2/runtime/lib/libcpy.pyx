@@ -51,10 +51,10 @@ cdef public next(obj):
 # ______________________________________________________________________
 # Attributes
 
-cdef public getfield(obj, str attr):
+cdef public getfield(obj, char *attr):
     return getattr(obj, attr)
 
-cdef public void setfield(obj, str attr, value):
+cdef public void setfield(obj, char *attr, value):
     setattr(obj, attr, value)
 
 # ______________________________________________________________________

@@ -6,6 +6,7 @@ Type checking after type inference.
 
 from __future__ import print_function, division, absolute_import
 
+from numba2.compiler.special import SETATTR
 from numba2.types import Function, ForeignFunction
 
 from pykit.ir import visit, Undef
@@ -24,8 +25,9 @@ class TypeChecker(object):
         obj, attr, value = op.args
         obj_type = self.context[obj]
         if attr not in obj_type.fields and attr not in obj_type.layout:
-            raise TypeError(
-                "Object of type '%s' has no attribute %r" % (obj_type, attr))
+            if SETATTR not in obj_type.fields:
+                raise TypeError(
+                    "Object of type '%s' has no attribute %r" % (obj_type, attr))
 
 #===------------------------------------------------------------------===
 # Scoping

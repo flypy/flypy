@@ -7,7 +7,7 @@ numba.vectorize().
 from __future__ import print_function, division, absolute_import
 
 from numba2 import sjit, jit, typeof, parse
-from .arrayobject import NDArray, Dimension, EmptyDim
+from .ndarrayobject import NDArray, Dimension, EmptyDim
 from numba2.runtime.obj.core import head, tail, NoneType, Type
 
 import numpy as np

@@ -7,9 +7,10 @@ try:
 except ImportError:
     import builtins
 
-from .. import jit, ijit, overlay, overload, cjit
+from .. import jit, ijit, overlay, overload, cjit, typeof
 from .interfaces import Sequence, Iterable, Iterator
-from .obj.core import Range, List, Type, Complex, Slice
+from .obj.core import (Range, List, Type, Complex, Slice, StaticTuple,
+                       EmptyList, NoneType, newbuffer)
 from .casting import cast
 from numba2.types import int32, float64
 from . import ffi
@@ -157,16 +158,27 @@ def enumerate(it):
 def slice(start, stop, step):
     return Slice(start, stop, step)
 
-@ijit('Iterable[x] -> List[x]')
+#@ijit('Iterable[x] -> List[x]')
+#def list(value):
+#    # TODO: not typeable
+#    result = []
+#    result.extend(value)
+#    return result
+
+@ijit('StaticTuple[a, b] -> List[a]')
 def list(value):
-    result = []
+    base_type = typeof(value.hd)
+    buf = newbuffer(base_type, len(value))
+
+    result = List(base_type, buf, 0)
     result.extend(value)
+
     return result
 
 # TODO: Overloading on arity
-#@ijit
-#def list():
-#    return []
+@ijit('NoneType[] -> EmptyList[]')
+def list(value=None):
+    return []
 
 # ____________________________________________________________
 

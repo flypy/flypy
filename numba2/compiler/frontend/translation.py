@@ -18,7 +18,7 @@ import collections
 from collections import namedtuple
 
 from numba2.errors import error_context, CompileError, EmptyStackError
-from numba2.runtime.obj import tupleobject, sliceobject
+from numba2.runtime.obj import tupleobject, listobject, sliceobject
 from .bytecode import ByteCode
 
 from pykit.ir import Function, Builder, Op, Const, OConst, Value, ops
@@ -492,7 +492,7 @@ class Translate(object):
         ordered = list(reversed(items))
         if all(isinstance(item, Const) for item in ordered):
             # create constant tuple
-             self.push(const(tuple(item.const for item in ordered)))
+            self.push(const(tuple(item.const for item in ordered)))
         elif len(ordered) < tupleobject.STATIC_THRESHOLD:
             # Build static tuple
             result = self.call_pop(tupleobject.EmptyTuple)
@@ -502,6 +502,16 @@ class Translate(object):
             self.push(result)
         else:
             raise NotImplementedError("Generic tuples")
+
+    def op_BUILD_LIST(self, inst):
+        count = inst.arg
+        if not count:
+            self.call(listobject.EmptyList, ())
+            return
+
+        self.op_BUILD_TUPLE(inst)
+        result_tuple = self.pop()
+        self.call(list, (result_tuple,))
 
     def op_LOAD_ATTR(self, inst):
         attr = self.names[inst.arg]

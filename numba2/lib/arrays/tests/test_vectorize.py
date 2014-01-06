@@ -43,7 +43,7 @@ class TestVectorize(unittest.TestCase):
 
         a = np.arange(10)
         b = np.arange(10, 20)
-        self.assertEqual(f(a, b), a + b)
+        self.assertTrue(np.all(f(a, b) == a + b))
 
 
 if __name__ == '__main__':

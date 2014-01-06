@@ -6,14 +6,92 @@ Type resolution and method resolution.
 
 from __future__ import print_function, division, absolute_import
 
-from ..typing.resolution import infer_call, is_method, get_remaining_args
+import numba2
+from numba2.compiler.special import SETATTR
+from ..typing.resolution import (infer_call, is_method, get_remaining_args,
+                                 infer_getattr, make_method)
 
 from pykit import types
-from pykit.ir import OpBuilder, Builder, Const, Function, Op
+from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
 
 #===------------------------------------------------------------------===
 # Call rewrites
 #===------------------------------------------------------------------===
+
+# TODO: Implement rewrite engine
+
+def rewrite_getattr(func, env):
+    """
+    Resolve missing attributes through __getattr__
+    """
+    context = env['numba.typing.context']
+
+    b = OpBuilder()
+    builder = Builder(func)
+
+    for op in func.ops:
+        if op.opcode == 'getfield':
+            value, attr = op.args
+            obj_type = context[value]
+            attr_type = numba2.String[()]
+
+            if attr not in obj_type.fields and attr not in obj_type.layout:
+                assert '__getattr__' in obj_type.fields
+
+                op.set_args([value, '__getattr__'])
+
+                # Construct attribute string
+                attr_string = OConst(attr)
+
+                # Retrieve __getattr__ function and type
+                getattr_func, func_type, restype = infer_getattr(obj_type, env)
+
+                # call(getfield(obj, '__getattr__'), ['attr'])
+                call = b.call(op.type, op, [attr_string])
+                op.replace_uses(call)
+                builder.position_after(op)
+                builder.emit(call)
+
+                # Update context
+                context[op] = func_type
+                context[attr_string] = attr_type
+                context[call] = restype
+
+
+def rewrite_setattr(func, env):
+    """
+    Resolve missing attributes through __setattr__
+    """
+    context = env['numba.typing.context']
+
+    b = Builder(func)
+
+    for op in func.ops:
+        if op.opcode == 'setfield':
+            obj, attr, value = op.args
+            obj_type = context[obj]
+            attr_type = numba2.String[()]
+
+            if attr not in obj_type.fields and attr not in obj_type.layout:
+                assert SETATTR in obj_type.fields, attr
+
+                b.position_after(op)
+
+                # Construct attribute string
+                attr_string = OConst(attr)
+
+                # call(getfield(obj, '__setattr__'), ['attr', value])
+                method_type = make_method(obj_type, SETATTR)
+                method = b.getfield(types.Opaque, obj, SETATTR)
+                call = b.call(types.Opaque, method, [attr_string, value])
+                op.delete()
+
+                # Update context
+                del context[op]
+                context[method] = method_type
+                context[call] = numba2.Void[()]
+                context[attr_string] = attr_type
+
 
 def rewrite_calls(func, env):
     """

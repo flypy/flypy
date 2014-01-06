@@ -37,7 +37,7 @@ from numba2.typing import resolve_simple, TypeVar, TypeConstructor
 from numba2.functionwrapper import FunctionWrapper
 from numba2.viz.prettyprint import debug_print
 from numba2.errors import error_context
-from .resolution import infer_call
+from .resolution import infer_call, Method, make_method, infer_getattr
 from .. import opaque
 
 import pykit.types
@@ -57,9 +57,6 @@ def view(G):
     import matplotlib.pyplot as plt
     networkx.draw(G)
     plt.show()
-
-Method = TypeConstructor("Method", 2, [{'coercible': True}] * 2)
-#Method = type(parse("Method[func, self]"))
 
 #===------------------------------------------------------------------===
 # Inference structures
@@ -382,7 +379,10 @@ class ConstraintGenerator(object):
         """
         self.G.add_edge(op.args[0] or void, self.return_node)
 
-# ______________________________________________________________________
+
+#===------------------------------------------------------------------===
+# Inference on Graph
+#===------------------------------------------------------------------===
 
 def infer_graph(cache, ctx, env):
     """
@@ -412,14 +412,16 @@ def infer_graph(cache, ctx, env):
     # pprint(ctx.graph.edge)
     # view(ctx.graph)
 
+    processed = set()
+
     while W:
         node = W.popleft()
-        changed = infer_node(cache, ctx, node, env)
+        changed = infer_node(cache, ctx, node, env, processed)
         if changed:
             for neighbor in ctx.graph.neighbors(node):
                 W.appendleft(neighbor)
 
-def infer_node(cache, ctx, node, env):
+def infer_node(cache, ctx, node, env, processed):
     """Infer types for a single node"""
     changed = False
     C = ctx.constraints.get(node, 'flow')
@@ -431,8 +433,6 @@ def infer_node(cache, ctx, node, env):
     incoming = ctx.graph.predecessors(node)
     outgoing = ctx.graph.neighbors(node)
 
-    processed = set()
-
     # Get line number of original function
     if isinstance(node, ir.Op):
         lineno = node.metadata.get('lineno', -1)
@@ -440,59 +440,98 @@ def infer_node(cache, ctx, node, env):
         lineno = -1
 
     with error_context(lineno=lineno, during="Infer call"):
-        if C == 'pointer':
-            for neighbor in incoming:
-                for type in ctx.context[neighbor]:
-                    #result = Pointer[type]
-                    result = type
-                    changed |= result not in typeset
-                    typeset.add(result)
+        inferer = inference_table[C]
+        return inferer(ctx, env, node, processed, incoming, typeset, changed)
 
-        elif C == 'flow':
-            for neighbor in incoming:
-                for type in ctx.context[neighbor]:
-                    changed |= type not in typeset
-                    typeset.add(type)
+### *** type inference rules *** ###
 
-        elif C == 'attr':
-            [neighbor] = incoming
-            attr = ctx.metadata[node]['attr']
-            for type in ctx.context[neighbor]:
-                if attr in type.fields:
-                    value = type.fields[attr]
-                    func, self = value, type
-                    result = Method(func, self)
-                elif attr in type.layout:
-                    result = type.resolved_layout[attr]
-                else:
-                    raise InferError("Type %s has no attribute %s" % (type, attr))
+def infer_pointer(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer pointer creation:
 
+        alloca var
+    """
+    for neighbor in incoming:
+        for type in ctx.context[neighbor]:
+            #result = Pointer[type]
+            result = type
+            changed |= result not in typeset
+            typeset.add(result)
+
+    return changed
+
+def infer_flow(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer data flow:
+
+        a = b
+    """
+    for neighbor in incoming:
+        for type in ctx.context[neighbor]:
+            changed |= type not in typeset
+            typeset.add(type)
+
+    return changed
+
+def infer_attr(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer attributes:
+
+        obj.a
+    """
+    [neighbor] = incoming
+    attr = ctx.metadata[node]['attr']
+    for type in ctx.context[neighbor]:
+        if attr in type.fields:
+            result = make_method(type, attr)
+        elif attr in type.layout:
+            result = type.resolved_layout[attr]
+        elif '__getattr__' in type.fields:
+            _, _, result = infer_getattr(type, env)
+        elif '__getattribute__' in type.fields:
+            raise InferError("__getattribute__ note supported")
+        else:
+            raise InferError("Type %s has no attribute %s" % (type, attr))
+
+        changed |= result not in typeset
+        typeset.add(result)
+
+    return changed
+
+def infer_appl(ctx, env, node, processed, incoming, typeset, changed):
+    """
+    Infer function application:
+
+        f(a)
+    """
+    func = ctx.metadata[node]['func']
+    func_types = ctx.context[func]
+    arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]
+
+    # Iterate over cartesian product, processing only unpreviously
+    # processed combinations
+    for func_type in set(func_types):
+        for arg_types in product(*arg_typess):
+            key = (node, func_type, tuple(arg_types))
+            if key not in processed:
+                processed.add(key)
+                _, signature, result = infer_call(func, func_type,
+                                                  arg_types, env)
+                if isinstance(result, TypeVar):
+                    raise TypeError("Expected a concrete type result, "
+                                    "not a type variable! (%s)" % (func,))
                 changed |= result not in typeset
                 typeset.add(result)
+                if None in func_types:
+                    func_types.remove(None)
+                    func_types.add(signature)
 
-        else:
-            assert C == 'call'
-            func = ctx.metadata[node]['func']
-            func_types = ctx.context[func]
-            arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]
+    return changed
 
-            # Iterate over cartesian product, processing only unpreviously
-            # processed combinations
-            for func_type in set(func_types):
-                for arg_types in product(*arg_typess):
-                    key = (node, func_type, tuple(arg_types))
-                    if key not in processed:
-                        processed.add(key)
-                        _, signature, result = infer_call(func, func_type,
-                                                          arg_types, env)
-                        if isinstance(result, TypeVar):
-                            raise TypeError("Expected a concrete type result, "
-                                            "not a type variable! (%s)" % (func,))
-                        changed |= result not in typeset
-                        typeset.add(result)
-                        if None in func_types:
-                            func_types.remove(None)
-                            func_types.add(signature)
 
-        return changed
-
+inference_table = {
+    'pointer': infer_pointer,
+    'flow': infer_flow,
+    'attr': infer_attr,
+    'call': infer_appl,
+}

@@ -56,8 +56,8 @@ Py_DecRef  = declare_in(ctypes.pythonapi, 'Py_DecRef', None, [obj])
 getiter    = declare('getiter' , obj, [obj])
 next       = declare('next'    , obj, [obj])
 
-getfield   = declare('getfield', obj, [obj, obj])
-setfield   = declare('setfield', obj, [obj, obj])
+getfield   = declare('getfield', obj, [obj, ctypes.c_char_p])
+setfield   = declare('setfield', obj, [obj, ctypes.c_char_p, obj])
 getitem    = declare('getitem' , obj, [obj, obj])
 setitem    = declare('setitem' , obj, [obj, obj])
 
