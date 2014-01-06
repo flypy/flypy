@@ -10,6 +10,10 @@ from numba2 import sjit, jit
 import numba2
 from .core import Type, Pointer
 
+# NOTE: There is a problem with the GC when Buffer is @jit, causing it it
+#       segfault (e.g. when building a list literal)
+#       Marking this sjit is incorrect however
+
 @sjit('Buffer[a]')
 class Buffer(object):
     layout = [

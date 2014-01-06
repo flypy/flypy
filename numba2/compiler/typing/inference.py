@@ -99,6 +99,24 @@ class Context(object):
 # Inference
 #===------------------------------------------------------------------===
 
+def print_context(func, env, context):
+    def _sort_key(op):
+        if isinstance(op, ir.Op):
+            return opindex[op]
+        return op
+
+    ops = list(func.ops)
+    opindex = dict(zip(ops, range(len(ops))))
+
+    print(("Type context %s:" % (env['numba.state.func_name'],)).center(90))
+    try:
+        for op in sorted(context, key=_sort_key):
+            ty = context[op]
+            print("    %s: %s" % (op, ty))
+    except ValueError:
+        print("unable to print context :((")
+
+
 def run(func, env):
     with errctx(env):
         cache = env['numba.inference.cache']
@@ -110,13 +128,7 @@ def run(func, env):
         env['numba.typing.constraints'] = ctx.constraints
 
         if debug_print(func, env):
-            print(("Type context %s:" % (env['numba.state.func_name'],)).center(90))
-            for op, typeset in ctx.context.iteritems():
-                print("%s%15s = %s" % (" " * 30, op, typeset))
-            try:
-                pprint(ctx.context, indent=30)
-            except ValueError:
-                print("unable to print context :((")
+            print_context(func, env, ctx.context)
 
         return ctx.func, env
 
