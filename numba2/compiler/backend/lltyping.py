@@ -41,6 +41,8 @@ def resolve_type(context, op):
             return op # TODO: Remove this
 
         # Generate low-level representation type
+        if isinstance(type, set):
+            assert not isinstance(type, set)
         ltype = compiler.representation_type(type)
 
         if isinstance(op, Const):

@@ -21,3 +21,10 @@ cython_debug/
 
 tags
 TAGS
+
+.DS_Store
+
+/numba2/runtime/gc/boehmlib.c
+/numba2/runtime/gc/boehmlib.h
+/numba2/runtime/lib/libcpy.c
+/numba2/runtime/lib/libcpy.h

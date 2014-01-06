@@ -184,9 +184,11 @@ class Floating(Real):
 # Binops
 #===------------------------------------------------------------------===
 
-def add_binop(cls, name, restype=None):
+def add_binop(cls, name, restype=None, pykitname=None):
+    if not pykitname:
+        pykitname = name
     special_name = "__%s__" % name
-    impl = lambda b, _, x, y: b.ret(getattr(b, name)(x, y))
+    impl = lambda b, _, x, y: b.ret(getattr(b, pykitname)(x, y))
     add_impl_cls(cls, special_name, impl, restype)
 
 
@@ -196,15 +198,15 @@ add_binop(Number, "sub")
 add_binop(Number, "div")
 add_binop(Number, "mod")
 
-add_binop(Number, "eq", ptypes.Bool)
-add_binop(Number, "ne", ptypes.Bool)
-add_binop(Number, "lt", ptypes.Bool)
-add_binop(Number, "le", ptypes.Bool)
-add_binop(Number, "gt", ptypes.Bool)
-add_binop(Number, "ge", ptypes.Bool)
+add_binop(Number, "eq", restype=ptypes.Bool)
+add_binop(Number, "ne", restype=ptypes.Bool)
+add_binop(Number, "lt", restype=ptypes.Bool)
+add_binop(Number, "le", restype=ptypes.Bool)
+add_binop(Number, "gt", restype=ptypes.Bool)
+add_binop(Number, "ge", restype=ptypes.Bool)
 
-add_binop(Number, "and")
-add_binop(Number, "or")
-add_binop(Number, "xor")
+add_binop(Number, "and", pykitname="bitand")
+add_binop(Number, "or", pykitname="bitor")
+add_binop(Number, "xor", pykitname="bitxor")
 add_binop(Number, "lshift")
 add_binop(Number, "rshift")
