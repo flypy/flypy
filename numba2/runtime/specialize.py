@@ -6,7 +6,7 @@ Specialization. Annotates functions for the compiler to process.
 
 from __future__ import print_function, division, absolute_import
 import inspect
-from .. import jit, annotate, overload, SpecializeError
+from .. import jit, annotate #, SpecializeError
 
 def specialize_value(*args):
     """
@@ -24,7 +24,7 @@ def specialize_value(*args):
         return f
     return decorator
 
-@jit('Iterable[α] -> Iterable[α]', specialize_value='iterable')
+@jit('Iterable[a] -> Iterable[a]', specialize_value='iterable')
 def unroll(iterable):
     """
     Fully unroll a constant-sized iterable. unroll is detected by the compiler.

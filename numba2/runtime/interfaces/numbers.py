@@ -26,7 +26,7 @@ def ojit(signature):
         def wrapper(self, *args):
             args = [self.unwrap()] + [x.unwrap() for x in args]
             return self.wrap(f(*args))
-        return jit(signature, opaque=True, inline=True)(wrapper)
+        return jit(signature, opaque=True, inline=True, eval_if_const=True)(wrapper)
     return decorator
 
 

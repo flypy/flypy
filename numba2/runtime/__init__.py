@@ -7,5 +7,4 @@ from .obj import *
 from .casting import cast
 from . import lowlevel_impls
 from .obj.core import *
-
-
+from .specialize import specialize_value
