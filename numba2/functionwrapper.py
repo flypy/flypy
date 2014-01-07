@@ -9,6 +9,7 @@ import types
 import ctypes
 from functools import partial
 from itertools import starmap
+import copy
 
 from numba2.rules import typeof
 from numba2.compiler.overloading import (lookup_previous, overload, Dispatcher,
@@ -187,6 +188,11 @@ class FunctionWrapper(object):
             return partial(self.py_func, instance)
         return self
 
+    def copy(self):
+        fw = FunctionWrapper(copy.deepcopy(self.dispatcher), self.py_func,
+                             abstract=self.abstract, opaque=self.opaque)
+        fw.implementor = self.implementor
+        return fw
 
 def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False,
          target="cpu", **kwds):

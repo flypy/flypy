@@ -68,7 +68,5 @@ def copy_methods(cls, interface):
         if isinstance(method, FunctionWrapper):
             if not method.abstract and attr not in vars(cls):
                 # Copy method if not present
-                # TODO: Copy?
-                # method = FunctionWrapper(method.py_func, method.signature,
-                #                          method.abstract, method.opaque)
                 setattr(cls, attr, method)
+

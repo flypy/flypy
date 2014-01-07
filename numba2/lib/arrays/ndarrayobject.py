@@ -126,6 +126,50 @@ def getsteps(dim):
 # Indexing
 #===------------------------------------------------------------------===
 
+@jit('dim -> Pointer[a] -> StaticTuple[Slice[start, stop, step], y] -> Type[t] -> r')
+def slice_dim(dim, p, indices, dtype):
+    # TODO: wraparound
+    s = head(indices)
+
+    data = p
+    extent = dim.extent
+    stride = dim.stride
+
+    start = choose(0, s.start)
+    stop = choose(extent, s.stop)
+    step = choose(1, s.step)
+
+    #-- Wrap around --#
+    if start < 0:
+        start += extent
+        if start < 0:
+            start = 0
+    if start > extent:
+        start = extent - 1
+
+    if stop < 0:
+        stop += extent
+        if stop < -1:
+            stop = -1
+    if stop > extent:
+        stop = extent
+
+    extent = len(xrange(start, stop, step))
+
+    # Process start
+    if s.start is not None:
+        data += start * stride
+
+    # Process step
+    if s.step is not None:
+        stride *= step
+
+    array = dim.base.index(data, tail(indices), dtype)
+    # TODO: Without 'step', ContigDim should remain a ContigDim
+    dims = Dimension(array.dims, extent, stride)
+    return NDArray(array.data, dims, dtype)
+
+
 @sjit('Dimension[base]')
 class Dimension(object):
     """
@@ -149,48 +193,33 @@ class Dimension(object):
          'StaticTuple[Slice[start, stop, step], y] -> Type[a] -> r')
     def index(self, p, indices, dtype):
         # TODO: wraparound
-        s = head(indices)
+        return slice_dim(self, p, indices, dtype)
 
-        data = p
-        extent = self.extent
-        stride = self.stride
-
-        start = choose(0, s.start)
-        stop = choose(extent, s.stop)
-        step = choose(1, s.step)
-
-        #-- Wrap around --#
-        if start < 0:
-            start += extent
-            if start < 0:
-                start = 0
-        if start > extent:
-            start = extent - 1
-
-        if stop < 0:
-            stop += extent
-            if stop < -1:
-                stop = -1
-        if stop > extent:
-            stop = extent
-
-        extent = len(xrange(start, stop, step))
-
-        # Process start
-        if s.start is not None:
-            data += start * stride
-
-        # Process step
-        if s.step is not None:
-            stride *= step
-
-        array = self.base.index(data, tail(indices), dtype)
-        dims = Dimension(array.dims, extent, stride)
-        return NDArray(array.data, dims, dtype)
-
-    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Type[a] -> r')
+    @jit('s -> Pointer[a] -> EmptyTuple[] -> Type[a] -> r')
     def index(self, p, indices, dtype):
         return NDArray(p, self, dtype)
+
+
+#@sjit('DimensionContig[base]')
+#class DimensionContig(Dimension):
+#    """
+#    Note: stride attribute is left here for uniform layout.
+#    """
+#    layout = [('base', 'base'), ('extent', 'int64'), ('stride', 'int64')]
+#
+#    @jit('s -> Pointer[a] -> StaticTuple[x : integral, y] -> r')
+#    def index(self, p, indices):
+#        idx = head(indices)
+#        return self.base.index(p + idx, tail(indices))
+#
+#    @jit('Dimension[base] -> Pointer[a] -> EmptyTuple[] -> Type[a] -> r')
+#    def index(self, p, indices, dtype):
+#        return NDArray(p, self, dtype)
+#
+#    @jit('s -> Pointer[a] -> StaticTuple[Slice[start, stop, step], y] -> r')
+#    def index(self, p, indices):
+#        return slice_dim(Dimension(self.base, self.extent, self.stride),
+#                         p, indices)
 
 
 @sjit
@@ -286,15 +315,12 @@ def fromnumpy(ndarray, ty, boundscheck=False):
     # Build array object
     data = fromobject(ndarray.ctypes.data, Pointer[numba2.int8])
 
-    # Type we use for shape/strides. We use Buffer since we can't spell
-    # "a tuple of size n" very well yet
-    #shape = fromseq(ndarray.shape, numba2.int64)
-    #strides = fromseq(steps, numba2.int64)
-    #keepalive = fromobject(ndarray, Object[()])
-
     dims = EmptyDim()
     for extent, stride in reversed(zip(ndarray.shape, steps)):
-        dims = Dimension(dims, extent, stride)
+        dimcls = Dimension
+        #dimcls = DimensionContig if stride == 1 else Dimension
+        dims = dimcls(dims, extent, stride)
+
         if boundscheck:
             dims = BoundsCheck(dims)
 
@@ -323,8 +349,12 @@ def typeof(array):
     dtype = numpy_support.from_dtype(array.dtype)
 
     dims = EmptyDim[()]
-    for i in range(array.ndim):
-        dims = Dimension[dims]
+
+    for i, stride in zip(range(array.ndim), reversed(array.strides)):
+        # TODO:
+        #dimcls = DimensionContig if stride == array.itemsize else Dimension
+        dimcls = Dimension
+        dims = dimcls[dims]
 
     return NDArray[dtype, dims]
 
@@ -341,10 +371,12 @@ def _getshape(dims):
     if isinstance(dims, Dimension):
         return (dims.extent,) + _getshape(dims.base)
     else:
+        assert isinstance(dims, EmptyDim)
         return ()
 
 def _getsteps(dims):
     if isinstance(dims, Dimension):
         return (dims.stride,) + _getsteps(dims.base)
     else:
+        assert isinstance(dims, EmptyDim)
         return ()
