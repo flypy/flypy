@@ -9,8 +9,9 @@ from __future__ import print_function, division, absolute_import
 import ctypes.util
 
 from numba2 import coretypes
+from numba2.lib import arrayobject
 from pykit.utils import hashable
-from pykit.utils.ctypes_support import is_ctypes_struct_type, is_ctypes_pointer_type
+from pykit.utils.ctypes_support import is_ctypes_struct_type, is_ctypes_pointer_type, is_ctypes_array_type
 
 #===------------------------------------------------------------------===
 # CTypes Utils
@@ -112,6 +113,8 @@ def from_ctypes_type(cty, ctypes_value=None):
         return ctypes_map[cty]
     elif cty is ctypes.c_void_p or cty is ctypes.py_object:
         return coretypes.Pointer[coretypes.void]
+    elif is_ctypes_array_type(cty):
+        return arrayobject.Array[from_ctypes_type(cty._type_), cty._length_]
     elif is_ctypes_pointer_type(cty):
         return coretypes.Pointer[from_ctypes_type(cty._type_)]
     elif is_ctypes_struct_type(cty):
