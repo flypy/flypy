@@ -17,6 +17,7 @@ from numba2.compiler.overloading import flatargs
 from numba2.rules import infer_type_from_layout
 
 from pykit import ir, types
+from pykit.ir import ops
 
 #===------------------------------------------------------------------===
 # Function call typing
@@ -181,6 +182,7 @@ def fill_missing_argtypes(func, argtypes):
 def resolve_context(func, env):
     """Reduce typesets in context to concrete types"""
     context = env['numba.typing.context']
+
     for op, typeset in context.iteritems():
         if typeset:
             typeset = context[op]
@@ -191,6 +193,11 @@ def resolve_context(func, env):
                     "Cannot type-join types for op %s: %s" % (op, e))
 
             context[op] = ty
+
+        elif isinstance(op, ir.Op) and not ops.is_void(op.opcode):
+            print(func)
+            raise TypeError("op %s has no type in function %s" % (op, func.name))
+
 
 def resolve_restype(func, env):
     """Figure out the return type and update the context and environment"""

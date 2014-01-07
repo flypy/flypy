@@ -4,7 +4,7 @@ import ctypes
 
 import unittest
 
-from numba2 import jit, Type, int32, float64, typeof, addressof
+from numba2 import jit, Type, int32, float64, typeof #, addressof
 
 ## Test helpers
 
