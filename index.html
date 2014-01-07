@@ -1,40 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
     <title>Numba-nextgen by ContinuumIO</title>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1 class="header">Numba-nextgen</h1>
-        <p class="header"></p>
 
-        <ul>
-          <li class="download"><a class="buttons" href="https://github.com/ContinuumIO/numba-lang/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/ContinuumIO/numba-lang/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/ContinuumIO/numba-lang">View On GitHub</a></li>
-        </ul>
+    <header>
+      <div class="container">
+        <h1>Numba-nextgen</h1>
+        <h2></h2>
 
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/ContinuumIO">ContinuumIO</a></p>
+        <section id="downloads">
+          <a href="https://github.com/ContinuumIO/flypy/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/ContinuumIO/flypy/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/ContinuumIO/flypy" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
 
-
-      </header>
-      <section>
-        <p>% Next iteration of Numba - The core language ideas
+    <div class="container">
+      <section id="main_content">
+        <p>% flypy - The core language ideas
 % 
 % </p>
 
-<p>This document describes the core numba language, which is designed to
+<p>This document describes the core flypy language, which is designed to
 generate efficient code for general, pythonic code. It will allow us to
 implement most of the features that currently reside in the compiler
 directly in a runtime. On top of this small core language we can write
@@ -258,7 +256,7 @@ the method signature.</p>
 <div class="highlight highlight-python"><pre><span class="n">myarray</span> <span class="o">=</span> <span class="n">Array</span><span class="p">[</span><span class="n">Double</span><span class="p">,</span> <span class="mi">2</span><span class="p">]()</span>
 </pre></div>
 
-<p>This will mostly appear in (numba) library code, and not in user-written
+<p>This will mostly appear in (flypy) library code, and not in user-written
 code, which uses higher-level APIs that ultimately construct these
 types. E.g.:</p>
 
@@ -528,7 +526,7 @@ which returns its argument unmodified:</p>
 <h2>
 <a name="specialization-and-generalization" class="anchor" href="#specialization-and-generalization"><span class="octicon octicon-link"></span></a>Specialization and Generalization</h2>
 
-<p>In numba-lang we need the flexibility to choose between highly
+<p>In flypy-lang we need the flexibility to choose between highly
 specialized and optimized code, but also more generic, modular, code.
 The reason for the latter is largely compilation time and memory use
 (i.e. avoiding "code bloat"). But it may even be that code is
@@ -892,7 +890,7 @@ optimizations it relies heavily on call-pattern specialization ([6]),
 allowing the compiler to eliminate pattern matching of consumer sites.</p>
 
 <h1>
-<a name="fusion-in-numba" class="anchor" href="#fusion-in-numba"><span class="octicon octicon-link"></span></a>Fusion in Numba</h1>
+<a name="fusion-in-flypy" class="anchor" href="#fusion-in-flypy"><span class="octicon octicon-link"></span></a>Fusion in flypy</h1>
 
 <p>The concept of a stream encapsulating a state and a stepper function is
 akin to iterators in Python, where the state is part of the iterator and
@@ -1173,7 +1171,7 @@ may not be necessary.</p>
 % 
 % </p>
 
-<p>This section discusses typing for numba. There is plenty of literature
+<p>This section discusses typing for flypy. There is plenty of literature
 on type inference, most notable is the Damas-Hindley-Milner Algorithm W.
 for lambda calculus [1]_, and an extension for ML. The algorithm
 handles let-polymorphism (a.k.a. ML-polymorphism), a form of parametric
@@ -1235,7 +1233,7 @@ assigned a union type). WIthout using the cartesian product this would
 lead to exponential behaviour since there are 2^N subsets for N types.</p>
 
 <h1>
-<a name="type-inference-in-numba" class="anchor" href="#type-inference-in-numba"><span class="octicon octicon-link"></span></a>Type inference in Numba</h1>
+<a name="type-inference-in-flypy" class="anchor" href="#type-inference-in-flypy"><span class="octicon octicon-link"></span></a>Type inference in flypy</h1>
 
 <p>We use the cartesian product algorithm on a constraint network based on
 the dataflow graph. To understand it, we need to understand the input
@@ -1334,7 +1332,7 @@ built-in types.</p>
 <h1>
 <a name="references-1" class="anchor" href="#references-1"><span class="octicon octicon-link"></span></a>References</h1>
 
-<p>% Numba Runtime
+<p>% flypy Runtime
 % 
 % </p>
 
@@ -1400,7 +1398,7 @@ memory at the same time.</p>
 <a name="extension-types" class="anchor" href="#extension-types"><span class="octicon octicon-link"></span></a>Extension Types</h1>
 
 <p>Extension types are currently built on top of CPython objects. This
-should be avoided. We need to decouple numba with anything CPython, for
+should be avoided. We need to decouple flypy with anything CPython, for
 the sake of portability as well as pycc.</p>
 
 <p>Extension types can also easily be written in the runtime:</p>
@@ -1426,11 +1424,8 @@ variables, and we can do simple lambda lifting instead of complicated
 closure conversion. This also trivially works on the GPU, allowing one
 to use map, filter etc, with lambdas trivially.</p>
       </section>
-      <footer>
-        <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
-      </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
+
+    
   </body>
 </html>
