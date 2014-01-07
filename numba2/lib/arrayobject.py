@@ -73,11 +73,18 @@ class Array(object):
         base, count = ty.parameters
         return ctype(base) * count
 
-@jit('List[base] -> Type[base] -> Array[base, count]')
+# Utils
+
+@jit('Type[base] -> int64 -> Array[base, count]')
+def newarray(basetype, size):
+    arr = (ctype(basetype) * size)()
+    return Array(arr)
+
+# @jit('Sequence[a] -> Type[a] -> Buffer[a]') # TODO: <--
 def fromseq(seq, basetype):
     # TODO: create on construct when CALL_FUNCTION_VAR is supported
     n = len(seq)
-    arr = (ctype(basetype) * len(seq))()
+    arr = newarray(basetype, n)
     for i, item in enumerate(seq):
         arr[i] = item
     return arr
