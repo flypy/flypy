@@ -23,19 +23,27 @@ def representation_type(ty):
     =======
     The pykit type for the object layout.
     """
+
+    from numba2.lib import vectorobject
+    from numba2.lib import arrayobject
+    from numba2.runtime.obj import pointerobject
+
     # NOTE: special cases should be kept to an absolute minimum here. They
     #       should probably be introduced only if ctypes cannot represent the
     #       type
-
-    from numba2.lib import vectorobject
-
     if ty.impl == vectorobject.Vector:
-        # Ctypes does not support vectors
         base, count = ty.parameters
         return ptypes.Vector(representation_type(base), count)
+    elif ty.impl == pointerobject.Pointer:
+        # type pointed to may not be supported by ctypes
+        (base,) = ty.parameters
+        if base.impl == vectorobject.Vector:
+            return ptypes.Pointer(representation_type(base))
 
     cty = conversion.ctype(ty)
     result_type = ctypes_support.from_ctypes_type(cty)
+
+    # struct uses pointer
     if result_type.is_struct:
         result_type = ptypes.Pointer(result_type)
 

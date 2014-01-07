@@ -73,7 +73,7 @@ add_impl(sizeof, "sizeof", implement_sizeof, ptypes.Int64)
 
 @jit('Type[base] -> base', opaque=True)
 def undef(type):
-    raise NotImplementedError("Not implemented at the python level")
+    pass
 
 def implement_undef(builder, argtypes, obj):
     restype = restype_undef(argtypes)
@@ -81,10 +81,10 @@ def implement_undef(builder, argtypes, obj):
     return builder.ret(result)
 
 def restype_undef(argtypes):
-    (type,) = argtypes[0]
-    assert type.impl == Type
-    (restype,) = type.parameters
-    t = lltype(restype)
-    return t
+    type = argtypes[0]
+    if type.impl == Type:
+        type = type.parameters[0]
+    (restype,) = type
+    return lltype(restype)
 
 add_impl(undef, "undef", implement_undef, restype_func=restype_undef)
