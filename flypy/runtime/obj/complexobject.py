@@ -52,15 +52,7 @@ class Complex(object):
 
     @jit('a -> bool')
     def __nonzero__(self):
-        if bool(self.real):
-            return True
-        elif bool(self.imag):
-            return True
-        else:
-            return False
-
-        # <- make this work in translation.py
-        #return bool(self.real) or bool(self.imag)
+        return bool(self.real) or bool(self.imag)
 
     @jit
     def __str__(self):
