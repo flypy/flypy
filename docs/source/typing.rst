@@ -1,6 +1,6 @@
 Typing
 ======
-This section discusses typing for numba. There is plenty of literature on type
+This section discusses typing for flypy. There is plenty of literature on type
 inference, most notable is the Damas-Hindley-Milner Algorithm W. for
 lambda calculus [1]_, and an extension for ML. The algorithm handles
 let-polymorphism (a.k.a. ML-polymorphism), a form of parametric polymorphism
@@ -64,7 +64,7 @@ the function application is problematic, since we send X1 (which will be
 assigned a union type). WIthout using the cartesian product this would lead
 to exponential behaviour since there are 2^N subsets for N types.
 
-Type inference in Numba
+Type inference in flypy
 -----------------------
 We use the cartesian product algorithm on a constraint network based on the
 dataflow graph. To understand it, we need to understand the input language.

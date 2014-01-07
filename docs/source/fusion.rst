@@ -134,7 +134,7 @@ stream, or vice-versa. In addition to inlining and other optimizations it
 relies heavily on call-pattern specialization ([6]), allowing the
 compiler to eliminate pattern matching of consumer sites.
 
-Fusion in Numba
+Fusion in flypy
 ---------------
 The concept of a stream encapsulating a state and a stepper function is akin
 to iterators in Python, where the state is part of the iterator and the

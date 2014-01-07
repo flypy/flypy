@@ -1,7 +1,7 @@
 Roadmap
 =======
 
-Numba roadmap. This partitions implementations into things that need
+flypy roadmap. This partitions implementations into things that need
 to be implemented in the compiler, and things that need to be implemented
 in the runtime.
 
@@ -12,7 +12,7 @@ done.
 Compiler
 --------
 
-See ``numba/compiler``. Items are listed in order of urgency.
+See ``flypy/compiler``. Items are listed in order of urgency.
 
 Varargs and Unpacking
 ~~~~~~~~~~~~~~~~~~~~~
@@ -79,7 +79,7 @@ Not urgent, only an optimization.
 Runtime
 -------
 
-See ``numba/runtime``. Items are listed in order of urgency.
+See ``flypy/runtime``. Items are listed in order of urgency.
 
 DyND Support
 ~~~~~~~~~~~~
@@ -91,11 +91,11 @@ Support a Vector and Array data type of a bound-number of stack-allocated values
 
 C++
 ~~~
-Allow building numba objects in C++ using generated C++ classes. See ``numba2.cppgen``
+Allow building flypy objects in C++ using generated C++ classes. See ``flypy.cppgen``
 
 Datetime
 ~~~~~~~~
-Port datetime support from numba.
+Port datetime support from flypy.
 
 Decimals
 --------

@@ -1,4 +1,4 @@
-Numba Runtime
+flypy Runtime
 =============
 Nearly all built-in data types are implemented in the runtime.
 
@@ -54,7 +54,7 @@ We will remove prange and simply use a parallel map with a closure.
 Extension Types
 ---------------
 Extension types are currently built on top of CPython objects. This should
-be avoided. We need to decouple numba with anything CPython, for the sake
+be avoided. We need to decouple flypy with anything CPython, for the sake
 of portability as well as pycc.
 
 Extension types can also easily be written in the runtime:

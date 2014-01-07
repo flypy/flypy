@@ -1,9 +1,9 @@
 .. core::
 
-Next iteration of Numba - The core language ideas
-=================================================
+flypy - The core language ideas
+===============================
 
-This document describes the core numba language, which is designed to generate
+This document describes the core flypy language, which is designed to generate
 efficient code for general, pythonic code. It will allow us to implement most
 of the features that currently reside in the compiler directly in a runtime.
 On top of this small core language we can write more advanced features such
@@ -196,7 +196,7 @@ The type can now be used as follows:
 
     myarray = Array[Double, 2]()
 
-This will mostly appear in (numba) library code, and not in user-written code,
+This will mostly appear in (flypy) library code, and not in user-written code,
 which uses higher-level APIs that ultimately construct these types. E.g.:
 
 .. code-block:: python

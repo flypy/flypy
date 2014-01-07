@@ -77,17 +77,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/numba.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/flypy.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/numba.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/flypy.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/numba"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/numba"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/flypy"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/flypy"
 	@echo "# devhelp"
 
 epub:
@@ -153,7 +153,7 @@ doctest:
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
 markdown:
-	pandoc -t markdown -s source/numbacore.rst >out.md
+	pandoc -t markdown -s source/flypycore.rst >out.md
 	pandoc -t markdown -s source/polymorphism.rst >>out.md
 	pandoc -t markdown -s source/fusion.rst >>out.md
 	pandoc -t markdown -s source/typing.rst >>out.md

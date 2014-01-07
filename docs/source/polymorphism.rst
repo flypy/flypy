@@ -30,7 +30,7 @@ Type `A` is a subtype of type `B` if it is a python subclass.
 
 Specialization and Generalization
 ---------------------------------
-In numba-lang we need the flexibility to choose between highly specialized and
+In flypy-lang we need the flexibility to choose between highly specialized and
 optimized code, but also more generic, modular, code. The reason for the
 latter is largely compilation time and memory use (i.e. avoiding "code bloat").
 But it may even be that code is distributed or deployed pre-compiled, without

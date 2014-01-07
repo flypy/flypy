@@ -1,4 +1,4 @@
-# Numba the Next Iteration
+# flypy the Next Iteration
 
 # Last Month
 
@@ -88,4 +88,4 @@ def map(f, xs):
 
 # Github:
 
-https://github.com/ContinuumIO/numba-nextgen
+https://github.com/ContinuumIO/flypy-nextgen

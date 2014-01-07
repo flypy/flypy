@@ -24,7 +24,7 @@ TAGS
 
 .DS_Store
 
-/numba2/runtime/gc/boehmlib.c
-/numba2/runtime/gc/boehmlib.h
-/numba2/runtime/lib/libcpy.c
-/numba2/runtime/lib/libcpy.h
+/flypy/runtime/gc/boehmlib.c
+/flypy/runtime/gc/boehmlib.h
+/flypy/runtime/lib/libcpy.c
+/flypy/runtime/lib/libcpy.h

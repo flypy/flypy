@@ -6,14 +6,14 @@ import os
 import sys
 import argparse
 from os.path import dirname, splitext
-from numba2.pipeline import passes
-from numba2.viz import prettyprint
+from flypy.pipeline import passes
+from flypy.viz import prettyprint
 
 sys.path.pop(0) # remove the bin directory so can import numba
 sys.path.append(os.getcwd())
 
-from numba2 import utils
-from numba2.pipeline import environment, phase
+from flypy import utils
+from flypy.pipeline import environment, phase
 from pykit.ir.verification import verify
 
 # ______________________________________________________________________

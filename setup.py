@@ -25,10 +25,10 @@ import versioneer
 # Setup constants and arguments
 #------------------------------------------------------------------------
 
-versioneer.versionfile_source = 'numba2/_version.py'
-versioneer.versionfile_build = 'numba2/_version.py'
+versioneer.versionfile_source = 'flypy/_version.py'
+versioneer.versionfile_build = 'flypy/_version.py'
 versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = 'numba2-'
+versioneer.parentdir_prefix = 'flypy-'
 
 cmdclass = versioneer.get_cmdclass()
 cmdclass['build_ext'] = build_ext
@@ -119,17 +119,17 @@ setup(
     scripts=["bin/numba"],
     package_data={
         '': ['*.md'],
-        'numba2.runtime.obj': ['*.c', '*.h', '*.pyx', '*.pxd'],
+        'flypy.runtime.obj': ['*.c', '*.h', '*.pyx', '*.pxd'],
     },
     ext_modules=[
         Extension(
-            name="numba2.runtime.lib.libcpy",
-            sources=["numba2/runtime/lib/libcpy.pyx"],
+            name="flypy.runtime.lib.libcpy",
+            sources=["flypy/runtime/lib/libcpy.pyx"],
             include_dirs=[numpy.get_include()],
             depends=[]),
         Extension(
-            name="numba2.runtime.gc.boehmlib",
-            sources=["numba2/runtime/gc/boehmlib.pyx"],
+            name="flypy.runtime.gc.boehmlib",
+            sources=["flypy/runtime/gc/boehmlib.pyx"],
             libraries=["gc"]),
     ],
     cmdclass=cmdclass,
