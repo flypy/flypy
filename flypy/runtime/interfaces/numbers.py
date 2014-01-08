@@ -40,7 +40,7 @@ class Number(object):
         self.x = x
 
     def wrap(self, x):
-        return Number(x)
+        return x
 
     def unwrap(self):
         return self.x
