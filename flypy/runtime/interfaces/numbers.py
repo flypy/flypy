@@ -34,8 +34,7 @@ def ojit(signature):
 class Number(object):
     """Interface for all numbers"""
 
-    layout = [('x', 'Number')]
-    immutable = ('x',)
+    layout = []
 
     def __init__(self, x):
         self.x = x

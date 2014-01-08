@@ -24,6 +24,12 @@ class Vector(Number):
     def __init__(self, items):
         self.items = items
 
+    def wrap(self, items):
+        return Vector(items)
+
+    def unwrap(self):
+        return self.items
+
     @jit('Vector[base, count] -> int64 -> base', opaque=True)
     def __getitem__(self, index):
         return self.items[index]
