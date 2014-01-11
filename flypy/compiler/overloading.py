@@ -5,8 +5,10 @@ import inspect
 from flypy.typing import resolve, to_blaze
 
 from datashape import overloading
+from datashape import coretypes as T
 from datashape.overloading import lookup_previous
 from datashape.overloading import overload, Dispatcher, flatargs as simple_flatargs
+from datashape.util import gensym
 
 def overloadable(f):
     """
@@ -127,6 +129,23 @@ def flatargs(f, args, kwargs, argspec=None):
         args += ({},)
 
     return args
+
+freshvar = lambda: T.TypeVar(gensym())
+
+def dummy_signature(f):
+    """Create a dummy signature for `f`"""
+    argspec = inspect.getargspec(f)
+    n = len(argspec.args)
+
+    argtypes = [freshvar() for i in range(n)]
+    restype = freshvar()
+
+    if argspec.varargs:
+        argtypes.append(freshvar())
+    if argspec.keywords:
+        argtypes.append(freshvar())
+
+    return T.Function(*argtypes + [restype])
 
 
 if __name__ == '__main__':

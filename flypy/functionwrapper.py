@@ -13,7 +13,7 @@ import copy
 
 from flypy.rules import typeof
 from flypy.compiler.overloading import (lookup_previous, overload, Dispatcher,
-                                         flatargs)
+                                        dummy_signature, flatargs)
 from flypy.linker import llvmlinker
 
 # TODO: Reuse flypy.flypywrapper.pyx for autojit Python entry points
@@ -161,6 +161,8 @@ class FunctionWrapper(object):
         return module
 
     def overload(self, py_func, signature, **kwds):
+        if not signature:
+            signature = dummy_signature(py_func)
         overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
 
     def get_llvm_func(self, argtypes, target):

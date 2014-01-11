@@ -50,11 +50,12 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
     if hasattr(type, 'type'):
         type = type.type
 
+    strtype = str(type)
     if valmemo is None:
         valmemo = {}
         typememo = ctypes_type_memo
-    if id(value) in valmemo:
-        return valmemo[id(value)]
+    if (id(value), strtype) in valmemo:
+        return valmemo[id(value), strtype]
 
     cls = type.impl
     if hasattr(cls, 'toctypes'):
@@ -77,13 +78,15 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
 
         # Resolve values
         values = []
-        for (name, _), ty in zip(cty._fields_, types):
+        for (name, cty_field), ty in zip(cty._fields_, types):
             if hasattr(value, name):
                 val = getattr(value, name)
             else:
                 assert name == 'dummy', name
                 val = 0
-            values.append(toctypes(val, ty, keepalive, valmemo, typememo))
+
+            cval = toctypes(val, ty, keepalive, valmemo, typememo)
+            values.append(cval)
 
         # Construct value from ctypes struct
         result = cty(*values)
@@ -92,7 +95,7 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
             keepalive.append(result)
             result = ctypes.pointer(result)
 
-    valmemo[id(value)] = result
+    valmemo[id(value), strtype] = result
     return result
 
 def fromctypes(value, ty, memo=None):

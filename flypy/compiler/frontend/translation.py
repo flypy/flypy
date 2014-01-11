@@ -89,7 +89,7 @@ class Translate(object):
         self.varnames = self.bytecode.code.co_varnames
         self.consts = self.bytecode.code.co_consts
         self.names = self.bytecode.code.co_names
-        self.argnames = self.varnames[:self.bytecode.code.co_argcount]
+        self.argnames = list(self.varnames[:self.bytecode.code.co_argcount])
 
         self.globals = dict(vars(__builtin__))
         self.builtins = set(self.globals.values())
@@ -99,8 +99,12 @@ class Translate(object):
         # Error checks
 
         argspec = inspect.getargspec(self.func)
-        assert not argspec.varargs, "does not support varargs"
-        assert not argspec.keywords, "does not support keywords"
+        if argspec.varargs:
+            self.argnames.append(argspec.varargs)
+        if argspec.keywords:
+            self.argnames.append(argspec.keywords)
+
+        assert not argspec.keywords, "keywords not yet supported"
 
     def initialize(self):
         """Initialize pykit untypes structures"""

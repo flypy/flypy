@@ -9,7 +9,7 @@ from os.path import dirname, splitext
 from flypy.pipeline import passes
 from flypy.viz import prettyprint
 
-sys.path.pop(0) # remove the bin directory so can import numba
+sys.path.pop(0) # remove the bin directory so can import flypy
 sys.path.append(os.getcwd())
 
 from flypy import utils
@@ -20,8 +20,8 @@ from pykit.ir.verification import verify
 
 def run(filename, cmdopts):
     root_env = environment._cpu_env
-    root_env['numba.cmdopts'].update(cmdopts)
-    root_env['numba.script'] = True
+    root_env['flypy.cmdopts'].update(cmdopts)
+    root_env['flypy.script'] = True
 
     modname, ext = splitext(dirname(filename))
     globals = { '__file__': '__main__', '__name__': modname }
