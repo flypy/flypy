@@ -6,8 +6,10 @@ Compiler utilities.
 
 from __future__ import print_function, division, absolute_import
 
+from flypy.runtime.obj.core import Constructor
+
 from pykit import types as ptypes
-from pykit.ir import Function
+from pykit.ir import Function, OConst
 
 class Caller(object):
     """
@@ -36,6 +38,22 @@ class Caller(object):
         self.context[result] = env["flypy.typing.restype"]
 
         return result
+
+    def apply_constructor(self, ctor, args=()):
+        """
+        Apply a constructor with the given context, builder, constructor and
+        arguments.
+        """
+        irctor = OConst(ctor)
+        result = self.builder.call(ptypes.Opaque, irctor, list(args))
+
+        argtypes = tuple(self.context[arg] for arg in args)
+        self.context[ctor] = Constructor[ctor.type]
+        self.context[result] = ctor[argtypes]
+
+        return result
+
+
 
 def callmap(f, func, env):
     """

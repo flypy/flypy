@@ -9,8 +9,11 @@ from __future__ import print_function, division, absolute_import
 import flypy
 from flypy.compiler.utils import callmap, jitcallmap
 from flypy.compiler.special import SETATTR
-from ..typing.resolution import (infer_call, is_method, get_remaining_args,
-                                 infer_getattr, make_method)
+from flypy.compiler.overloading import get_remaining_args, flatargs
+from flypy.compiler.utils import Caller
+from flypy.runtime.obj.core import EmptyTuple, StaticTuple, Constructor
+from flypy.compiler.typing.resolution import (infer_call, is_method,
+                                              infer_getattr, make_method)
 
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
@@ -155,8 +158,29 @@ def rewrite_varargs(func, env):
 
         call(f, [x, y, z]) -> call(f, [x, (y, z)])
     """
+    b = Builder(func)
+    caller = Caller(b, env['flypy.typing.context'], env)
 
+    def f(context, py_func, f_env, op):
+        f, args = op.args
 
+        # Retrieve any remaining arguments meant for *args
+        flattened = flatargs(py_func, args, {})
+        if flattened.have_varargs:
+            b.position_before(op)
+            #print(py_func, flattened.varargs)
+
+            # -- Build the tuple -- #
+            result = caller.apply_constructor(EmptyTuple)
+            for item in flattened.varargs:
+                result = caller.apply_constructor(StaticTuple,
+                                                  args=[item, result])
+
+            # -- Patch callsite -- #
+            args = list(flattened.positional) + [result]
+            op.set_args([f, args])
+
+    jitcallmap(f, func, env)
 
 def allocate_const(func, env, op, value, type):
     const = Const(value, types.Opaque)

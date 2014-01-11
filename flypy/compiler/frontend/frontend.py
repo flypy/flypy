@@ -51,26 +51,36 @@ def simplify_argtypes(func, env):
         *args    -> tuple
         **kwargs -> dict
     """
-    from flypy.compiler.overloading import flatargs
+    from flypy.compiler.overloading import fill_missing_argtypes, flatargs
 
     argtypes = env["flypy.typing.argtypes"]
 
     if func.opaque:
         return argtypes
 
-    # Simlifying assumption...
+    # We make the simlifying assumption that `py_func` is the right overload,
+    # which has not been determined yet. This means all overloads must have
+    # the same types for defaults...
     py_func = func.py_func
-    argtypes = list(flatargs(py_func, argtypes, {}))
+
+    # Fill out missing argtypes for defaults
+    argtypes = fill_missing_argtypes(py_func, argtypes)
+
+    # Handle varargs/keywords (*args, **kwargs)
+    argtypes = flatargs(py_func, argtypes, {})
+
+    result = list(argtypes)
 
     varargs, keywords = [], []
-    if argtypes and isinstance(argtypes[-1], dict):
-        #keywords = [argtypes.pop()]
+    if argtypes.have_keywords:
+        #keywords = [result.pop()]
         raise TypeError("Keyword arguments are not yet supported")
-    if argtypes and isinstance(argtypes[-1], tuple):
-        varargs = [make_tuple_type(argtypes.pop())]
+    if argtypes.have_varargs:
+        varargs = [make_tuple_type(result.pop())]
 
-    return argtypes + varargs + keywords
-
+    argtypes = result + varargs + keywords
+    #print(func, argtypes)
+    return argtypes
 
 def translate(py_func, env):
     """

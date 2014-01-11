@@ -51,12 +51,12 @@ class FunctionWrapper(object):
 
         # Order arguments
         args = flatargs(self.dispatcher.f, args, kwargs)
-        argtypes = [typeof(x) for x in args]
 
         # Translate
-        cfunc, restype = self.translate(argtypes)
+        cfunc, restype = self.translate([typeof(x) for x in args.flat])
 
         # Construct flypy values
+        argtypes = [typeof(x) for x in args]
         arg_objs = list(starmap(fromobject, zip(args, argtypes)))
 
         # Map flypy values to a ctypes representation

@@ -13,7 +13,7 @@ from flypy import promote, unify, typejoin
 from flypy.functionwrapper import FunctionWrapper
 from flypy.types import Type, Constructor, ForeignFunction, Function, void
 from flypy.typing import TypeConstructor
-from flypy.compiler.overloading import flatargs
+from flypy.compiler.overloading import fill_missing_argtypes
 from flypy.rules import infer_type_from_layout
 
 from pykit import ir, types
@@ -86,9 +86,6 @@ def infer_function_call(func, func_type, argtypes, env):
         func = func.const
 
     # TODO: Support recursion !
-
-    if len(func.overloads) == 1 and not func.opaque:
-        argtypes = fill_missing_argtypes(func.py_func, tuple(argtypes))
 
     env = env['flypy.fresh_env'](func, argtypes)
     func, env = phase.typing(func, env)
@@ -163,17 +160,6 @@ def infer_constructor_application(classtype, argtypes):
     assert len(argtypes) == len(argnames)
 
     return infer_type_from_layout(classtype, zip(argnames, argtypes))
-
-
-def get_remaining_args(func, args):
-    newargs = flatargs(func, args, {})
-    return newargs[len(args):]
-
-def fill_missing_argtypes(func, argtypes):
-    from flypy import typeof
-
-    remaining = get_remaining_args(func, argtypes)
-    return argtypes + tuple(typeof(arg) for arg in remaining)
 
 #===------------------------------------------------------------------===
 # Type resolution

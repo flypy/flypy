@@ -127,7 +127,7 @@ def run(func, env):
         env['flypy.typing.context'] = ctx.context
         env['flypy.typing.constraints'] = ctx.constraints
 
-        if debug_print(func, env):
+        if debug_print(func, env) and not env['flypy.state.opaque']:
             print_context(func, env, ctx.context)
 
         return ctx.func, env

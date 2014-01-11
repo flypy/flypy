@@ -29,15 +29,5 @@ class TestCallingFlypyConvention(unittest.TestCase):
         self.assertEqual(f(1, 2, 0, 3, 0), [1, 2, 3])
 
 
-@jit
-def g(a, b, *args):
-    return [a, b, args[1]]
-
-@jit
-def f(a, b, c, d, e):
-    return g(a, b, c, d, e)
-
-f(1, 2, 0, 3, 0)
-
-#if __name__ == '__main__':
-#    unittest.main()
+if __name__ == '__main__':
+    unittest.main()
