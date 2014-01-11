@@ -80,6 +80,7 @@ def flatargs(f, args, kwargs, argspec=None):
     """
     argspec = inspect.getargspec(f) if argspec is None else argspec
     defaults = argspec.defaults or ()
+    args = tuple(args)
     kwargs = dict(kwargs)
 
     def unreachable():

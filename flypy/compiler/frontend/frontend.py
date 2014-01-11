@@ -5,7 +5,10 @@ Post-passes on untyped IR emitted by the front-end bytecode translation.
 """
 
 from __future__ import print_function, division, absolute_import
+import inspect
+
 from .translation import Translate
+from flypy.runtime.obj.core import make_tuple_type
 
 from pykit.ir import Builder
 
@@ -14,12 +17,15 @@ from pykit.ir import Builder
 #===------------------------------------------------------------------===
 
 def setup(func, env):
+    """
+    Set up function's environment. Very first pass that runs in the pipeline.
+    """
     from flypy.compiler.overloading import best_match
 
     # -------------------------------------------------
     # Find Python function implementation
 
-    argtypes = env["flypy.typing.argtypes"]
+    argtypes = simplify_argtypes(func, env)
     py_func, signature, kwds = best_match(func, list(argtypes))
 
     # -------------------------------------------------
@@ -37,6 +43,34 @@ def setup(func, env):
         env["flypy.typing.restype"] = kwds["infer_restype"](argtypes)
 
     return py_func, env
+
+def simplify_argtypes(func, env):
+    """
+    Simplify the argtypes for non-opaque functions:
+
+        *args    -> tuple
+        **kwargs -> dict
+    """
+    from flypy.compiler.overloading import flatargs
+
+    argtypes = env["flypy.typing.argtypes"]
+
+    if func.opaque:
+        return argtypes
+
+    # Simlifying assumption...
+    py_func = func.py_func
+    argtypes = list(flatargs(py_func, argtypes, {}))
+
+    varargs, keywords = [], []
+    if argtypes and isinstance(argtypes[-1], dict):
+        #keywords = [argtypes.pop()]
+        raise TypeError("Keyword arguments are not yet supported")
+    if argtypes and isinstance(argtypes[-1], tuple):
+        varargs = [make_tuple_type(argtypes.pop())]
+
+    return argtypes + varargs + keywords
+
 
 def translate(py_func, env):
     """

@@ -83,7 +83,7 @@ def error_context(lineno=-1, during=None, pyfunc=None):
     except Exception, e:
         em = _ErrorMsg(exc=e, pyfunc=pyfunc, during=during, lineno=lineno)
         exc = type(e)(em)
-        raise exc, None, sys.exc_info()[2]
+        raise #exc, None, sys.exc_info()[2]
 
 
 def errctx(env, op=None):

@@ -173,12 +173,19 @@ def tail(t):
     return t.tl
 
 
+
+def make_tuple_type(tup):
+    """
+    Create a flypy tuple type from a python tuple of element types.
+    """
+    if len(tup) < STATIC_THRESHOLD:
+        result = EmptyTuple[()]
+        for ty in reversed(tup):
+            result = StaticTuple[ty, result]
+        return result
+    return GenericTuple[reduce(promote, tup)]
+
 @typeof.case(tuple)
 def typeof(pyval):
     valtypes = tuple(map(typeof, pyval))
-    if len(pyval) < STATIC_THRESHOLD:
-        result = EmptyTuple[()]
-        for ty in reversed(valtypes):
-            result = StaticTuple[ty, result]
-        return result
-    return GenericTuple[reduce(promote, valtypes)]
+    return make_tuple_type(valtypes)

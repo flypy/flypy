@@ -7,6 +7,7 @@ Type resolution and method resolution.
 from __future__ import print_function, division, absolute_import
 
 import flypy
+from flypy.compiler.utils import callmap, jitcallmap
 from flypy.compiler.special import SETATTR
 from ..typing.resolution import (infer_call, is_method, get_remaining_args,
                                  infer_getattr, make_method)
@@ -98,30 +99,27 @@ def rewrite_calls(func, env):
     Resolve methods and function calls (which may be overloaded!) via static
     function calls.
     """
-    context = env['flypy.typing.context']
-
     b = OpBuilder()
-    for op in func.ops:
-        if op.opcode == 'call':
-            # Retrieve typed function
-            f, args = op.args
-            signature = context[f]
 
-            # Retrieve typed function from the given arg types
-            argtypes = [context[a] for a in args]
-            typed_func, _, _ = infer_call(f, signature, argtypes, env)
+    def f(context, op):
+        f, args = op.args
+        signature = context[f]
 
-            if is_method(signature):
-                # Insert self in args list
-                getfield = op.args[0]
-                self = getfield.args[0]
-                args = [self] + args
+        # Retrieve typed function from the given arg types
+        argtypes = [context[a] for a in args]
+        typed_func, _, _ = infer_call(f, signature, argtypes, env)
 
-            # Rewrite call
-            newop = b.call(op.type, typed_func, args, result=op.result)
-            op.replace(newop)
+        if is_method(signature):
+            # Insert self in args list
+            getfield = op.args[0]
+            self = getfield.args[0]
+            args = [self] + args
 
-    env['flypy.state.callgraph'] = None
+        # Rewrite call
+        newop = b.call(op.type, typed_func, args, result=op.result)
+        op.replace(newop)
+
+    callmap(f, func, env)
 
 
 def rewrite_optional_args(func, env):
@@ -136,28 +134,28 @@ def rewrite_optional_args(func, env):
     """
     from flypy import typeof
 
-    envs = env['flypy.state.envs']
+    def f(context, py_func, f_env, op):
+        f, args = op.args
 
-    for op in func.ops:
-        if op.opcode == 'call':
+        # Add any potentially remaining values
+        remaining = get_remaining_args(py_func, (None,) * len(args))
+        consts = [allocate_const(func, env, op, value, typeof(value))
+                      for value in remaining]
+        op.set_args([f, args + consts])
 
-            # Retrieve function and environment
-            f, args = op.args
-            if not isinstance(f, Function):
-                continue
+    jitcallmap(f, func, env)
 
-            f_env = envs[f]
 
-            # Retrieve Python version and opaqueness
-            py_func = f_env['flypy.state.py_func']
-            opaque = f_env['flypy.state.opaque']
+def rewrite_varargs(func, env):
+    """
+    Rewrite function application with arguments that go in the varargs:
 
-            if py_func and not opaque:
-                # Add any potentially remaining values
-                remaining = get_remaining_args(py_func, (None,) * len(args))
-                consts = [allocate_const(func, env, op, value, typeof(value))
-                              for value in remaining]
-                op.set_args([f, args + consts])
+        def f(x, *args):
+            ...
+
+        call(f, [x, y, z]) -> call(f, [x, (y, z)])
+    """
+
 
 
 def allocate_const(func, env, op, value, type):

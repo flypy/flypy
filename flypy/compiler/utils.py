@@ -7,6 +7,7 @@ Compiler utilities.
 from __future__ import print_function, division, absolute_import
 
 from pykit import types as ptypes
+from pykit.ir import Function
 
 class Caller(object):
     """
@@ -35,3 +36,37 @@ class Caller(object):
         self.context[result] = env["flypy.typing.restype"]
 
         return result
+
+def callmap(f, func, env):
+    """
+    Map `f` over all calls in the function `func`.
+    """
+    context = env['flypy.typing.context']
+
+    for op in func.ops:
+        if op.opcode == 'call':
+            f(context, op)
+
+def jitcallmap(f, func, env):
+    """
+    Map `f` over all calls in the function `func` which are non-opaque
+    jit functions.
+    """
+    context = env['flypy.typing.context']
+    envs = env['flypy.state.envs']
+
+    for op in func.ops:
+        if op.opcode == 'call':
+            callee, args = op.args
+            if not isinstance(callee, Function):
+                continue
+
+            f_env = envs[callee]
+
+            # Retrieve Python version and opaqueness
+            py_func = f_env['flypy.state.py_func']
+            opaque = f_env['flypy.state.opaque']
+
+            if py_func and not opaque:
+                f(context, py_func, f_env, op)
+
