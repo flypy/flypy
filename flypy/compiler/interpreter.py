@@ -16,7 +16,7 @@ from flypy import typeof, jit, functionwrapper, conversion
 from flypy.rules import is_flypy_type
 from flypy.pipeline import environment, phase
 from flypy.compiler.opaque import implement
-from flypy.compiler.overloading import flatargs
+from flypy.compiler.overloading import simple_flatargs
 
 from pykit.ir import interp, tracing, Function
 
@@ -40,7 +40,7 @@ def op_call(run_phase, typeof_func, interp, func, args):
 
         try:
             # Flatten args (consider default values)
-            args = flatargs(func.dispatcher.f, tuple(args), {})
+            args = simple_flatargs(func.dispatcher.f, tuple(args), {})
         except TypeError:
             pass
 
