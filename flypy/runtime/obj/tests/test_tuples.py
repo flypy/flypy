@@ -63,7 +63,49 @@ class TestSmallTuple(unittest.TestCase):
         self.assertEqual(rep.tl.tl.hd, 3)
 
 
+class TestTupleCreation(unittest.TestCase):
+
+    def test_empty(self):
+        @jit
+        def empty():
+            return ()
+
+        self.assertEqual(empty(), ())
+
+    def test_creation(self):
+        @jit
+        def create():
+            return (1, 2, 3)
+
+        self.assertEqual(create(), (1, 2, 3))
+
+
+class TestTupleBuiltin(unittest.TestCase):
+
+    def test_empty_builtin(self):
+        @jit
+        def empty():
+            return tuple()
+
+        self.assertEqual(empty(), ())
+
+    def test_empty(self):
+        @jit
+        def fromit(it):
+            return tuple(it)
+
+        #self.assertEqual(fromit((1, 2, 3)), (1, 2, 3))
+        #self.assertEqual(fromit([1, 2, 3]), (1, 2, 3))
+
+
 class TestJitTuple(unittest.TestCase):
+
+    def test_empty_conversion(self):
+        @jit
+        def f(t):
+            return t
+        self.assertEqual(f(()), ())
+
 
     def test_getitem(self):
         @jit

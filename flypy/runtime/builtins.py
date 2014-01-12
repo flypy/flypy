@@ -10,7 +10,7 @@ except ImportError:
 from .. import jit, ijit, overlay, overload, cjit, typeof
 from .interfaces import Sequence, Iterable, Iterator
 from .obj.core import (Range, List, Type, Complex, Slice, StaticTuple,
-                       EmptyList, NoneType, newbuffer)
+                       EmptyTuple, GenericTuple, EmptyList, NoneType, newbuffer)
 from .casting import cast
 from flypy.types import int32, float64
 from . import ffi
@@ -158,12 +158,11 @@ def enumerate(it):
 def slice(start, stop, step):
     return Slice(start, stop, step)
 
-#@ijit('Iterable[x] -> List[x]')
-#def list(value):
-#    # TODO: not typeable
-#    result = []
-#    result.extend(value)
-#    return result
+
+# TODO: Overloading on arity
+@ijit('NoneType[] -> EmptyList[]')
+def list(value=None):
+    return []
 
 @ijit('StaticTuple[a, b] -> List[a]')
 def list(value):
@@ -175,10 +174,25 @@ def list(value):
 
     return result
 
-# TODO: Overloading on arity
-@ijit('NoneType[] -> EmptyList[]')
-def list(value=None):
-    return []
+#@ijit('Iterable[x] -> List[x]')
+#def list(value):
+#    # TODO: not typeable
+#    result = []
+#    result.extend(value)
+#    return result
+
+
+@cjit('NoneType[] -> EmptyTuple[]')
+def tuple(value=None):
+    return ()
+
+@cjit('StaticTuple[a, b] -> StaticTuple[a, b]')
+def tuple(value):
+    return value
+
+@cjit #('StaticTuple[a, b] -> GenericTuple[t]') #('Iterable[a] -> GenericTuple[T]')
+def tuple(iterable):
+    return GenericTuple(list(iterable))
 
 # ____________________________________________________________
 
@@ -200,4 +214,5 @@ overlay(builtins.enumerate, enumerate)
 overlay(builtins.range, range)
 overlay(builtins.xrange, range)
 overlay(builtins.list, list)
+overlay(builtins.tuple, tuple)
 overlay(builtins.print, print)

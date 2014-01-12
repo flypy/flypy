@@ -9,8 +9,6 @@ range = lambda *args: list(xrange(*args))
 class TestListCreation(unittest.TestCase):
 
     def test_empty_builtin(self):
-        raise unittest.SkipTest("list() call")
-
         @jit
         def empty():
             return list()

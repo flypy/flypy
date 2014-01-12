@@ -25,23 +25,28 @@ class Tuple(object):
 
 @sjit('GenericTuple[T]')
 class GenericTuple(Tuple):
-    layout = [('items', 'List[T]')]
+    layout = [('_items', 'List[T]')]
 
     @jit('a -> T')
     def __getitem__(self, item):
-        return self.items[item]
+        return self._items[item]
 
     @jit('a -> Iterator[T]')
     def __iter__(self):
-        return iter(self.items)
+        return iter(self._items)
 
     @jit('a -> int64')
     def __len__(self):
-        return len(self.items)
+        return len(self._items)
 
     @jit('a -> Tuple[T]')
     def __add__(self, other):
-        return Tuple(self.items + other.items)
+        return Tuple(self._items + other._items)
+
+    @jit #('Iterable[a] -> GenericTuple[a]')
+    def from_iterable(self, it):
+        # TODO: class methods
+        self._items.extend(it)
 
 
 @sjit('StaticTuple[a, b]')
@@ -109,6 +114,8 @@ class StaticTuple(Tuple):
         return repr(tuple(result))
         #return '(%s)' % ", ".join(map(str, self))
 
+    # -------------------------
+
     def element_type(self):
         if self.hd is None:
             raise TypeError("Cannot compute element type of empty tuple!")
@@ -162,6 +169,12 @@ class EmptyTuple(Tuple):
     @jit('a -> int64')
     def __len__(self):
         return 0
+
+    # -------------------------
+
+    @staticmethod
+    def toobject(value, type):
+        return ()
 
 
 @jit('StaticTuple[a, b] -> a')
