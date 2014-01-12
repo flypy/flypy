@@ -43,7 +43,7 @@ class ConstantFolder(sccp.ConstantFolder):
             signature = self.context[func]
 
             argtypes = [self.context[a] for a in args]
-            typed_func, restype = infer_call(func, signature, argtypes)
+            #typed_func, restype = infer_call(func, signature, argtypes)
 
             # Check whether we can safely evaluate the function
             func_env = self.envs[func]

@@ -65,6 +65,7 @@ BYTECODES = [
     ('BUILD_TUPLE', 2),
     ('BUILD_LIST', 2),
     ('CALL_FUNCTION', 2),
+    ('CALL_FUNCTION_VAR', 2),
     ('COMPARE_OP', 2),
     ('DUP_TOP',  0),
     ('DUP_TOPX', 2),

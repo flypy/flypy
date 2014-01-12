@@ -28,6 +28,18 @@ class TestCallingFlypyConvention(unittest.TestCase):
 
         self.assertEqual(f(1, 2, 0, 3, 0), [1, 2, 3])
 
+    def test_unpacking(self):
+        raise unittest.SkipTest("unpacking")
+
+        @jit
+        def g(a, b, c):
+            return [a, b, c]
+        @jit
+        def f(*args):
+            return g(*args)
+
+        self.assertEqual(f(1, 2, 0, 3, 0), [1, 2, 3])
+
 
 if __name__ == '__main__':
     unittest.main()

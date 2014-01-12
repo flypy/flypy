@@ -186,11 +186,11 @@ def list(value):
 def tuple(value=None):
     return ()
 
-@cjit('StaticTuple[a, b] -> StaticTuple[a, b]')
+@cjit('StaticTuple[a, b] -> r')
 def tuple(value):
     return value
 
-@cjit #('StaticTuple[a, b] -> GenericTuple[t]') #('Iterable[a] -> GenericTuple[T]')
+@cjit('Iterable[a] -> GenericTuple[T]')
 def tuple(iterable):
     return GenericTuple(list(iterable))
 

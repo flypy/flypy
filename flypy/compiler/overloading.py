@@ -216,14 +216,6 @@ def fill_missing_argtypes(func, argtypes):
     remaining = get_remaining_args(func, argtypes)
     return argtypes + tuple(typeof(arg) for arg in remaining)
 
-def get_varargs(flattened_args):
-    flattened_args = list(flattened_args)
-
-    if flattened_args and isinstance(flattened_args[-1], dict):
-        flattened_args.pop()
-    if flattened_args and isinstance(argtypes[-1], tuple):
-        varargs = [make_tuple_type(argtypes.pop())]
-
 
 if __name__ == '__main__':
     import doctest

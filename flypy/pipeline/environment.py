@@ -49,6 +49,7 @@ _cpu_env = {
     'flypy.state.copies':       None,
     'flypy.state.crnt_func':    None,
     'flypy.state.options':      None,
+    'flypy.state.call_flags':   None,   # Flags on how arguments are passed
     'flypy.state.dependence':   None,
 
     # GC
@@ -115,7 +116,7 @@ _target_env_map = {
 # New envs
 #===------------------------------------------------------------------===
 
-def fresh_env(func, argtypes, target="cpu"):
+def fresh_env(func, argtypes, target="cpu", varargs=False, keywords=False):
     """
     Allocate a new environment.
     """

@@ -35,7 +35,7 @@ def make_method(type, attr):
     return Method(func, self)
 
 
-def infer_call(func, func_type, argtypes, env):
+def infer_call(func, func_type, argtypes, env, flags={}):
     """
     Infer a single call. We have three cases:
 
@@ -45,33 +45,31 @@ def infer_call(func, func_type, argtypes, env):
         3) Method. We need to insert 'self' in the cartesian product
 
     NOTE: This must only be called during the type inference phase !
+
+    Parameters
+    ==========
+    func: ir.Value
+        IR representation of the callee
+    func_type: Function, ForeignFunction or Method
+        signature of callee
+    flags: dict
+        dict containing info regarding the presence of varargs and keyword args
     """
     is_const = isinstance(func, ir.Const)
     is_flypy_func = is_const and isinstance(func.const, FunctionWrapper)
     is_class = isinstance(func_type, (type(Type.type), type(Constructor.type)))
 
     if is_method(func_type) or is_flypy_func:
-        return infer_function_call(func, func_type, argtypes, env)
+        return infer_function_call(func, func_type, argtypes, env, flags)
     elif is_class:
-        return infer_class_call(func, func_type, argtypes)
+        return infer_class_call(func, func_type, argtypes, flags)
     elif not isinstance(func, ir.Function):
-        return infer_foreign_call(func, func_type, argtypes)
+        return infer_foreign_call(func, func_type, argtypes, flags)
     else:
         raise NotImplementedError(func, func_type)
 
-def infer_getattr(type, env):
-    """
-    Infer a call of obj.__getattr__(attr)
-    """
-    from flypy.runtime.obj.core import String
 
-    func_type = make_method(type, '__getattr__')
-    func = func_type.parameters[0]
-
-    attr_type = String[()]
-    return infer_call(func, func_type, [attr_type], env)
-
-def infer_function_call(func, func_type, argtypes, env):
+def infer_function_call(func, func_type, argtypes, env, flags):
     """
     Method call or flypy function call.
     """
@@ -87,14 +85,15 @@ def infer_function_call(func, func_type, argtypes, env):
 
     # TODO: Support recursion !
 
-    env = env['flypy.fresh_env'](func, argtypes)
+    env = env['flypy.fresh_env'](func, argtypes, **flags)
     func, env = phase.typing(func, env)
     # env["flypy.typing.restype"]
     if func_type is None:
         func_type = env["flypy.typing.signature"]
     return func, func_type, env["flypy.typing.restype"]
 
-def infer_class_call(func, func_type, argtypes):
+
+def infer_class_call(func, func_type, argtypes, flags):
     """
     Constructor application.
     """
@@ -107,7 +106,8 @@ def infer_class_call(func, func_type, argtypes):
     # TODO: Return a Constructor?
     return func, Function[tuple(argtypes) + (classtype,)], classtype
 
-def infer_foreign_call(func, func_type, argtypes):
+
+def infer_foreign_call(func, func_type, argtypes, flags):
     """
     Higher-order or foreign function call.
     """
@@ -160,6 +160,24 @@ def infer_constructor_application(classtype, argtypes):
     assert len(argtypes) == len(argnames)
 
     return infer_type_from_layout(classtype, zip(argnames, argtypes))
+
+
+#===------------------------------------------------------------------===
+# Attribute resolution
+#===------------------------------------------------------------------===
+
+def infer_getattr(type, env):
+    """
+    Infer a call of obj.__getattr__(attr)
+    """
+    from flypy.runtime.obj.core import String
+
+    func_type = make_method(type, '__getattr__')
+    func = func_type.parameters[0]
+
+    attr_type = String[()]
+    return infer_call(func, func_type, [attr_type], env)
+
 
 #===------------------------------------------------------------------===
 # Type resolution

@@ -10,6 +10,7 @@ from flypy import jit, sjit, ijit, cjit, abstract, typeof
 from flypy.conversion import fromobject, toobject
 from .noneobject import NoneType
 from .iterators import counting_iterator
+from .listobject import List
 
 STATIC_THRESHOLD = 8
 
@@ -39,9 +40,9 @@ class GenericTuple(Tuple):
     def __len__(self):
         return len(self._items)
 
-    @jit('a -> Tuple[T]')
+    @jit('a -> a -> a')
     def __add__(self, other):
-        return Tuple(self._items + other._items)
+        return GenericTuple(self._items + other._items)
 
     @jit #('Iterable[a] -> GenericTuple[a]')
     def from_iterable(self, it):
@@ -197,6 +198,15 @@ def make_tuple_type(tup):
             result = StaticTuple[ty, result]
         return result
     return GenericTuple[reduce(promote, tup)]
+
+def extract_tuple_types(tuple_type):
+    """
+    Extract the element types from the (static) tuple type and return them
+    in a tuple.
+    """
+    if isinstance(tuple_type, EmptyTuple):
+        return ()
+    return (tuple_type.hd,) + extract_tuple_types(tuple_type.tl)
 
 @typeof.case(tuple)
 def typeof(pyval):

@@ -95,6 +95,8 @@ class Translate(object):
         self.builtins = set(self.globals.values())
         self.globals.update(self.func.func_globals)
 
+        self.call_annotations = collections.defaultdict(dict)
+
         # -------------------------------------------------
         # Error checks
 
@@ -421,7 +423,7 @@ class Translate(object):
             val = None # Generate a bare 'ret' instruction
         self.insert('ret', val)
 
-    def op_CALL_FUNCTION(self, inst):
+    def op_CALL_FUNCTION(self, inst, varargs=None):
         argc = inst.arg & 0xff
         kwsc = (inst.arg >> 8) & 0xff
         def pop_kws():
@@ -436,7 +438,19 @@ class Translate(object):
         assert not kws, "Keyword arguments not yet supported"
 
         func = self.pop()
-        self.call(func, args)
+        return self.call(func, args)
+
+    def op_CALL_FUNCTION_VAR(self, inst):
+        it = self.call_pop(tuple, [self.pop()])
+        #varargs = self.insert('unpack', it)
+        call = self.op_CALL_FUNCTION(inst, varargs=it)
+
+        # Add unpacked iterable to args list
+        f, args = call.args
+        call.set_args([f, args + [it]])
+
+        # Annotate call as a 'varargs' application
+        self.call_annotations[call]['varargs'] = True
 
     def op_GET_ITER(self, inst):
         self.call(iter, [self.pop()])

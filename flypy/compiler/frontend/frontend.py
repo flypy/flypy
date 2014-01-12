@@ -103,6 +103,8 @@ def translate(py_func, env):
     t.interpret()
     func = t.dst
 
+    env['numba.state.call_annotations'] = t.call_annotations
+
     return func, env
 
 #===------------------------------------------------------------------===
