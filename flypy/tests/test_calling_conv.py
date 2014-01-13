@@ -29,8 +29,6 @@ class TestCallingFlypyConvention(unittest.TestCase):
         self.assertEqual(f(1, 2, 0, 3, 0), [1, 2, 3])
 
     def test_unpacking(self):
-        raise unittest.SkipTest("unpacking")
-
         @jit
         def g(a, b, c):
             return [a, b, c]
@@ -38,8 +36,21 @@ class TestCallingFlypyConvention(unittest.TestCase):
         def f(*args):
             return g(*args)
 
-        self.assertEqual(f(1, 2, 0, 3, 0), [1, 2, 3])
+        self.assertEqual(f(1, 2, 3), [1, 2, 3])
 
+    def test_unpacking2(self):
+        raise unittest.SkipTest("unpacking with additional varargs")
+
+        @jit
+        def g(a, b, *args):
+            return [a, b, args[0]]
+        @jit
+        def f(*args):
+            return g(*args)
+
+        self.assertEqual(f(1, 2, 3), [1, 2, 3])
+
+    # TODO: Test unpacking with GenericTuple
 
 if __name__ == '__main__':
     unittest.main()

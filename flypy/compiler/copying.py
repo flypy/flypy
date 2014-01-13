@@ -80,6 +80,8 @@ def copy_env(old_func, new_func, env):
     new_env = dict(env)
     new_env['flypy.typing.context'] = copy_ir_valuemap(
         old_func, new_func, new_env['flypy.typing.context'] or {})
+    new_env['flypy.state.call_flags'] = copy_ir_valuemap(
+        old_func, new_func, new_env['flypy.state.call_flags'] or {})
     return new_env
 
 

@@ -49,7 +49,8 @@ _cpu_env = {
     'flypy.state.copies':       None,
     'flypy.state.crnt_func':    None,
     'flypy.state.options':      None,
-    'flypy.state.call_flags':   None,   # Flags on how arguments are passed
+    'flypy.state.call_flags':   None,   # Flags on how arguments are passed for each call Op
+    'flypy.state.called_flags': None,   # How this function itself was called
     'flypy.state.dependence':   None,
 
     # GC
@@ -134,10 +135,11 @@ def fresh_env(func, argtypes, target="cpu", varargs=False, keywords=False):
     env['flypy.state.func_qname'] = py_func.__name__
     env['flypy.state.func_globals'] = py_func.__globals__
     env['flypy.state.func_code'] = py_func.__code__
+    env['flypy.state.called_flags'] = {'varargs': varargs, 'keywords': keywords}
 
     # Copy
-    def copy(func1, argtypes1):
-        return fresh_env(func1, argtypes1, target)
+    def copy(func1, argtypes1, **kwds):
+        return fresh_env(func1, argtypes1, target, **kwds)
 
     env['flypy.fresh_env'] = copy
 

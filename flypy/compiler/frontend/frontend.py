@@ -8,7 +8,9 @@ from __future__ import print_function, division, absolute_import
 import inspect
 
 from .translation import Translate
-from flypy.runtime.obj.core import make_tuple_type
+from flypy.compiler.signature import compute_missing
+from flypy.rules import typematch
+from flypy.runtime.obj.core import make_tuple_type, StaticTuple, GenericTuple, extract_tuple_eltypes
 
 from pykit.ir import Builder
 
@@ -51,7 +53,7 @@ def simplify_argtypes(func, env):
         *args    -> tuple
         **kwargs -> dict
     """
-    from flypy.compiler.overloading import fill_missing_argtypes, flatargs
+    from flypy.compiler.signature import fill_missing_argtypes, flatargs
 
     argtypes = env["flypy.typing.argtypes"]
 
@@ -63,12 +65,18 @@ def simplify_argtypes(func, env):
     # the same types for defaults...
     py_func = func.py_func
 
-    # Fill out missing argtypes for defaults
-    argtypes = fill_missing_argtypes(py_func, argtypes)
+    called_flags = env['flypy.state.called_flags']
+    called_with_varargs = called_flags['varargs']
+    called_with_keywords = called_flags['keywords']
+
+    if called_with_varargs:
+        argtypes = handle_unpacking_varargs(func, py_func, argtypes)
+    else:
+        # Fill out missing argtypes for defaults
+        argtypes = fill_missing_argtypes(py_func, argtypes)
 
     # Handle varargs/keywords (*args, **kwargs)
     argtypes = flatargs(py_func, argtypes, {})
-
     result = list(argtypes)
 
     varargs, keywords = [], []
@@ -81,6 +89,39 @@ def simplify_argtypes(func, env):
     argtypes = result + varargs + keywords
     #print(func, argtypes)
     return argtypes
+
+def handle_unpacking_varargs(func, py_func, argtypes):
+    """
+    Handle unpacking of varargs:
+
+        f(10, *args)
+              ^^^^^
+
+    We assume that unpacking consumes all positional arguments, i.e. we
+    do not support shenanigans such as the following:
+
+        def f(a, b=2, c=3):
+            ...
+
+        f(1, *(4,))
+
+    To support that we'd have to call a wrapper function, that takes a tuple
+    and supplies missing defaults dynamically.
+    """
+    argspec = inspect.getargspec(py_func)
+
+    tuple_type = argtypes[-1]
+    argtypes   = argtypes[:-1]
+    missing  = compute_missing(py_func, argtypes)
+
+    # Extract remaining argument types
+    remaining = extract_tuple_eltypes(tuple_type, missing)
+    if len(remaining) > missing and not argspec.varargs:
+        raise TypeError(
+            "Too many arguments supplied to function %s: %s" % (
+                py_func, argtypes))
+
+    return tuple(argtypes) + tuple(remaining)
 
 def translate(py_func, env):
     """
@@ -103,7 +144,7 @@ def translate(py_func, env):
     t.interpret()
     func = t.dst
 
-    env['numba.state.call_annotations'] = t.call_annotations
+    env['flypy.state.call_flags'] = t.call_annotations
 
     return func, env
 

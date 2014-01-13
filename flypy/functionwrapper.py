@@ -12,8 +12,8 @@ from itertools import starmap
 import copy
 
 from flypy.rules import typeof
-from flypy.compiler.overloading import (lookup_previous, overload, Dispatcher,
-                                        dummy_signature, flatargs)
+from flypy.compiler.overloading import lookup_previous, overload, Dispatcher
+from flypy.compiler.signature import dummy_signature, flatargs
 from flypy.linker import llvmlinker
 
 # TODO: Reuse flypy.flypywrapper.pyx for autojit Python entry points

@@ -87,4 +87,3 @@ def jitcallmap(f, func, env):
 
             if py_func and not opaque:
                 f(context, py_func, f_env, op)
-

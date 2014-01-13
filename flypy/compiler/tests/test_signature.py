@@ -3,7 +3,7 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from flypy.compiler.overloading import flatargs
+from flypy.compiler.signature import flatargs
 
 class TestArgParse(unittest.TestCase):
 

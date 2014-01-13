@@ -13,7 +13,7 @@ from flypy import promote, unify, typejoin
 from flypy.functionwrapper import FunctionWrapper
 from flypy.types import Type, Constructor, ForeignFunction, Function, void
 from flypy.typing import TypeConstructor
-from flypy.compiler.overloading import fill_missing_argtypes
+from flypy.compiler.signature import fill_missing_argtypes
 from flypy.rules import infer_type_from_layout
 
 from pykit import ir, types
@@ -35,7 +35,7 @@ def make_method(type, attr):
     return Method(func, self)
 
 
-def infer_call(func, func_type, argtypes, env, flags={}):
+def infer_call(func, op, func_type, argtypes, env):
     """
     Infer a single call. We have three cases:
 
@@ -58,6 +58,9 @@ def infer_call(func, func_type, argtypes, env, flags={}):
     is_const = isinstance(func, ir.Const)
     is_flypy_func = is_const and isinstance(func.const, FunctionWrapper)
     is_class = isinstance(func_type, (type(Type.type), type(Constructor.type)))
+
+    call_flags = env['flypy.state.call_flags']
+    flags = call_flags.get(op, {})
 
     if is_method(func_type) or is_flypy_func:
         return infer_function_call(func, func_type, argtypes, env, flags)
@@ -166,7 +169,7 @@ def infer_constructor_application(classtype, argtypes):
 # Attribute resolution
 #===------------------------------------------------------------------===
 
-def infer_getattr(type, env):
+def infer_getattr(type, op, env):
     """
     Infer a call of obj.__getattr__(attr)
     """
@@ -176,8 +179,7 @@ def infer_getattr(type, env):
     func = func_type.parameters[0]
 
     attr_type = String[()]
-    return infer_call(func, func_type, [attr_type], env)
-
+    return infer_call(func, op, func_type, [attr_type], env)
 
 #===------------------------------------------------------------------===
 # Type resolution

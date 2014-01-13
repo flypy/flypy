@@ -9,11 +9,13 @@ from __future__ import print_function, division, absolute_import
 import flypy
 from flypy.compiler.utils import callmap, jitcallmap
 from flypy.compiler.special import SETATTR
-from flypy.compiler.overloading import get_remaining_args, flatargs
+from flypy.compiler.signature import get_remaining_args, flatargs
 from flypy.compiler.utils import Caller
-from flypy.runtime.obj.core import EmptyTuple, StaticTuple, Constructor
 from flypy.compiler.typing.resolution import (infer_call, is_method,
                                               infer_getattr, make_method)
+from flypy.compiler.signature import compute_missing
+from flypy.runtime import primitives
+from flypy.runtime.obj.core import EmptyTuple, StaticTuple, Constructor, extract_tuple_eltypes
 
 from pykit import types
 from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
@@ -48,7 +50,8 @@ def rewrite_getattr(func, env):
                 attr_string = OConst(attr)
 
                 # Retrieve __getattr__ function and type
-                getattr_func, func_type, restype = infer_getattr(obj_type, env)
+                getattr_func, func_type, restype = infer_getattr(
+                    obj_type, op, env)
 
                 # call(getfield(obj, '__getattr__'), ['attr'])
                 call = b.call(op.type, op, [attr_string])
@@ -110,7 +113,7 @@ def rewrite_calls(func, env):
 
         # Retrieve typed function from the given arg types
         argtypes = [context[a] for a in args]
-        typed_func, _, _ = infer_call(f, signature, argtypes, env)
+        typed_func, _, _ = infer_call(f, op, signature, argtypes, env)
 
         if is_method(signature):
             # Insert self in args list
@@ -149,6 +152,85 @@ def rewrite_optional_args(func, env):
     jitcallmap(f, func, env)
 
 
+@flypy.jit
+def slicetuple(t, n):
+    return t[n:]
+
+def rewrite_unpacking(func, env):
+    """
+    Rewrite argument unpacking:
+
+        f(x, *args)
+              ^^^^^
+
+        temp = tuple(args)
+        f(x, temp[0], temp[1])
+    """
+    from flypy.pipeline import phase
+
+    b = Builder(func)
+    caller = Caller(b, env['flypy.typing.context'], env)
+    call_flags = env['flypy.state.call_flags']
+
+    def f(context, py_func, f_env, op):
+        f, args = op.args
+        flags = call_flags.get(op, {})
+
+        if not flags.get('varargs'):
+            return
+
+        # Unpack positional and varargs argument
+        # For f(x, *args): positional = [x], varargs = args
+        positional, varargs = args[:-1], args[-1]
+        varargs_type = context[varargs]
+
+        # Missing number of positional arguments (int)
+        missing = compute_missing(py_func, positional)
+
+        # Types in the tuple, may be heterogeneous
+        eltypes = extract_tuple_eltypes(varargs_type, missing)
+
+        # Now supply the missing positional arguments
+        b.position_before(op)
+        for i, argty in zip(range(missing), eltypes):
+            idx = OConst(i)
+            context[idx] = flypy.int32
+
+            #hd = b.getfield(types.Opaque, varargs, 'hd')
+            #tl = b.getfield(types.Opaque, varargs, 'tl')
+
+            positional_arg = caller.call(phase.typing,
+                                         primitives.getitem,
+                                         [varargs, idx])
+            positional.append(positional_arg)
+
+        # TODO: For GenericTuple unpacking, assure that
+        #       len(remaining_tuple) == missing
+
+        if len(eltypes) > missing:
+            # In case we have more element types than positional parameters,
+            # we must have a function that takes varargs, e.g.
+            #
+            #   def f(x, y, *args):
+            #       ...
+            #
+            # That we call as follows (for example):
+            #
+            #       f(x, *args)
+            idx = OConst(missing)
+            context[idx] = flypy.int32
+
+            argstup = caller.call(phase.typing,
+                                  slicetuple,
+                                  [varargs, idx])
+            positional.append(argstup)
+
+        # Update with new positional arguments
+        op.set_args([f, positional])
+
+    jitcallmap(f, func, env)
+
+
 def rewrite_varargs(func, env):
     """
     Rewrite function application with arguments that go in the varargs:
@@ -160,9 +242,15 @@ def rewrite_varargs(func, env):
     """
     b = Builder(func)
     caller = Caller(b, env['flypy.typing.context'], env)
+    caller = Caller(b, env['flypy.typing.context'], env)
+    call_flags = env['flypy.state.call_flags']
 
     def f(context, py_func, f_env, op):
         f, args = op.args
+        flags = call_flags.get(op, {})
+
+        if flags.get('varargs'):
+            return
 
         # Retrieve any remaining arguments meant for *args
         flattened = flatargs(py_func, args, {})

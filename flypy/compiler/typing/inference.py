@@ -322,7 +322,7 @@ class ConstraintGenerator(object):
         arg, attr = op.args
 
         self.G.add_edge(arg, op)
-        self.metadata[op] = { 'attr': attr }
+        self.metadata[op] = { 'attr': attr, 'op': op }
         self.constraints[op] = 'attr'
 
     def op_call(self, op):
@@ -336,7 +336,7 @@ class ConstraintGenerator(object):
         self.constraints[op] = 'call'
 
         func, args = op.args
-        self.metadata[op] = { 'func': func, 'args': args}
+        self.metadata[op] = { 'func': func, 'args': args, 'call': op }
 
     def op_convert(self, op):
         """
@@ -353,9 +353,8 @@ class ConstraintGenerator(object):
         else:
             self.G.add_edge(op.args[0], op)
 
-    def op_unpack(self, op):
-        print(op.args[0])
-        self.G.add_edge(op.args[0], op)
+    #def op_unpack(self, op):
+    #    self.G.add_edge(op.args[0], op)
 
     def op_setfield(self, op):
         pass # Handle this in the type checker
@@ -496,14 +495,17 @@ def infer_attr(ctx, env, node, processed, incoming, typeset, changed):
         obj.a
     """
     [neighbor] = incoming
+
     attr = ctx.metadata[node]['attr']
+    op   = ctx.metadata[node]['op']
+
     for type in ctx.context[neighbor]:
         if attr in type.fields:
             result = make_method(type, attr)
         elif attr in type.layout:
             result = type.resolved_layout[attr]
         elif '__getattr__' in type.fields:
-            _, _, result = infer_getattr(type, env)
+            _, _, result = infer_getattr(type, op, env)
         elif '__getattribute__' in type.fields:
             raise InferError("__getattribute__ note supported")
         else:
@@ -521,6 +523,8 @@ def infer_appl(ctx, env, node, processed, incoming, typeset, changed):
         f(a)
     """
     func = ctx.metadata[node]['func']
+    op   = ctx.metadata[node]['call']
+
     func_types = ctx.context[func]
     arg_typess = [ctx.context[arg] for arg in ctx.metadata[node]['args']]
 
@@ -531,7 +535,7 @@ def infer_appl(ctx, env, node, processed, incoming, typeset, changed):
             key = (node, func_type, tuple(arg_types))
             if key not in processed:
                 processed.add(key)
-                _, signature, result = infer_call(func, func_type,
+                _, signature, result = infer_call(func, op, func_type,
                                                   arg_types, env)
                 if isinstance(result, TypeVar):
                     raise TypeError("Expected a concrete type result, "

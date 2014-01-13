@@ -7,6 +7,7 @@ tuple implementation.
 from __future__ import print_function, division, absolute_import
 
 from flypy import jit, sjit, ijit, cjit, abstract, typeof
+from flypy.rules import typematch
 from flypy.conversion import fromobject, toobject
 from .noneobject import NoneType
 from .iterators import counting_iterator
@@ -199,14 +200,27 @@ def make_tuple_type(tup):
         return result
     return GenericTuple[reduce(promote, tup)]
 
-def extract_tuple_types(tuple_type):
+
+def extract_statictuple_eltypes(tuple_type):
+    if typematch(tuple_type, EmptyTuple):
+        return ()
+
+    hd, tl = tuple_type.parameters
+    return (hd,) + extract_statictuple_eltypes(tl)
+
+
+def extract_tuple_eltypes(tuple_type, n):
     """
     Extract the element types from the (static) tuple type and return them
     in a tuple.
     """
-    if isinstance(tuple_type, EmptyTuple):
-        return ()
-    return (tuple_type.hd,) + extract_tuple_types(tuple_type.tl)
+    if typematch(tuple_type, StaticTuple):
+        return extract_statictuple_eltypes(tuple_type)
+    else:
+        assert typematch(tuple_type, GenericTuple), tuple_type
+        base_type = tuple_type.parameters[0]
+        return (base_type,) * n
+
 
 @typeof.case(tuple)
 def typeof(pyval):
