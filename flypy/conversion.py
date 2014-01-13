@@ -82,7 +82,7 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
             if hasattr(value, name):
                 val = getattr(value, name)
             else:
-                assert name == 'dummy', name
+                assert name == 'dummy', (name, value, value.__class__)
                 val = 0
 
             cval = toctypes(val, ty, keepalive, valmemo, typememo)

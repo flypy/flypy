@@ -118,8 +118,8 @@ def handle_unpacking_varargs(func, py_func, argtypes):
     remaining = extract_tuple_eltypes(tuple_type, missing)
     if len(remaining) > missing and not argspec.varargs:
         raise TypeError(
-            "Too many arguments supplied to function %s: %s" % (
-                py_func, argtypes))
+            "Too many arguments supplied to function %s: %s %s %s" % (
+                py_func, argtypes, remaining, missing))
 
     return tuple(argtypes) + tuple(remaining)
 
