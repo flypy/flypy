@@ -191,6 +191,7 @@ class FunctionWrapper(object):
         return self
 
     def copy(self):
+        raise NotImplementedError
         fw = FunctionWrapper(copy.deepcopy(self.dispatcher), self.py_func,
                              abstract=self.abstract, opaque=self.opaque)
         fw.implementor = self.implementor
