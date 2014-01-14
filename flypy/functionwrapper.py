@@ -247,7 +247,22 @@ def populate_dispatcher(dispatcher, overloads):
     """
     Populate dispatcher with the given overloads.
     """
+    from flypy.typing import resolve, to_blaze
+
     for py_func, signature, kwds in overloads:
         if not signature:
             signature = dummy_signature(py_func)
+        else:
+            # Resolve the signature in its scope, that is resolve any dummy
+            # blaze TypeConstructor objects to the types from the scope
+            scope = determine_scope(py_func)
+            bound = {} # TODO:
+            signature = resolve(signature, scope, bound)
+            # Use blaze's coercion rules for now
+            signature = to_blaze(signature)
+
         overload(signature, dispatcher=dispatcher, **kwds)(py_func)
+
+
+def determine_scope(py_func):
+    return py_func.__globals__
