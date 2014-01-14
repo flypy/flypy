@@ -6,6 +6,7 @@ Type checking after type inference.
 
 from __future__ import print_function, division, absolute_import
 
+import flypy
 from flypy.compiler.special import SETATTR
 from flypy.types import Function, ForeignFunction
 
@@ -38,7 +39,6 @@ def check_scoping(func, env):
         if op.opcode != 'phi':
             for arg in flatten(op.args):
                 if isinstance(arg, Undef):
-
                     raise NameError("Variable referenced before assignment")
 
 #===------------------------------------------------------------------===
@@ -48,5 +48,8 @@ def check_scoping(func, env):
 def typecheck(func, env):
     context = env['flypy.typing.context']
     visit(TypeChecker(context), func)
+
+    check_scoping(func, env)
+
 
 run = typecheck

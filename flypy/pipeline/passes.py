@@ -24,7 +24,7 @@ from flypy.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
                                    conversion, rewrite_obj_return, allocator,
-                                   rewrite_externs, generators)
+                                   rewrite_externs, generators, void2none)
 from flypy.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.transform import dce
@@ -61,6 +61,7 @@ typing = [
     debugprint.debugprint_typed,
     typecheck,
     # flypy.compiler.lower.*
+    void2none,
     rewrite_getattr,
     rewrite_setattr,
     rewrite_calls,
