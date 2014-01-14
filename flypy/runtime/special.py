@@ -7,10 +7,13 @@ Special flypy functions.
 from __future__ import print_function, division, absolute_import
 
 import flypy
-from flypy import jit, Type, Pointer, overlay
+from flypy import jit, Type, Pointer, String, overlay
 from flypy.pipeline import fresh_env, phase
 from flypy.runtime import lowlevel_impls
 from flypy.compiler import opaque
+
+from pykit import types as ptypes
+from pykit.ir import Op
 
 __all__ = ['typeof']
 
@@ -27,6 +30,17 @@ def typeof(obj):
 #    Take the address of a given function.
 #    """
 #    raise NotImplementedError("Not implemented at the python level")
+
+#===------------------------------------------------------------------===
+# Debug printing...
+#===------------------------------------------------------------------===
+
+@jit('a -> void', opaque=True)
+def debugprint(expr):
+    """
+    Print information about `expr` during type inferencing.
+    """
+    raise NotImplementedError("Not implemented at the python level")
 
 #===------------------------------------------------------------------===
 # Low-level implementations

@@ -145,9 +145,9 @@ x = make_applier(add, a, b) # a + b
 y = make_applier(usub, x)
 term = make_applier(mul, x, y)
 
-print(term)
-print(eval(term, (2, 3)))
-print(eval(term, (7, 3)))
+#print(term)
+#print(eval(term, (2, 3)))
+#print(eval(term, (7, 3)))
 
 #===------------------------------------------------------------------===
 # Example flypy loop nest wrapper
@@ -199,11 +199,11 @@ def index(inputs, i):
     return inputs
 
 
-loopnest = Loop(InnerLoop(term))
-A = np.arange(25).reshape(5, 5)
-out = np.empty((5, 5))
+loopnest = InnerLoop(term)
+A = np.arange(25) #.reshape(5, 5)
+out = np.empty(25) #(5, 5))
 args = (out, A, A)
-#print(eval(loopnest, args))
+print(eval(loopnest, args))
 
 #===------------------------------------------------------------------===
 # Example with CKernels

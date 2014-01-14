@@ -356,6 +356,9 @@ class ConstraintGenerator(object):
     #def op_unpack(self, op):
     #    self.G.add_edge(op.args[0], op)
 
+    def op_debugprint(self, op):
+        self.G.add_edge(void, op)
+
     def op_setfield(self, op):
         pass # Handle this in the type checker
 
