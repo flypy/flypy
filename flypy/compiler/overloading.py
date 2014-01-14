@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
-import inspect
 
 from flypy.typing import resolve, to_blaze
+
+from pykit.utils import cached
 
 from datashape import overloading
 from datashape import coretypes as T
 from datashape.overloading import lookup_previous, flatargs as simple_flatargs
 from datashape.overloading import overload, Dispatcher
 from datashape.util import gensym
+
 
 def overloadable(f):
     """
@@ -33,6 +35,11 @@ def best_match(func_wrapper, argtypes):
     -------
     (py_func, result_signature)
     """
+    return _best_match(func_wrapper, tuple(argtypes))
+
+
+@cached()
+def _best_match(func_wrapper, argtypes):
     overloaded = func_wrapper.resolve_dispatcher()
     argtypes = [to_blaze(t) for t in argtypes]
 
