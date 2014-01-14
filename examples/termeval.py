@@ -232,19 +232,25 @@ makearg = argmarker()
 a = next(makearg)
 b = next(makearg)
 x = make_applier(add, a, b)
-loopnest = InnerLoop(x)
+inner = InnerLoop(x)
+outer = Loop(inner)
 
-A = np.arange(25) #.reshape(5, 5)
-out = np.empty(25) #(5, 5))
-args = (out, A, A)
-print(eval(loopnest, args))
+def test_1d():
+    A = np.arange(25) #.reshape(5, 5)
+    out = np.empty(25) #(5, 5))
+    args = (out, A, A)
+    print(eval(inner, args))
 
 # 2-dimensional example
 
-A = np.arange(25).reshape(5, 5)
-out = np.empty(25).reshape((5, 5))
-args = (out, A, A)
-print(eval(Loop(loopnest), args))
+def test_2d():
+    A = np.arange(25).reshape(5, 5)
+    out = np.empty(25).reshape((5, 5))
+    args = (out, A, A)
+    print(eval(outer, args))
+
+test_1d()
+test_2d()
 
 #===------------------------------------------------------------------===
 # Example with CKernels

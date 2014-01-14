@@ -46,7 +46,7 @@ def best_match(func_wrapper, argtypes):
     -------
     (py_func, result_signature)
     """
-    o = func_wrapper.dispatcher
+    o = func_wrapper.resolve_dispatcher()
     scope = determine_scope(func_wrapper.py_func)
     bound = {} # TODO:
     overloaded = resolve_overloads(o, scope, bound)

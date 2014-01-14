@@ -103,7 +103,7 @@ def overload_methods(cls, base):
             if not method.abstract:
                 if attr not in vars(cls):
                     # Copy method if not present
-                    setattr(cls, attr, method) #.copy())
+                    setattr(cls, attr, method.copy())
                 #elif attr[0] != '_':
                 #    # NOTE: contains awful hacks to make signature comparsion
                 #    #       works
