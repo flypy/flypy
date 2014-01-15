@@ -4,7 +4,8 @@
 Implements a runtime using CPython.
 """
 
-from __future__ import print_function, division, absolute_import
+# future feature absolute_import is not defined ?
+from __future__ import print_function, division #, absolute_import
 
 from cpython cimport *
 from libc.stdint cimport uint64_t, int64_t
