@@ -2,7 +2,8 @@
 from __future__ import print_function, division, absolute_import
 
 import unittest
-from flypy import jit, int32, int64, float32, float64
+from flypy import jit
+from flypy.types import int32, int64, float32, float64
 
 import numpy as np
 

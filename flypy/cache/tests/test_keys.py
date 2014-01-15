@@ -2,7 +2,8 @@
 from __future__ import print_function, division, absolute_import
 
 import unittest
-from flypy import int32, float64, jit
+from flypy import jit
+from flypy.types import int32, float64
 from flypy.cache import keys
 from flypy.cache.tests import mod1, mod2
 

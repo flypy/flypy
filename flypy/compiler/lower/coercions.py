@@ -7,9 +7,9 @@ Type coercions.
 from __future__ import print_function, division, absolute_import
 
 import flypy
-from flypy import errors
+from flypy import types, errors
 
-from pykit import types
+from pykit import types as ptypes
 from pykit.ir import OpBuilder, Builder, Const, Function, Op, Undef, ops
 
 #------------------------------------------------------------------------
@@ -119,7 +119,7 @@ class Coercion(object):
             op.set_args([retval])
 
     def coerce_to_conditional(self, op):
-        restype = flypy.bool_
+        restype = types.bool_
         cond, trueblock, falseblock = op.args
         if self.context[cond] != restype:
             retval = self.convert(cond, restype, op)
@@ -136,11 +136,11 @@ class Coercion(object):
         for i, (pred, val) in enumerate(zip(blocks, vals)):
             if isinstance(val, Const) and self.context[val] != ty:
                 self.builder.position_before(pred.tail)
-                newval = self.builder.convert(types.Opaque, val)
+                newval = self.builder.convert(ptypes.Opaque, val)
                 self.context[newval] = ty
                 vals[i] = newval
             elif isinstance(val, Undef) and self.context[val] != ty:
-                newval = Undef(types.Opaque)
+                newval = Undef(ptypes.Opaque)
                 self.context[newval] = ty
                 vals[i] = newval
 
@@ -185,7 +185,7 @@ class Coercion(object):
 
             isconst = isinstance(arg, (Undef, Const))
 
-            conversion = Op('coerce', types.Opaque, [arg])
+            conversion = Op('coerce', ptypes.Opaque, [arg])
             self.context[conversion] = ty
 
             if isconst:

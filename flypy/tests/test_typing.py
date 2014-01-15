@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from flypy import jit, int32, Type, Constructor, Pointer
+from flypy import jit
+from flypy.types import int32, Type, Constructor, Pointer
 from flypy.typing import resolve
 
 def _resolve(t, bound):

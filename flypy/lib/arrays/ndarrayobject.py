@@ -6,7 +6,7 @@ Arrays and NumPy conversion.
 
 from __future__ import print_function, division, absolute_import
 
-import flypy
+import flypy.types
 from flypy import jit, sjit, ijit, typeof, cjit
 from flypy.support import numpy_support
 from flypy.conversion import fromobject, toobject
@@ -313,7 +313,7 @@ def fromnumpy(ndarray, ty, boundscheck=False):
                          "(e.g. views in record arrays)")
 
     # Build array object
-    data = fromobject(ndarray.ctypes.data, Pointer[flypy.int8])
+    data = fromobject(ndarray.ctypes.data, Pointer[flypy.types.int8])
 
     dims = EmptyDim()
     for extent, stride in reversed(zip(ndarray.shape, steps)):
@@ -329,7 +329,7 @@ def fromnumpy(ndarray, ty, boundscheck=False):
 
 def tonumpy(arr, dtype):
     """Build a NumPy array from an NDArray"""
-    itemsize = flypy.sizeof_type(dtype)
+    itemsize = flypy.types.sizeof_type(dtype)
     steps = np.array(_getsteps(arr.dims))
     shape = np.array(_getshape(arr.dims))
     strides = steps * itemsize

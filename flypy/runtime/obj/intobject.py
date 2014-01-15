@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 import math
 import ctypes
 
-import flypy
+import flypy.types
 from flypy import jit, sjit, typeof
 from flypy.runtime import formatting
 from ..interfaces import Number
@@ -20,7 +20,7 @@ class Int(Number):
 
     @jit('a -> int64')
     def __int__(self):
-        return flypy.cast(self, flypy.int64)
+        return flypy.cast(self, flypy.types.int64)
 
     @jit
     def __str__(self):
@@ -86,9 +86,9 @@ def int_format(x):
         - use snprintf
     """
     x = upcast(x)
-    buf = flypy.runtime.obj.core.newbuffer(flypy.char, ndigits(x) + 1)
+    buf = flypy.runtime.obj.core.newbuffer(flypy.types.char, ndigits(x) + 1)
     formatting.sprintf(buf, getformat(x), x)
-    return flypy.String(buf)
+    return flypy.types.String(buf)
 
 #===------------------------------------------------------------------===
 # typeof

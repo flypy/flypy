@@ -7,6 +7,7 @@ Type resolution and method resolution.
 from __future__ import print_function, division, absolute_import
 
 import flypy
+from flypy import types
 from flypy.compiler.utils import callmap, jitcallmap
 from flypy.compiler.special import SETATTR
 from flypy.compiler.signature import get_remaining_args, flatargs
@@ -17,7 +18,7 @@ from flypy.compiler.signature import compute_missing
 from flypy.runtime import primitives
 from flypy.runtime.obj.core import EmptyTuple, StaticTuple, Constructor, extract_tuple_eltypes
 
-from pykit import types
+from pykit import types as ptypes
 from pykit.ir import OpBuilder, Builder, Const, OConst, Function, Op
 
 #===------------------------------------------------------------------===
@@ -39,7 +40,7 @@ def rewrite_getattr(func, env):
         if op.opcode == 'getfield':
             value, attr = op.args
             obj_type = context[value]
-            attr_type = flypy.String[()]
+            attr_type = types.String[()]
 
             if attr not in obj_type.fields and attr not in obj_type.layout:
                 assert '__getattr__' in obj_type.fields
@@ -77,7 +78,7 @@ def rewrite_setattr(func, env):
         if op.opcode == 'setfield':
             obj, attr, value = op.args
             obj_type = context[obj]
-            attr_type = flypy.String[()]
+            attr_type = types.String[()]
 
             if attr not in obj_type.fields and attr not in obj_type.layout:
                 assert SETATTR in obj_type.fields, attr
@@ -89,14 +90,14 @@ def rewrite_setattr(func, env):
 
                 # call(getfield(obj, '__setattr__'), ['attr', value])
                 method_type = make_method(obj_type, SETATTR)
-                method = b.getfield(types.Opaque, obj, SETATTR)
-                call = b.call(types.Opaque, method, [attr_string, value])
+                method = b.getfield(ptypes.Opaque, obj, SETATTR)
+                call = b.call(ptypes.Opaque, method, [attr_string, value])
                 op.delete()
 
                 # Update context
                 del context[op]
                 context[method] = method_type
-                context[call] = flypy.Void[()]
+                context[call] = types.Void[()]
                 context[attr_string] = attr_type
 
 
@@ -194,10 +195,10 @@ def rewrite_unpacking(func, env):
         b.position_before(op)
         for i, argty in zip(range(missing), eltypes):
             idx = OConst(i)
-            context[idx] = flypy.int32
+            context[idx] = types.int32
 
-            #hd = b.getfield(types.Opaque, varargs, 'hd')
-            #tl = b.getfield(types.Opaque, varargs, 'tl')
+            #hd = b.getfield(ptypes.Opaque, varargs, 'hd')
+            #tl = b.getfield(ptypes.Opaque, varargs, 'tl')
 
             positional_arg = caller.call(phase.typing,
                                          primitives.getitem,
@@ -218,7 +219,7 @@ def rewrite_unpacking(func, env):
             #
             #       f(x, *args)
             idx = OConst(missing)
-            context[idx] = flypy.int32
+            context[idx] = types.int32
 
             argstup = caller.call(phase.typing,
                                   slicetuple,
@@ -271,7 +272,7 @@ def rewrite_varargs(func, env):
     jitcallmap(f, func, env)
 
 def allocate_const(func, env, op, value, type):
-    const = Const(value, types.Opaque)
+    const = Const(value, ptypes.Opaque)
     context = env['flypy.typing.context']
     context[const] = type
     return const

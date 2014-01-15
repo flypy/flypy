@@ -8,8 +8,8 @@ from __future__ import print_function, division, absolute_import
 
 import ctypes
 
-from flypy import jit, void, representation, conversion
-from flypy.types import Pointer
+from flypy import jit, representation, conversion
+from flypy.types import Pointer, void
 from flypy.compiler import is_flypy_cc
 
 from pykit import types

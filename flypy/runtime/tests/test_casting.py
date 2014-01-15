@@ -4,7 +4,8 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 import unittest
 
-from flypy import jit, int32, float64, cast, Pointer
+from flypy import jit, cast
+from flypy.types import int32, float64, Pointer
 
 class TestCasting(unittest.TestCase):
 

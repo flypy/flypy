@@ -6,12 +6,10 @@ Lower conversion operations.
 
 from __future__ import print_function, division, absolute_import
 
-import flypy
-from flypy import errors
-from flypy.pipeline import environment
+from flypy import types, errors
 from ..utils import Caller
 
-from pykit import types
+from pykit import types as ptypes
 from pykit.ir import OpBuilder, Const, OConst
 
 def run(func, env):
@@ -45,7 +43,7 @@ def lower_coerce(func, env):
             if src_type == dst_type:
                 continue
 
-            type_argtype = flypy.Type[dst_type]
+            type_argtype = types.Type[dst_type]
             type_arg = OConst(dst_type)
             context[type_arg] = type_argtype
 

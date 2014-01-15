@@ -6,7 +6,8 @@ Type coercion.
 
 from __future__ import print_function, division, absolute_import
 
-from flypy import jit, ijit, cjit, Type, Pointer, void, cast
+from flypy import jit, ijit, cjit, cast
+from flypy.types import Type, Pointer, void
 
 jit = cjit
 

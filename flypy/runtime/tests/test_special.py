@@ -4,7 +4,8 @@ import ctypes
 
 import unittest
 
-from flypy import jit, Type, int32, float64, typeof #, addressof
+from flypy import jit, typeof #, addressof
+from flypy.types import Type, int32, float64
 
 ## Test helpers
 

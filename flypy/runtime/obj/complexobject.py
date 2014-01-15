@@ -11,7 +11,7 @@ try:
 except ImportError:
     import builtins
 
-import flypy
+import flypy.types
 from flypy import jit, sjit, typeof, overlay
 
 #===------------------------------------------------------------------===
@@ -74,4 +74,4 @@ class Complex(object):
 
 @typeof.case(builtins.complex)
 def typeof(pyval):
-    return Complex[flypy.float64]
+    return Complex[flypy.types.float64]

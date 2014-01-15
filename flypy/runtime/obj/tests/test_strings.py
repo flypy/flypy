@@ -5,7 +5,8 @@ import ctypes
 import cffi
 import unittest
 
-from flypy import jit, typeof, int32, float64, NULL
+from flypy import jit, typeof, NULL
+from flypy.types import int32, float64
 
 class TestStrings(unittest.TestCase):
 

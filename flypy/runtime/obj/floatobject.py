@@ -8,8 +8,8 @@ from __future__ import print_function, division, absolute_import
 import math
 import ctypes
 
-import flypy
-from ... import sjit, jit, typeof
+import flypy.types
+from flypy import sjit, jit, typeof
 from flypy.runtime import formatting
 from ..interfaces import Number
 
@@ -19,7 +19,7 @@ class Float(Number):
 
     @jit('a -> int64')
     def __int__(self):
-        return flypy.cast(self, flypy.int64)
+        return flypy.cast(self, flypy.types.int64)
 
     @jit
     def __str__(self):

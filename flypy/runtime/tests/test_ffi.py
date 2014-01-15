@@ -4,7 +4,8 @@ from __future__ import print_function, division, absolute_import
 import math
 import unittest
 
-from flypy import jit, types, int32, float64, Type, cast
+from flypy import jit, types, cast
+from flypy.types import int32, float64, Type
 from flypy.runtime import ffi
 
 # ______________________________________________________________________

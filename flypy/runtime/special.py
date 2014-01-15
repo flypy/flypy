@@ -7,7 +7,8 @@ Special flypy functions.
 from __future__ import print_function, division, absolute_import
 
 import flypy
-from flypy import jit, Type, Pointer, String, overlay
+from flypy import jit, overlay
+from flypy.types import Type, Pointer, String
 from flypy.pipeline import fresh_env, phase
 from flypy.runtime import lowlevel_impls
 from flypy.compiler import opaque
