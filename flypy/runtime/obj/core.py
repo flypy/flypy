@@ -11,6 +11,7 @@ from .intobject import Int
 from .floatobject import Float
 from .complexobject import Complex
 from .sliceobject import Slice
+from .iterators import counting_iterator, CountingIterator
 from .tupleobject import (Tuple, StaticTuple, GenericTuple, head, tail,
                           EmptyTuple, make_tuple_type, extract_tuple_eltypes)
 from .listobject import List, EmptyList

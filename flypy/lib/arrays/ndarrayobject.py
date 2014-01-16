@@ -13,6 +13,7 @@ from flypy.conversion import fromobject, toobject
 from flypy.runtime.obj.core import (Type, Pointer, StaticTuple, address,
                                      Buffer, Slice, NoneType,
                                      fromseq, head, tail, EmptyTuple)
+from flypy.runtime.obj.sliceobject import normalize
 from flypy.runtime.lib import libcpy
 from flypy.runtime.hacks import choose
 
@@ -135,25 +136,8 @@ def slice_dim(dim, p, indices, dtype):
     extent = dim.extent
     stride = dim.stride
 
-    start = choose(0, s.start)
-    stop = choose(extent, s.stop)
-    step = choose(1, s.step)
-
-    #-- Wrap around --#
-    if start < 0:
-        start += extent
-        if start < 0:
-            start = 0
-    if start > extent:
-        start = extent - 1
-
-    if stop < 0:
-        stop += extent
-        if stop < -1:
-            stop = -1
-    if stop > extent:
-        stop = extent
-
+    t = normalize(s, extent)
+    start = t[0] ; stop = t[1] ; step = t[2] # TODO: tuple unpacking
     extent = len(xrange(start, stop, step))
 
     # Process start

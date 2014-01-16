@@ -8,7 +8,9 @@ from __future__ import print_function, division, absolute_import
 
 from flypy import sjit, jit
 import flypy
-from .core import Type, Pointer
+import flypy.runtime
+from .core import Type, Pointer, Slice, counting_iterator
+from .sliceobject import normalize
 
 # NOTE: There is a problem with the GC when Buffer is @jit, causing it it
 #       segfault (e.g. when building a list literal)
@@ -49,6 +51,16 @@ class Buffer(object):
     def __setitem__(self, item, value):
         self.p[item] = value
 
+    @jit('Buffer[a] -> Slice[x, y, z] -> a -> void')
+    def __setitem__(self, s, value):
+        domain = normalize(s, len(self))
+        for i in range(*domain):
+            self.p[i] = value
+
+    @jit
+    def __iter__(self):
+        return counting_iterator(self)
+
     @jit('a -> int64')
     def __len__(self):
         return self.size
@@ -68,6 +80,9 @@ class Buffer(object):
     @jit('Buffer[a] -> Pointer[a]')
     def pointer(self): # TODO: Properties
         return self.p
+
+    def __str__(self):
+        return "buffer(%s)" % list(self)
 
 #===------------------------------------------------------------------===
 # Buffer utils
