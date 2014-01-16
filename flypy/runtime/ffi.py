@@ -6,7 +6,7 @@ Foreign function interface functionality.
 
 from __future__ import print_function, division, absolute_import
 
-import flypy
+import flypy.types
 from flypy import jit, cjit
 from .casting import cast
 from .obj.core import Type, Pointer, Void
@@ -61,7 +61,7 @@ def implement_sizeof(builder, argtypes, obj):
     [argtype] = argtypes
     if argtype.impl == Type:
         [argtype] = argtype.parameters # Unpack 'a' from 'Type[a]'
-        size = flypy.sizeof_type(argtype)
+        size = flypy.types.sizeof_type(argtype)
         result = ir.Const(size, ptypes.Int64)
     else:
         result = builder.sizeof(ptypes.Int64, obj)

@@ -6,15 +6,15 @@ Value representation of instances of user-defined types.
 
 from __future__ import print_function, division, absolute_import
 
-import flypy as nb
-
 #===------------------------------------------------------------------===
 # Object Representation
 #===------------------------------------------------------------------===
 
 def c_primitive(type):
-    return type.impl in (nb.Bool, nb.Int, nb.Float, nb.Pointer, nb.Void,
-                         nb.Function, nb.ForeignFunction)
+    from flypy import types
+
+    return type.impl in (types.Bool, types.Int, types.Float, types.Pointer,
+                         types.Void, types.Function, types.ForeignFunction)
 
 def stack_allocate(type):
     """

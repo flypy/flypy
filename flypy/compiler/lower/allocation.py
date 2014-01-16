@@ -8,9 +8,9 @@ information.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-from flypy import is_flypy_type, int64, errors
+from flypy import is_flypy_type, errors
 from flypy.compiler.utils import Caller
-from flypy.types import Type, Pointer, void
+from flypy.types import Type, Pointer, void, int64
 from flypy.representation import stack_allocate
 from flypy.runtime import gc
 

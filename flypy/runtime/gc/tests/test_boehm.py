@@ -2,7 +2,8 @@
 from __future__ import print_function, division, absolute_import
 import unittest
 
-from flypy import jit, Pointer, float64, typeof, int32, cast, void
+from flypy import jit, cast, typeof
+from flypy.types import Pointer, float64, int32, void
 from flypy.runtime.gc import boehm as gc
 
 class TestBoehm(unittest.TestCase):

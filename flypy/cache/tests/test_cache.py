@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 import datetime
 import unittest
 
-from flypy import int32, float64, jit
+from flypy import jit
+from flypy.types import int32, float64
 from flypy.pipeline import phase, environment
 from flypy.cache import keys, codecache
 

@@ -7,7 +7,7 @@ Pointer implementation.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-import flypy
+import flypy.types
 from flypy import sjit, jit, ijit, cjit
 from flypy.compiler import representation_type
 from flypy.conversion import ctype
@@ -47,14 +47,14 @@ class Pointer(object):
 
     @jit('a -> Pointer[b] -> bool')
     def __eq__(self, other):
-        val1 = flypy.cast(self, flypy.int64)
-        val2 = flypy.cast(other, flypy.int64)
+        val1 = flypy.cast(self, flypy.types.int64)
+        val2 = flypy.cast(other, flypy.types.int64)
         return val1 == val2
 
     @jit('a -> NULL -> bool')
     def __eq__(self, other):
-        val1 = flypy.cast(self, flypy.int64)
-        val2 = flypy.cast(0, flypy.int64)
+        val1 = flypy.cast(self, flypy.types.int64)
+        val2 = flypy.cast(0, flypy.types.int64)
         return val1 == val2
 
     @jit('a -> b -> bool')

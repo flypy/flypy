@@ -2,7 +2,8 @@
 from __future__ import print_function, division, absolute_import
 import unittest
 
-from flypy import jit, Object, typeof, pyoverload
+from flypy import jit, typeof, pyoverload
+from flypy.types import Object
 #from flypy.runtime.obj import object
 
 # -----------------------

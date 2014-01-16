@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from flypy import jit, typeof, int32, float64
+from flypy import jit, typeof
+from flypy.types import int32, float64
 from flypy.runtime.obj.core import make_variant
 
 int_or_float = make_variant(int32, float64)

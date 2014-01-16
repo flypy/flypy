@@ -26,6 +26,7 @@ from __future__ import print_function, division, absolute_import
 
 from flypy import jit, sjit, typeof
 from flypy.conversion import fromobject
+from flypy.lib.nplib import NDArray
 from flypy.runtime.obj.tupleobject import head, tail, StaticTuple, EmptyTuple
 
 import numpy as np
@@ -59,6 +60,21 @@ def make_applier(f, *subterms):
     #       acts on roots!
     subterms = fromobject(subterms, typeof(subterms))
     return Apply(subterms)
+
+def constant(n):
+    """A Term representing a constant"""
+    @jit
+    class Constant(object):
+        layout = []
+
+        @jit
+        def apply(self, args):
+            return n
+
+        def __repr__(self):
+            return "Const(%s)" % (n,)
+
+    return Constant
 
 def argmarker():
     """Create an stream of argument indices into the args tuple"""
@@ -166,6 +182,8 @@ class Loop(object):
         for i in range(extent):
             eval(self.subterm, index(inputs, i))
 
+        return head(inputs)
+
     def __repr__(self):
         return "Loop(%s)" % (self.subterms,)
 
@@ -184,26 +202,55 @@ class InnerLoop(object):
         for i in range(extent):
             out[i] = eval(self.subterm, index(inputs, i))
 
+        return out
+
     def __repr__(self):
         return "InnerLoop(%s)" % (self.subterms,)
 
 
-@jit('StaticTuple[a, b] -> int64 -> r')
+@jit('StaticTuple[NDArray[dtype, dims], tl] -> int64 -> r')
 def index(inputs, i):
     hd = head(inputs)
     tl = tail(inputs)
     return StaticTuple(hd[i], index(tl, i))
+
+#@jit('t -> int64 -> r')
+#def index(inputs, i):
+#    hd = head(inputs)
+#    tl = tail(inputs)
+#    return StaticTuple(hd, index(tl, i))
 
 @jit('EmptyTuple[] -> int64 -> r')
 def index(inputs, i):
     return inputs
 
 
-loopnest = Loop(InnerLoop(term))
-A = np.arange(25).reshape(5, 5)
-out = np.empty((5, 5))
-args = (out, A, A)
-#print(eval(loopnest, args))
+# 1-dimensional example
+
+makearg = argmarker()
+
+a = next(makearg)
+b = next(makearg)
+x = make_applier(add, a, b)
+inner = InnerLoop(x)
+outer = Loop(inner)
+
+def test_1d():
+    A = np.arange(25) #.reshape(5, 5)
+    out = np.empty(25) #(5, 5))
+    args = (out, A, A)
+    print(eval(inner, args))
+
+# 2-dimensional example
+
+def test_2d():
+    A = np.arange(25).reshape(5, 5)
+    out = np.empty(25).reshape((5, 5))
+    args = (out, A, A)
+    print(eval(outer, args))
+
+test_1d()
+test_2d()
 
 #===------------------------------------------------------------------===
 # Example with CKernels

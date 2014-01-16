@@ -8,7 +8,8 @@ from __future__ import print_function, division, absolute_import
 from functools import partial
 
 from flypy.compiler.backend import lltyping, llvm, lowering, rewrite_lowlevel_constants
-from flypy.compiler.frontend import (translate, simplify_exceptions, checker, setup)
+from flypy.compiler.frontend import (translate, simplify_exceptions, checker,
+                                     setup, debugprint)
 from flypy.compiler.backend import (lltyping, llvm, lowering,
                                      rewrite_lowlevel_constants)
 from flypy.compiler.analysis import dependence_analysis
@@ -23,7 +24,7 @@ from flypy.compiler.lower import (rewrite_calls, rewrite_raise_exc_type,
                                    rewrite_constructors, explicit_coercions,
                                    rewrite_optional_args, rewrite_constants,
                                    conversion, rewrite_obj_return, allocator,
-                                   rewrite_externs, generators)
+                                   rewrite_externs, generators, void2none)
 from flypy.viz.prettyprint import dump, dump_cfg, dump_llvm, dump_optimized
 
 from pykit.transform import dce
@@ -43,6 +44,7 @@ frontend = [
     translate,
     simplify_exceptions,
     dump_cfg,
+    debugprint,
     simplification.rewrite_ops,
     simplification.rewrite_overlays,
     deadblocks,
@@ -56,8 +58,10 @@ typing = [
     inference,
     resolve_context,
     resolve_restype,
+    debugprint.debugprint_typed,
     typecheck,
     # flypy.compiler.lower.*
+    void2none,
     rewrite_getattr,
     rewrite_setattr,
     rewrite_calls,

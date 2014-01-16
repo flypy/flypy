@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from flypy import jit, sjit, int32, void, Pointer
+from flypy import jit, sjit
+from flypy.types import int32, void, Pointer
 from flypy.runtime import ffi
 
 #===------------------------------------------------------------------===

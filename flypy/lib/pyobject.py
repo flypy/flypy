@@ -7,7 +7,7 @@ Implement objects.
 from __future__ import print_function, division, absolute_import
 import ctypes
 
-import flypy
+import flypy.types
 from flypy import jit, ijit, typeof
 from flypy.runtime.obj.stringobject import as_cstring
 from flypy.coretypes import Void, Pointer, String
@@ -179,8 +179,8 @@ class Object(object):
 
         # Build flypy String
         n = len(str_obj)
-        buf = flypy.Buffer(p, n + 1, False)
-        return flypy.String(buf)
+        buf = flypy.types.Buffer(p, n + 1, False)
+        return flypy.types.String(buf)
 
     @jit
     def __repr__(self):

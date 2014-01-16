@@ -23,9 +23,16 @@ class FunctionWrapper(object):
     Result of @jit for functions.
     """
 
-    def __init__(self, dispatcher, py_func, abstract=False, opaque=False,
-                 target="cpu"):
-        self.dispatcher = dispatcher
+    def __init__(self, parent, py_func, abstract=False,
+                 opaque=False, target="cpu"):
+        self.parent = parent            # parent function, which we are a
+                                        # copy of
+
+        self._dispatcher = Dispatcher() # dispatcher for overloads
+        self._pending_overloads  = []   # pending overloads
+        self.closed = False             # whether this function is closed
+                                        # for extension
+
         self.py_func = py_func
         # self.signature = signature
         self.abstract = abstract
@@ -50,7 +57,7 @@ class FunctionWrapper(object):
         keepalive = list(args) + list(kwargs.values())
 
         # Order arguments
-        args = flatargs(self.dispatcher.f, args, kwargs)
+        args = flatargs(self.py_func, args, kwargs)
 
         # Translate
         cfunc, restype = self.translate([typeof(x) for x in args.flat])
@@ -160,10 +167,29 @@ class FunctionWrapper(object):
         module = self.link(argtypes, 'dpp')
         return module
 
+    def resolve_dispatcher(self):
+        """
+        Resolve the dispatcher, that is parse all signatures and build
+        a dispatcher object. This happens when the function is needed
+        to generate code somewhere. After that it is closed for extension.
+        """
+        if not self.closed:
+            pending = self._pending_overloads
+            if self.parent:
+                self.parent.resolve_dispatcher()
+                pending = self.parent._pending_overloads + pending
+
+            populate_dispatcher(self._dispatcher, pending)
+            self.closed = True
+
+        return self._dispatcher
+
     def overload(self, py_func, signature, **kwds):
-        if not signature:
-            signature = dummy_signature(py_func)
-        overload(signature, dispatcher=self.dispatcher, **kwds)(py_func)
+        if self.closed:
+            raise TypeError(
+                "This function has been closed for extension, "
+                "it has already been used!")
+        self._pending_overloads.append((py_func, signature, kwds))
 
     def get_llvm_func(self, argtypes, target):
         """Get the LLVM function object for the argtypes.
@@ -177,10 +203,10 @@ class FunctionWrapper(object):
 
     @property
     def overloads(self):
-        return self.dispatcher.overloads
+        return self.resolve_dispatcher().overloads
 
     def __str__(self):
-        return "<flypy function (%s)>" % str(self.dispatcher)
+        return "<flypy function (%s)>" % str(self.py_func)
 
     __repr__ = __str__
 
@@ -191,10 +217,11 @@ class FunctionWrapper(object):
         return self
 
     def copy(self):
-        fw = FunctionWrapper(copy.deepcopy(self.dispatcher), self.py_func,
-                             abstract=self.abstract, opaque=self.opaque)
+        fw = FunctionWrapper(self, self.py_func, abstract=self.abstract,
+                             opaque=self.opaque)
         fw.implementor = self.implementor
         return fw
+
 
 def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False,
          target="cpu", **kwds):
@@ -209,10 +236,33 @@ def wrap(py_func, signature, scope, inline=False, opaque=False, abstract=False,
         raise TypeError(
             "Function %s in current scope is not overloadable" % (func,))
     else:
-        dispatcher = Dispatcher()
-        func = FunctionWrapper(dispatcher, py_func,
-                               abstract=abstract, opaque=opaque, target=target)
+        func = FunctionWrapper(None, py_func, abstract=abstract,
+                               opaque=opaque, target=target)
 
     func.overload(py_func, signature, inline=inline, opaque=opaque,
                   abstract=abstract, target=target, **kwds)
     return func
+
+def populate_dispatcher(dispatcher, overloads):
+    """
+    Populate dispatcher with the given overloads.
+    """
+    from flypy.typing import resolve, to_blaze
+
+    for py_func, signature, kwds in overloads:
+        if not signature:
+            signature = dummy_signature(py_func)
+        else:
+            # Resolve the signature in its scope, that is resolve any dummy
+            # blaze TypeConstructor objects to the types from the scope
+            scope = determine_scope(py_func)
+            bound = {} # TODO:
+            signature = resolve(signature, scope, bound)
+            # Use blaze's coercion rules for now
+            signature = to_blaze(signature)
+
+        overload(signature, dispatcher=dispatcher, **kwds)(py_func)
+
+
+def determine_scope(py_func):
+    return py_func.__globals__

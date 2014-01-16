@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
-import inspect
 
 from flypy.typing import resolve, to_blaze
 
+from pykit.utils import cached
+
 from datashape import overloading
 from datashape import coretypes as T
-from datashape.overloading import lookup_previous
-from datashape.overloading import overload, Dispatcher, flatargs as simple_flatargs
+from datashape.overloading import lookup_previous, flatargs as simple_flatargs
+from datashape.overloading import overload, Dispatcher
 from datashape.util import gensym
+
 
 def overloadable(f):
     """
@@ -16,19 +18,6 @@ def overloadable(f):
     overload on
     """
     return Dispatcher()
-
-# TODO: Cache results
-def resolve_overloads(o, scope, bound):
-    """
-    Resolve the signatures of overloaded methods in the given scope. Further
-    resolve any type variables listed in `bound` by their replacement.
-    """
-    result = Dispatcher()
-    for (f, signature, kwds) in o.overloads:
-        new_sig = resolve(signature, scope, bound)
-        new_sig = to_blaze(new_sig) # Use blaze's coercion rules for now
-        overload(new_sig, result, **kwds)(f)
-    return result
 
 def best_match(func_wrapper, argtypes):
     """
@@ -46,14 +35,17 @@ def best_match(func_wrapper, argtypes):
     -------
     (py_func, result_signature)
     """
-    o = func_wrapper.dispatcher
-    scope = determine_scope(func_wrapper.py_func)
-    bound = {} # TODO:
-    overloaded = resolve_overloads(o, scope, bound)
+    return _best_match(func_wrapper, tuple(argtypes))
+
+
+@cached()
+def _best_match(func_wrapper, argtypes):
+    overloaded = func_wrapper.resolve_dispatcher()
     argtypes = [to_blaze(t) for t in argtypes]
 
     overload = overloading.best_match(overloaded, argtypes)
-    signature = resolve(overload.resolved_sig, scope, bound)
+    scope = determine_scope(overload.func)
+    signature = resolve(overload.resolved_sig, scope, {})
     return (overload.func, signature, overload.kwds)
 
 

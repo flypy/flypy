@@ -3,7 +3,8 @@ from __future__ import print_function, division, absolute_import
 
 import unittest
 
-from flypy import jit, typeof, int32, float64
+from flypy import jit, typeof
+from flypy.types import int32, float64
 #from flypy.compiler.representation import build_ctypes_representation
 from flypy.runtime.obj.tupleobject import StaticTuple, EmptyTuple, NoneType
 from flypy.conversion import fromobject, toobject, toctypes

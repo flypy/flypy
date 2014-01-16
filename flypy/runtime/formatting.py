@@ -9,7 +9,7 @@ which themselves need say, integers.
 from __future__ import print_function, division, absolute_import
 import math
 
-import flypy
+import flypy.types
 from flypy import jit
 
 #===------------------------------------------------------------------===
@@ -39,7 +39,7 @@ def format_static(fmt, x, n):
         - use snprintf
         - resize buffer according to # of bytes written
     """
-    buf = flypy.runtime.obj.core.newbuffer(flypy.char, n)
+    buf = flypy.runtime.obj.core.newbuffer(flypy.types.char, n)
     n = sprintf(buf, fmt, x)
     buf.resize(n)
-    return flypy.String(buf)
+    return flypy.types.String(buf)

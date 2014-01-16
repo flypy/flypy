@@ -4,7 +4,8 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 import unittest
 
-from flypy import jit, int32
+from flypy import jit
+from flypy.types import int32
 from flypy.runtime.obj.bufferobject import Buffer, fromseq
 
 class TestPointers(unittest.TestCase):

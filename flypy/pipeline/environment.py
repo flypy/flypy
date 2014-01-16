@@ -51,6 +51,7 @@ _cpu_env = {
     'flypy.state.options':      None,
     'flypy.state.call_flags':   None,   # Flags on how arguments are passed for each call Op
     'flypy.state.called_flags': None,   # How this function itself was called
+    'flypy.state.have_debugprint': False,   # Whether this function has a 'debugprint' op
     'flypy.state.dependence':   None,
 
     # GC

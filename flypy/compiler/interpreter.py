@@ -40,7 +40,7 @@ def op_call(run_phase, typeof_func, interp, func, args):
 
         try:
             # Flatten args (consider default values)
-            args = simple_flatargs(func.dispatcher.f, tuple(args), {})
+            args = simple_flatargs(func.py_func, tuple(args), {})
         except TypeError:
             pass
 
