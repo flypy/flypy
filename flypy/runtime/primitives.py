@@ -19,6 +19,7 @@ jit = cjit
 
 @jit('a -> b -> bool')
 def is_(a, b):
+    """Support `a is b` syntax"""
     return False
 
 # TODO: Overload for variants !
@@ -29,18 +30,25 @@ def is_(a, b):
 
 @jit('a -> bool')
 def not_(x):
+    """Support `not x` syntax"""
     if bool(x):
         return False
     return True
 
 @jit
 def getitem(obj, idx):
+    """Support `obj[idx]` syntax"""
     return obj.__getitem__(idx)
 
 @jit
 def setitem(obj, idx, value):
+    """Support `obj[idx] = value` syntax"""
     obj.__setitem__(idx, value)
 
+@jit('a -> b -> bool')
+def contains(item, obj):
+    """Support `item in obj` syntax"""
+    return obj.__contains__(item)
 
 #===------------------------------------------------------------------===
 # Overlays
@@ -54,3 +62,4 @@ overlay(operator.is_, is_)
 overlay(operator.not_, not_)
 overlay(operator.getitem, getitem)
 overlay(operator.setitem, setitem)
+overlay(operator.contains, contains)

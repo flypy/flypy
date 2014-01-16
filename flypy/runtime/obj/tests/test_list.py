@@ -67,6 +67,28 @@ class TestListSpecialMethods(unittest.TestCase):
         raise unittest.SkipTest
         self.assertEqual(add(range(10), range(10, 20)), range(20))
 
+    def test_contains(self):
+        @jit
+        def contains(x, lst):
+            return x in lst
+
+        self.assertTrue(contains(4, range(10)))
+        self.assertTrue(contains(0, range(10)))
+        self.assertTrue(contains(9, range(10)))
+        self.assertFalse(contains(-1, range(10)))
+        self.assertFalse(contains(10, range(10)))
+
+    def test_not_contains(self):
+        @jit
+        def contains(x, lst):
+            return x not in lst
+
+        self.assertFalse(contains(4, range(10)))
+        self.assertFalse(contains(0, range(10)))
+        self.assertFalse(contains(9, range(10)))
+        self.assertTrue(contains(-1, range(10)))
+        self.assertTrue(contains(10, range(10)))
+
 
 class TestListMethods(unittest.TestCase):
 

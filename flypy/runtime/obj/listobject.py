@@ -89,6 +89,13 @@ class List(object):
 
     # ---- List Methods ---- #
 
+    @jit('List[a] -> a -> bool')
+    def __contains__(self, item):
+        for x in self:
+            if x == item:
+                return True
+        return False
+
     @jit('List[a] -> a -> void')
     def append(self, value):
         self._grow()
