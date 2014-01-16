@@ -4,7 +4,7 @@ Re-export core objects
 """
 from __future__ import print_function, division, absolute_import
 
-from .pointerobject import Pointer, address
+from .pointerobject import Pointer, address, NULL
 from .typeobject import Type, Constructor
 from .boolobject import Bool
 from .intobject import Int
@@ -18,7 +18,7 @@ from .listobject import List, EmptyList
 from .rangeobject import Range
 from .noneobject import NoneType, NoneValue
 from .structobject import struct_
-from .dummy import Void, Function, ForeignFunction, NULL
+from .dummy import Void, Function, ForeignFunction
 from .variantobject import make_variant
 from .bufferobject import Buffer, newbuffer, fromseq, copyto
 from .stringobject import String, from_cstring, as_cstring

@@ -12,6 +12,7 @@ from flypy import sjit, jit, ijit, cjit
 from flypy.compiler import representation_type
 from flypy.conversion import ctype
 from flypy.runtime import formatting
+from .richcompare import RichComparisonMixin
 from ..lowlevel_impls import add_impl_cls
 
 from pykit import types as ptypes
@@ -23,7 +24,7 @@ jit = cjit
 #===------------------------------------------------------------------===
 
 @sjit('Pointer[a]')
-class Pointer(object):
+class Pointer(RichComparisonMixin):
     layout = [] # [('p', 'Pointer[a]')]
 
     def __init__(self, p):
@@ -45,21 +46,17 @@ class Pointer(object):
 
     # __________________________________________________________________
 
-    @jit('a -> Pointer[b] -> bool')
+    @jit('Pointer[a] -> Pointer[b] -> bool')
     def __eq__(self, other):
-        val1 = flypy.cast(self, flypy.types.int64)
-        val2 = flypy.cast(other, flypy.types.int64)
-        return val1 == val2
+        return self.ptrtoint() == other.ptrtoint()
 
-    @jit('a -> NULL -> bool')
+    @jit('a -> NullType[] -> bool')
     def __eq__(self, other):
-        val1 = flypy.cast(self, flypy.types.int64)
-        val2 = flypy.cast(0, flypy.types.int64)
-        return val1 == val2
+        return self.ptrtoint() == 0
 
-    @jit('a -> b -> bool')
-    def __ne__(self, other):
-        return not (self == other)
+    @jit('Pointer[a] -> Pointer[b] -> bool')
+    def __lt__(self, other):
+        return self.ptrtoint() < other.ptrtoint()
 
     # __________________________________________________________________
 
@@ -75,9 +72,17 @@ class Pointer(object):
     def __sub__(self, index):
         return self + -index
 
+    @jit('Pointer[a] -> Pointer[a] -> int64')
+    def __sub__(self, index):
+        return self.ptrtoint() - index.ptrtoint()
+
     @jit('a -> bool')
     def __nonzero__(self):
         return self != flypy.NULL
+
+    @jit('a -> int64')
+    def ptrtoint(self):
+        return flypy.cast(self, flypy.types.int64)
 
     @jit
     def __str__(self):
@@ -109,6 +114,28 @@ class Pointer(object):
     def ctype(cls, ty):
         [base] = ty.parameters
         return ctypes.POINTER(ctype(base))
+
+#===------------------------------------------------------------------===
+# NULL
+#===------------------------------------------------------------------===
+
+@sjit
+class NullType(object):
+    layout = []
+
+    @jit('a -> bool')
+    def __nonzero__(self):
+        return False
+
+    @jit('a -> Pointer[b] -> bool')
+    def __eq__(self, other):
+        return other.ptrtoint() == 0
+
+    #@jit('a -> b -> bool')
+    #def __eq__(self, other):
+    #    return False
+
+NULL = NullType()
 
 #===------------------------------------------------------------------===
 # Low-level Implementation

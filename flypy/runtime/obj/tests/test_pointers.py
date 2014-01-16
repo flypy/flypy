@@ -44,6 +44,64 @@ class TestPointers(unittest.TestCase):
 
         self.assertTrue(f(ctypes.c_void_p(0)))
 
+    def test_pointer_eq(self):
+        @jit
+        def f(p1, p2):
+            return p1 == p2
+
+        p1, p2 = ctypes.c_void_p(2), ctypes.c_void_p(3)
+        self.assertTrue(f(p1, p1))
+        self.assertFalse(f(p1, p2))
+
+    def test_pointer_ne(self):
+        @jit
+        def f(p1, p2):
+            return p1 != p2
+
+        p1, p2 = ctypes.c_void_p(2), ctypes.c_void_p(3)
+        self.assertFalse(f(p1, p1))
+        self.assertTrue(f(p1, p2))
+
+    def test_pointer_lt(self):
+        @jit
+        def f(p1, p2):
+            return p1 < p2
+
+        p1, p2 = ctypes.c_void_p(2), ctypes.c_void_p(3)
+        self.assertTrue(f(p1, p2))
+        self.assertFalse(f(p2, p1))
+        self.assertFalse(f(p1, p1))
+
+    def test_pointer_le(self):
+        @jit
+        def f(p1, p2):
+            return p1 <= p2
+
+        p1, p2 = ctypes.c_void_p(2), ctypes.c_void_p(3)
+        self.assertTrue(f(p1, p2))
+        self.assertFalse(f(p2, p1))
+        self.assertTrue(f(p1, p1))
+
+    def test_pointer_gt(self):
+        @jit
+        def f(p1, p2):
+            return p1 > p2
+
+        p1, p2 = ctypes.c_void_p(2), ctypes.c_void_p(3)
+        self.assertFalse(f(p1, p2))
+        self.assertTrue(f(p2, p1))
+        self.assertFalse(f(p1, p1))
+
+    def test_pointer_ge(self):
+        @jit
+        def f(p1, p2):
+            return p1 >= p2
+
+        p1, p2 = ctypes.c_void_p(2), ctypes.c_void_p(3)
+        self.assertFalse(f(p1, p2))
+        self.assertTrue(f(p2, p1))
+        self.assertTrue(f(p1, p1))
+
     def test_nonzero(self):
         @jit
         def f(p):
