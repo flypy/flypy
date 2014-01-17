@@ -6,7 +6,7 @@ List implementation.
 
 from __future__ import print_function, division, absolute_import
 
-from flypy import jit, typeof
+from flypy import jit, ijit, typeof
 from flypy.conversion import toobject, fromobject, toctypes
 from .typeobject import Type
 from .pointerobject import Pointer
@@ -243,6 +243,18 @@ class EmptyList(List):
     @jit('a -> List[b] -> List[b]')
     def __add__(self, other):
         return other
+
+    @jit
+    def __iter__(self):
+        return self
+
+    @ijit
+    def __next__(self):
+        raise StopIteration
+
+    @jit('a -> int64')
+    def __len__(self):
+        return 0
 
     @staticmethod
     def fromobject(lst, type):
