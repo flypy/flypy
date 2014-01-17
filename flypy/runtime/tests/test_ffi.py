@@ -36,6 +36,17 @@ class TestFFI(unittest.TestCase):
         self.assertEqual(apply('float64 -> int64', 10.0), 8)
         self.assertEqual(apply('Type[float64] -> int64', float64), 8)
 
+    def test_ffi_func_as_value(self):
+        @jit
+        def square(x):
+            return x * x
+
+        @jit
+        def apply(f, x):
+            return f(x)
+
+        c_square, _ = square.translate([int32])
+        self.assertEqual(apply(c_square, 10), 100)
 
 # ______________________________________________________________________
 

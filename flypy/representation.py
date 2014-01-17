@@ -14,7 +14,7 @@ def c_primitive(type):
     from flypy import types
 
     return type.impl in (types.Bool, types.Int, types.Float, types.Pointer,
-                         types.Void, types.Function, types.ForeignFunction)
+                         types.Void, types.Function)
 
 def stack_allocate(type):
     """

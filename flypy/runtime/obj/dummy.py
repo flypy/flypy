@@ -10,7 +10,7 @@ import ctypes
 from flypy import jit
 from flypy.representation import byref
 from flypy.conversion import ctype
-from .pointerobject import Pointer
+from .pointerobject import Pointer, make_ctypes_ptr
 
 from datashape import Function as FunctionType
 
@@ -69,12 +69,15 @@ class ForeignFunction(object):
     def ctype(cls, ty):
         restype = ctype(ty.parameters[-1])
         argtypes = [ctype(argtype) for argtype in ty.parameters[:-1]]
-        return ctypes.CFUNCTYPE(restype, *argtypes)
+        #return ctypes.CFUNCTYPE(restype, *argtypes)
+        return ctypes.POINTER(ctypes.CFUNCTYPE(restype, *argtypes))
 
     @staticmethod
     def toctypes(value, type):
         value = value.p
-        return Pointer.toctypes(Pointer(value), Pointer[type])
+        return make_ctypes_ptr(value, type)
+        #ctype_func_p = Pointer.toctypes(Pointer(value), Pointer[type])
+        #return ctype_func_p
 
 # Set the 'varargs' property on the type of function types. This is
 # somewhat of a gross hack, and clearly displays limitations in our
