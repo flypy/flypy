@@ -13,7 +13,7 @@ from __future__ import print_function, division, absolute_import
 from flypy import jit, sjit, cast, sizeof, NULL
 
 
-@sjit('StackFrame[roots]')
+@sjit
 class StackFrame(object):
     """
     Stack-allocated frame holding roots and per-type traverse functions.
@@ -24,14 +24,11 @@ class StackFrame(object):
     """
 
     layout = [
-        ('prev', 'Pointer[StackFrame[]]'),
+        ('prev',        'Pointer[StackFrame[]]'),
+        ('n',           'int64'),
         ('trace_funcs', 'Pointer[Pointer[void]]'),
-        ('roots', 'roots'), # Array[Pointer[int8]]
+        ('roots',       'Pointer[Pointer[void]]'),
     ]
-
-    @jit
-    def __init__(self, prev):
-        self.prev = prev
 
 
 @jit('Pointer[StackFrame[]] -> r')

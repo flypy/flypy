@@ -4,7 +4,7 @@ Re-export core objects
 """
 from __future__ import print_function, division, absolute_import
 
-from .pointerobject import Pointer, address, NULL
+from .pointerobject import Pointer, address, NullType, NULL
 from .typeobject import Type, Constructor
 from .boolobject import Bool
 from .intobject import Int
