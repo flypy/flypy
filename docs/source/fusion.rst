@@ -353,6 +353,10 @@ derive some of our cases above:
     4. This is regular inlining with stack variable sharing combined with
        value specialization
 
+Note further that the inlining with stack variable sharing is a special case
+of deduplicated inlining with value specialization, this time on the consumer
+token. This means the last case really means inlining the generator once,
+and subsequently value-specializing both the producer and consumer tokens.
 
 Of course, we must be careful with specialization. In practice it is likely
 that the number of consumer sites is only one, but multiple producer sites
