@@ -136,7 +136,7 @@ compiler to eliminate pattern matching of consumer sites.
 
 Fusion in flypy
 ---------------
-The concept of a stream encapsulating a state and a stepper function is akin
+The concept of a streams encapsulating a state and a stepper function is akin
 to iterators in Python, where the state is part of the iterator and the
 stepping functionality is provided by the ``__next__`` method. Although
 iterators can be composed and specialized on static callee destination (
@@ -150,18 +150,18 @@ as generators::
 The state is naturally captured in the generator's stack frame. To allow
 fusion we need to inline producers into consumers. This is possible only
 if we can turn the lazy generator into a non-lazy producer, i.e. the consumer
-must immediately consume the result. This introduces a restriction:
+must be the only consumer of the result. This introduces a restriction:
 
     * The generator may not be stored, passed to other functions
       or returned. We can capture this notion by having ``iter(generator)``
       create a ``stream``, and disallowing the rewrite rule
-      ``stream (unstream s) = s`` to trigger when the ``unstream`` has
+      ``stream (unstream s) = s`` to trigger when the ``unstream s`` has
       multiple uses.
 
       This means the value remains `unstreamed` (which itself is lazy, but
       effectively constitutes a fusion boundary).
 
-Since we can express many (all?) higher-order fusable functions as generator,
+Since we can express many (all?) higher-order fusable functions as generators,
 we have a powerful building block (in the same way as the previously outlined
 research methods), that will give us rewrite rules for free.
 I.e., we will not need to state the following:
@@ -179,32 +179,186 @@ since this automatically follows from the definition of map:
         for x in xs:
             yield f(x)
 
-The two things that need to be addressed are 1) how to inline generators and
-2) how do we specialize on argument "sub-terms".
+Below we discuss how to realize our fusion scheme.
 
-1. Inlining Generators
-----------------------
-The inlining pattern is straightforward:
+Generator Fusion
+----------------
+We start by assuming a restrictor generator model, where all the producer and
+consumer sites are statically identified.
 
-    - remove the loop back-edge
-    - promote loop index to stack variable
-    - inline generator
-    - transform 'yield val' to 'i = val'
-    - replace each 'yield' from the callee with a copy of the loop body
-      of the caller
+For instance, this places a restriction on how the generator can be
+instantiated, which must be from a statically identified function or
+method receiver.
 
-Now consider a set of generators that have multiple yield expressions:
+It places a restriction on how the generator is consumed, which must also be
+statically known, in order to specialize consumer sites to producers.
+
+In the most straightforward situation we have a single producer site and a
+single consumer site. In more complicated cases, we can have multiple
+producer sites (e.g. multiple yields) or multiple consumer sites (e.g.
+multiple loops over a single generator).
+
+The multiple producer problem is complicated by the consumer not statically
+knowing which dispatch site the next item retrieval will have to jump to.
+
+In addition to any producer sites, there is an additional generator entry
+point, which is the start of the function. Additional exit points of the
+producer are the return points (including the end of the function). The
+exit points correspond to the points where a StopIteration is conceptually
+raised.
+
+We start by addressing the most general case we want to handle, which is
+a statically identified generator producer with any number of producer sites
+and and any number of local consumer sites.
+
+The General Case
+++++++++++++++++
+The general case is P producer sites, 1 entry point, and C consumer sites.
+Specializing the consumer to the producer can mean the following:
+
+    1. track two tokens, which correspond respectively to the currently
+       active producer and consumer sites. Retrieving a new item means using
+       a dispatch table that jumps to the right program in the generator, the
+       token for which we'll call a producer token.
+
+       Yielding means dispatching to any of the C consumer sites, using what
+       we'll call the consumer token. These tokens can be shared in a stack
+       variable between the consumer and producer, the producer updates the
+       producer token and the consumer the consumer token.
+
+    2. Specialize the consumer to the producer, i.e. for each producer site P,
+       generate a special consumer C' that only jumps only to a specific producer
+       program point (a specific yield). All consumers copies need to share stack
+       variables. This eliminates the token used to dispatch to the right
+       producer program point. This requires P + 1 specializations of C.
+
+    3. Specialize the producer to the consumer, that is, for each consumer site
+       generate a producer P' that jumps to C only. All these producers must
+       share the same stack variables. We need C copies of the producer. This
+       eliminates the dispatch used to dispatch back to the right consumer
+       site. This requires C specializations of P.
+
+    4. Specialize all producers to all consumers and all consumers to all
+       producers. This effectively flattens both dispatch tables, and requires
+       (P + 1) * C specializations.
+
+
+We noted P + 1 specializations to incorporate the entry point as a special
+point. The entry point can be eliminated from consideration if we have a
+`for` loop that consumes the result:
 
 .. code-block:: python
 
-    def f(x):
-        yield x
-        yield x
+    for i in produce(x):
+        ...
+
+We can eliminate the entry point from consideration since we statically know
+where this entry point must be inserted in the control flow: it must be
+right at the call to `next()` in the loop header block. Further, since we
+are the only consumer of the generator, we have P * 1 specializations in the
+latter case. The fully degenerate case also has additionally one yield point:
+
+.. code-block:: python
+
+    def produce(x):
+        sum = 0
+        for i in range(x):  # produce.header
+            yield sum       # produce.body0
+            sum += i        # produce.body1
+
+    for i in produce(x):
+        f(i)                # consumer.body
+
+     # This becomes
+
+     sum = 0
+     for i in range(x):     # produce.header
+         i = sum            # produce.body0
+         f(i)               # consumer.body
+         sum += i           # producer.body1
+
+The transitions between the different basic blocks above are actually jumps.
+Since the jumps in the body are all unconditional, they are simply eliminated
+by the control flow simplier pass.
+
+Note that the third pattern, where we specialize producers to consumers, is a
+simple instance of inlining the `next()` call a traditional generator
+implementation, which has a dispatch table to jump to the different resume
+points in the generator. Hence our first pattern is simply a generalization
+of inlining, where we inline a function only once and subsequently connect
+arguments to parameters by assigning local stack variables, with a dispatcher
+at the end to resume at the right point in the consumer.
+
+.. digraph:: inlining
+
+    P0 -> Cdispatch
+    P1 -> Cdispatch
+    PN -> Cdispatch
+
+    Cdispatch -> C0
+    Cdispatch -> C1
+    Cdispatch -> CN
+
+    C0 -> Pdispatch
+    C1 -> Pdispatch
+    CN -> Pdispatch
+
+    Pdispatch -> P0
+    Pdispatch -> P1
+    Pdispatch -> PN
+
+Currently, we only handle the degenerate case of generator inlining, with
+a single consumer and a single producer point, and further with a statically
+known entry point. This looks as follows:
+
+.. code-block:: python
+
+    for i in produce(x):
+        f(i)
+
+However, when we use a while loop the entry point insertion cannot be determined
+straightforwardly, since we may have an arbitrary condition on our loop:
+
+.. code-block:: python
+
+    while something_complicated:
+        i = next(g)
+        f(i)
+
+Hence the length of our loop is no longer dictated by the generator. It is now
+dictated by both the generator and the loop condition.
+
+To handle the generation of efficient code while retaining generality, it
+seems desirable to implement generic generators (i.e. case 3). Through
+straightforward inlining, combined with stack-allocation of the activation
+record, scalar replacement of aggregates and control flow simplification
+we are very close to the optimal form we desire.
+
+The only runtime overhead introduced is the producer dispatch at entry to
+the producer! We can simply eliminate this dispatch by implementing an
+optimization that can specialize control flow paths. This is a straightforward
+application of partial evaluation, where we categorize only the producer token
+as static. Our special case is really a value-specialization for a single
+variable of a single basic block. This has the effect of simply unrolling
+the while loop one iteration.
+
+To summarize, if we implement the general form of generators we can
+derive some of our cases above:
+
+    1. This is simply de-duplicated inlining
+    2. This is de-duplicated inlining combined with the value specialization
+       of the producer token (case 1 + value specialization)
+    3. This is regular inlining, except we now share stack variables between
+       all inlined versions
+    4. This is regular inlining with stack variable sharing combined with
+       value specialization
 
 
-Inlining of the producer into the consumer means duplicating the body for
-each yield. This can lead to exponential code explosion in the size of the
-depth of the terms:
+Of course, we must be careful with specialization. In practice it is likely
+that the number of consumer sites is only one, but multiple producer sites
+(multiple yield statements is common). Recursive application of this
+optimization will generate an exponential amount of code in the depth of
+the generator chain.
 
 .. code-block:: python
 
@@ -234,16 +388,10 @@ This function has two yields. If we rewrite it to use only one yield:
 
 We have introduced dynamicity that cannot be eliminated without specialization
 on the values (i.e. unrolling the outer loop, yielding the first
-implementation). This not special in any way, it is inherent to inlining and
-we and treat it as such (by simply using an inlining threshold). Crossing
-the threshold simply means temporaries are not eliminated -- in this case
-this means generator "cells" remain.
-
-If this proves problematic, functions such as concat can instead always
-unstream their results. Even better than fully unstreaming, or sticking with
-a generator cell, is to use a buffering generator fused with the expression
-that consumes N iterations and buffers the results. This divides the constant
-overhead of generators by a constant factor.
+implementation). This not new in any way, it is inherent to inlining and
+value specialization, and we treat it as such (by simply using sensible
+thresholds). Crossing the threshold simply means temporaries are not
+eliminated -- in this case this means generator "cells" remain.
 
 2. Specialization
 +++++++++++++++++
@@ -377,18 +525,6 @@ This results in approximately the following code after inlining:
 
 It is now easy to see that we can eliminate the second pattern in the first
 loop, and the first pattern in the second loop.
-
-Compiler Support
-----------------
-To summarize, to support fusion in a general and pythonic way can be modelled
-on generators. To support this we need:
-
-    - generator inlining
-    - For SIMD and bulk operations, call pattern specialization. For us this
-      means branch pruning and branch merging based on type.
-
-The most important optimization is the fusion, SIMD is a useful extension.
-Depending on the LLVM vectorizer (or possibly our own), it may not be necessary.
 
 References
 ----------
