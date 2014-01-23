@@ -349,14 +349,16 @@ derive some of our cases above:
     2. This is de-duplicated inlining combined with the value specialization
        of the producer token (case 1 + value specialization)
     3. This is regular inlining, except we now share stack variables between
-       all inlined versions
-    4. This is regular inlining with stack variable sharing combined with
-       value specialization
+       all inlined versions. This is automatically guaranteed by the way we
+       have boxed up the generator state and pass that in.
+    4. This is regular inlining combined with value specialization on the
+       producer token.
 
 Note further that the inlining with stack variable sharing is a special case
 of deduplicated inlining with value specialization, this time on the consumer
-token. This means the last case really means inlining the generator once,
-and subsequently value-specializing both the producer and consumer tokens.
+token. However, since we have boxed up the stack state of the generator anyway,
+it simply means inlining the function where needed and passing in the same
+generator state.
 
 Of course, we must be careful with specialization. In practice it is likely
 that the number of consumer sites is only one, but multiple producer sites
