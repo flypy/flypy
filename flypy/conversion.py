@@ -146,7 +146,6 @@ def ctype(type, memo=None):
     """
     Return the low-level ctypes type representation for a flypy type instance.
     """
-
     # -------------------------------------------------
     # Setup cache
 
@@ -159,43 +158,40 @@ def ctype(type, memo=None):
         return memo[type]
 
     # -------------------------------------------------
-    # Create ctypes type
+    # Handle custom ctype methods
 
     cls = type.impl
     if hasattr(cls, 'ctype'):
         result = cls.ctype(type)
-    else:
-        # -------------------------------------------------
-        # Determine field ctypes
-
-        names, types = zip(*type.resolved_layout.items()) or [(), ()]
-        types = [ctype(ty, memo) for ty in types]
-        if not types:
-            names = ['dummy']
-            types = [ctypes.c_int8]
-
-        # -------------------------------------------------
-        # Build struct
-
-        class result(ctypes.Structure):
-            _fields_ = zip(names, types)
-
-            def __repr__(self):
-                return "{ %s }" % (", ".join("%s:%s" % (name, getattr(self, name))
-                                                 for name in names))
-
-        result.__name__ = 'CTypes' + type.__class__.__name__
-
-        # -------------------------------------------------
-        # Handle stack allocation
-
-        if not stack_allocate(type):
-            result = ctypes.POINTER(result)
+        memo[type] = result
+        return result
 
     # -------------------------------------------------
-    # Cache result
+    # Build dummy struct and cache result
+
+    class result(ctypes.Structure):
+        def __repr__(self):
+            return "{ %s }" % (", ".join("%s:%s" % (name, getattr(self, name))
+                                             for name in names))
+
+    struct = result
+    if not stack_allocate(type):
+        result = ctypes.POINTER(result)
 
     memo[type] = result
+
+    # -------------------------------------------------
+    # Determine field ctypes
+
+    names, types = zip(*type.resolved_layout.items()) or [(), ()]
+    types = [ctype(ty, memo) for ty in types]
+    if not types:
+        names = ['dummy']
+        types = [ctypes.c_int8]
+
+    struct._fields_ = zip(names, types)
+    struct.__name__ = 'CTypes' + type.__class__.__name__
+
     return result
 
 
