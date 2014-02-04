@@ -8,6 +8,10 @@ from flypy.types import integral
 class TestInt(unittest.TestCase):
 
     def test_tostr(self):
+        raise unittest.SkipTest(
+            "The JIT doesn't know how to handle a RAUW on a value it has emitted. "
+            "Fix llvmmath.")
+
         @jit('int32 -> a')
         def f1(x):
             return str(x)

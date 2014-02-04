@@ -186,9 +186,10 @@ class FunctionWrapper(object):
 
     def overload(self, py_func, signature, **kwds):
         if self.closed:
-            raise TypeError(
-                "This function has been closed for extension, "
-                "it has already been used!")
+            pass
+            #raise TypeError(
+            #    "This function has been closed for extension, "
+            #    "it has already been used!")
         self._pending_overloads.append((py_func, signature, kwds))
 
     def get_llvm_func(self, argtypes, target):
