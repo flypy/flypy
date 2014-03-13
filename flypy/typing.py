@@ -149,6 +149,11 @@ class MetaType(type):
 
         return result
 
+
+def is_flypy(cls):
+    """Check whether the given class is a flypy @jit class"""
+    return getattr(cls, _is_flypy_class, False)
+
 #===------------------------------------------------------------------===
 # Utils
 #===------------------------------------------------------------------===
