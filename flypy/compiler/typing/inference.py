@@ -160,7 +160,7 @@ def infer(cache, func, env, argtypes):
         from flypy.runtime.obj.generatorobject import Generator
 
         element_type = reduce(typejoin, ctx.context['generator'])
-        restype = Generator[element_type, void]
+        restype = Generator[element_type, void, None, func]
         typeset.clear()
         typeset.add(restype)
     elif typeset:

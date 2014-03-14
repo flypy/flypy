@@ -89,11 +89,16 @@ def error_context(lineno=-1, during=None, pyfunc=None):
 def errctx(env, op=None):
     phase = env['flypy.state.phase']
     phase_name = getattr(phase, '__name__', phase)
-    return error_context(during=phase_name, pyfunc=env['flypy.state.py_func'])
+    lineno = -1
+    if op is not None:
+        lineno = op.metadata.get('lineno', lineno)
+    return error_context(lineno=lineno, during=phase_name,
+                         pyfunc=env['flypy.state.py_func'])
 
-def error(env, phase, *msg):
-    with errctx(env):
+def error(env, op, *msg):
+    with errctx(env, op):
         raise CompileError(*msg)
+
 
 def _tell_func(pyfunc):
     code = pyfunc.func_code
