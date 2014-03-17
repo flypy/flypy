@@ -21,7 +21,7 @@ def dataflow(func, env, sync_context=True):
 
     if sync_context:
         context = env['flypy.typing.context']
-        for phi, alloc in phis.iteritems():
+        for phi, alloc in phis.items():
             type = context[alloc]
             context[phi] = type
             for arg in phi.args[1]:

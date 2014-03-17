@@ -21,7 +21,7 @@ except ImportError as e:
 def applyable(args, kwargs):
     if len(args) == 1 and not kwargs:
             f = args[0]
-            if isinstance(f, (type, types.FunctionType, types.ClassType)):
+            if isinstance(f, (type, types.FunctionType)):
                 from .coretypes import Mono
                 if not isinstance(f, Mono):
                     return True

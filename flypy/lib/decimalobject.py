@@ -33,7 +33,7 @@ class mpd_t(Structure):
 msg = "mpdec library not found, no accelerated decimals supported"
 try:
     dll = libfinder.open_lib_ctypes(libfinder.find_lib("mpdec"))
-except OSError, e:
+except OSError as e:
     warnings.warn(msg)
     raise ImportError("%s: %s" % (msg, str(e)))
 

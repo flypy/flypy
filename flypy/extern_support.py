@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 External references.
 
@@ -75,10 +77,10 @@ def externlib(prefix, lib, symbols):
         setattr(extlib, raw, extern(mangled, getattr(lib, raw)))
     return extlib
 
-def extern_cffi(prefix, dlopen, declstr):
+def extern_cffi(prefix, dll_path, declstr):
     ffi = cffi.FFI()
     ffi.cdef(declstr)
-    clib = ffi.dlopen(dlopen)
+    clib = ffi.dlopen(dll_path)
     symbols = _parse_cdecl(declstr)
     return externlib(prefix, clib, symbols), clib
 

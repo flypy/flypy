@@ -183,17 +183,19 @@ def ctype(type, memo=None):
     # -------------------------------------------------
     # Determine field ctypes
 
-    names, types = zip(*type.resolved_layout.items()) or [(), ()]
+    names, types = unzip2(type.resolved_layout.items())
     types = [ctype(ty, memo) for ty in types]
     if not types:
         names = ['dummy']
         types = [ctypes.c_int8]
 
-    struct._fields_ = zip(names, types)
+    struct._fields_ = list(zip(names, types))
     struct.__name__ = 'CTypes' + type.__class__.__name__
 
     return result
 
+def unzip2(xs):
+    return list(zip(*xs)) or [(), ()]
 
 def make_coercers(type):
     """

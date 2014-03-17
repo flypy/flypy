@@ -17,7 +17,7 @@ from Cython.Distutils import build_ext
 from Cython.Distutils.extension import Extension as CythonExtension
 
 if sys.version_info[:2] < (2, 6):
-    raise Exception('numba requires Python 2.6 or greater.')
+    raise Exception('flypy requires Python 2.6 or greater.')
 
 import versioneer
 
@@ -37,7 +37,7 @@ setup_args = {
     'long_description': open('README.md').read(),
 }
 
-numba_root = os.path.dirname(os.path.abspath(__file__))
+flypy_root = os.path.dirname(os.path.abspath(__file__))
 
 #------------------------------------------------------------------------
 # Package finding
@@ -68,7 +68,7 @@ def find_packages(where='.', exclude=()):
 # 2to3
 #------------------------------------------------------------------------
 
-def run_2to3():
+def run_2to3(cmdclass):
     import lib2to3.refactor
     from distutils.command.build_py import build_py_2to3 as build_py
     print("Installing 2to3 fixers")
@@ -84,6 +84,10 @@ def run_2to3():
     # Distribute options
     # setup_args["use_2to3"] = True
 
+
+if sys.version_info[0] >= 3:
+    run_2to3(cmdclass)
+
 #------------------------------------------------------------------------
 # setup
 #------------------------------------------------------------------------
@@ -93,30 +97,24 @@ exclude_packages = (
 )
 
 setup(
-    name="numba",
+    name="flypy",
     version=versioneer.get_version(),
-    author="Continuum Analytics, Inc.",
-    author_email="numba-users@continuum.io",
-    url="http://numba.github.com",
+    author="Mark Florisson",
+    #author_email="",
+    #url="",
     license="BSD",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        # "Programming Language :: Python :: 2.6",
-        "Programming Language :: Python :: 2.7",
-        # "Programming Language :: Python :: 3.2",
+        #"Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.2",
         "Topic :: Utilities",
     ],
     description="Compiling Python code using LLVM",
     packages=find_packages(exclude=exclude_packages),
-    #entry_points = {
-    #    'console_scripts': [
-    #        'pycc = numba.pycc:main',
-    #        ]
-    #},
-    scripts=["bin/numba"],
+    scripts=["bin/flypy"],
     package_data={
         '': ['*.md'],
         'flypy.runtime.obj': ['*.c', '*.h', '*.pyx', '*.pxd'],

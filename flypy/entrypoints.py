@@ -32,7 +32,7 @@ def jit(f=None, *args, **kwds):
     """
     kwds['scope'] = kwds.pop('scope', sys._getframe(1).f_locals)
 
-    if isinstance(f, (type, types.FunctionType, types.ClassType)):
+    if isinstance(f, (type, types.FunctionType)):
         return _jit(f, *args, **kwds)
 
     arg = f
@@ -40,7 +40,7 @@ def jit(f=None, *args, **kwds):
 
 
 def _jit(f, *args, **kwds):
-    if isinstance(f, (types.ClassType, type)):
+    if isinstance(f, type):
         return jit_class(f, *args, **kwds)
     else:
         assert isinstance(f, types.FunctionType)

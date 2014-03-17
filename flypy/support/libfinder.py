@@ -13,6 +13,7 @@ def get_conda_lib_dir():
 
 DLLNAMEMAP = {
     'linux2': ('lib', '.so'),
+    'linux':  ('lib', '.so'),
     'darwin': ('lib', '.dylib'),
     'win32' : ('',    '.dll')
 }

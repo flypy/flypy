@@ -2,8 +2,6 @@
 
 """
 Utilities for working with bytecode.
-
-Taken from flypypro/npm/utils.py by Siu Kwan Lam.
 """
 
 from __future__ import print_function, division, absolute_import
@@ -31,20 +29,6 @@ class SortedMap(collections.Mapping):
 
     def __iter__(self):
         return (k for k, v in self._values)
-
-class SortedSet(collections.Set):
-    def __init__(self, seq):
-        self._set = set(seq)
-        self._values = list(sorted(self._set))
-
-    def __contains__(self, item):
-        return item in self._set
-
-    def __len__(self):
-        return len(self._values)
-
-    def __iter__(self):
-        return iter(self._values)
 
 
 def cache(fn):

@@ -100,4 +100,4 @@ def copy_ir_valuemap(old_func, new_func, valuemap):
     new = vmap(lambda x: x, new_func)
     replacements = dict(zip(old, new))
     return dict((replacements.get(oldop, oldop), value)
-                    for oldop, value in valuemap.iteritems())
+                    for oldop, value in valuemap.items())

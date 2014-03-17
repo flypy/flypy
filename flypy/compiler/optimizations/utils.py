@@ -16,10 +16,10 @@ def update_context(dst_env, src_env, valuemap):
     context = dst_env['flypy.typing.context']
     callee_context = src_env['flypy.typing.context']
 
-    for old_op, new_op in valuemap.iteritems():
+    for old_op, new_op in valuemap.items():
         if old_op in callee_context:
             context[new_op] = callee_context[old_op]
 
-    for const, type in callee_context.iteritems():
+    for const, type in callee_context.items():
         if not isinstance(const, Op):
             context[const] = type

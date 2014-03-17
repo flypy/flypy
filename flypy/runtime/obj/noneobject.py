@@ -5,7 +5,6 @@ Dummy None implementation.
 """
 
 from __future__ import print_function, division, absolute_import
-import types
 from flypy import overlay
 from ... import jit, typeof
 
@@ -29,7 +28,7 @@ class NoneType(object):
 NoneValue = NoneType()
 
 
-@typeof.case(types.NoneType)
+@typeof.case(type(None))
 def typeof(pyval):
      return NoneType[()]
 

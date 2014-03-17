@@ -14,7 +14,7 @@ annotations = {
 
 def annotate(obj, **kwds):
     """Set an annotation and verify validity"""
-    for name, value in kwds.iteritems():
+    for name, value in kwds.items():
         if name not in annotations:
             raise ValueError("Not a known annotation: %s" % (name,))
         elif not isinstance(value, annotations[name]):

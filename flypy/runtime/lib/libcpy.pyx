@@ -17,13 +17,11 @@ import numpy as np
 
 import functools
 try:
-    import __builtin__ as builtin
+    import __builtin__ as builtins
 except ImportError:
-    import builtin
+    import builtins
 
 cdef extern from "Python.h":
-    char *PyString_AS_STRING(object)
-
     ctypedef unsigned long Py_uintptr_t
     ctypedef struct PyTypeObject:
         pass
@@ -68,7 +66,7 @@ cdef public void setitem(obj, indices, value):
     obj[indices] = value
 
 cdef public slice slice(Py_ssize_t lower, Py_ssize_t upper, Py_ssize_t step):
-    return builtin.slice(lower, upper, step)
+    return builtins.slice(lower, upper, step)
 
 # ______________________________________________________________________
 # Basic operators
@@ -194,8 +192,9 @@ cdef public torepr(obj):
     return repr(obj)
 
 cdef public char * asstring(obj):
-    assert isinstance(obj, str)
-    return PyString_AS_STRING(obj)
+    if isinstance(obj, str):
+        obj = bytes(obj, 'ascii')
+    return obj
 
 cdef public fromstring(char *s, Py_ssize_t length):
     return s[:length]

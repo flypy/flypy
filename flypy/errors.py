@@ -40,7 +40,7 @@ class _ErrorMsg(object):
     def __str__(self):
         try:
             return self.format()
-        except Exception, e:
+        except Exception as e:
             return str(e)
 
     __repr__ = __str__
@@ -80,10 +80,10 @@ def error_context(lineno=-1, during=None, pyfunc=None):
     # Adapted from flypypro/npm/errors.py
     try:
         yield
-    except Exception, e:
+    except Exception as e:
         em = _ErrorMsg(exc=e, pyfunc=pyfunc, during=during, lineno=lineno)
         exc = type(e)(em)
-        raise exc, None, sys.exc_info()[2]
+        raise #exc, None, sys.exc_info()[2]
 
 
 def errctx(env, op=None):

@@ -6,6 +6,7 @@ Type resolution and method resolution.
 
 from __future__ import print_function, division, absolute_import
 import inspect
+from functools import reduce
 
 from flypy.errors import UnificationError
 from flypy.pipeline import fresh_env
@@ -189,12 +190,12 @@ def resolve_context(func, env):
     """Reduce typesets in context to concrete types"""
     context = env['flypy.typing.context']
 
-    for op, typeset in context.iteritems():
+    for op, typeset in context.items():
         if typeset:
             typeset = context[op]
             try:
                 ty = reduce(typejoin, typeset)
-            except TypeError, e:
+            except TypeError as e:
                 raise TypeError(
                     "Cannot type-join types for op %s: %s" % (op, e))
 
@@ -219,7 +220,7 @@ def resolve_restype(func, env):
     elif inferred_restype != restype:
         try:
             [restype] = unify([(inferred_restype, restype)])
-        except UnificationError, e:
+        except UnificationError as e:
             raise TypeError(
                 "Annotated result type %s does not match inferred "
                 "type %s for function %r: %s" % (

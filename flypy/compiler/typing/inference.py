@@ -28,6 +28,7 @@ promotion, triggering either an error or a call to a real implementation.
 from __future__ import print_function, division, absolute_import
 from pprint import pprint
 import collections
+from functools import reduce
 from itertools import product
 
 from flypy import promote, typeof, parse, typejoin
@@ -51,7 +52,7 @@ import networkx
 #===------------------------------------------------------------------===
 
 def copy_context(context):
-    return dict((binding, set(type)) for binding, type in context.iteritems())
+    return dict((binding, set(type)) for binding, type in context.items())
 
 def view(G):
     import matplotlib.pyplot as plt

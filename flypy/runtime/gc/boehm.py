@@ -6,19 +6,17 @@ Garbage collection using the Boehm collector.
 
 from __future__ import print_function, division, absolute_import
 import os
+import glob
 
-import flypy
 from flypy import cjit
-from flypy.types import Pointer, void
+from flypy.types import Pointer
 from flypy.runtime.ffi import sizeof, cast
-from flypy.runtime.obj.core import Type
-from . import boehmlib
 from flypy.extern_support import extern_cffi
 
 __all__ = ['gc_alloc']
 
 root = os.path.dirname(os.path.abspath(__file__))
-lib = os.path.join(root, "boehmlib.so")
+[lib] = glob.glob(os.path.join(root, "boehmlib*so"))
 
 #===------------------------------------------------------------------===
 # Decls

@@ -65,6 +65,6 @@ def find_copies(graph, envs, phase):
 
 
 def update_copies(all_copies, phase):
-    for old_func, (new_func, new_env) in all_copies.iteritems():
+    for old_func, (new_func, new_env) in all_copies.items():
         f_copies = new_env['flypy.state.copies']
         f_copies[phase] = Transition(old_func, new_func, new_env)

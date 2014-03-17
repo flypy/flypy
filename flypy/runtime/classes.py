@@ -5,7 +5,6 @@ Entry points for runtime code.
 """
 
 from __future__ import print_function, division, absolute_import
-import string
 import textwrap
 
 from flypy.typing import parse
@@ -35,7 +34,7 @@ def parse_constructor(signature):
     """Parse a type pass to @jit on a class"""
     from flypy.coretypes import Mono, TypeVar, EllipsisT
 
-    if isinstance(signature, basestring):
+    if isinstance(signature, str):
         t = parse(signature)
     else:
         t = signature
@@ -80,7 +79,7 @@ def fabricate_init(names):
     """) % (", ".join(names), "\n    ".join(stmts))
 
     result = {}
-    exec source in result, result
+    exec(source, result, result)
 
     __init__ = result["__init__"]
     del result["__init__"]

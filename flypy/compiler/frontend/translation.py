@@ -3,19 +3,16 @@
 """
 First stage in flypy translation. Translates Python bytecode to untyped
 pykit IR.
-
-Initially adapted from flypypro/npm/symbolic.py by Siu Kwan Lam.
 """
 
 from __future__ import print_function, division, absolute_import
 
-import __builtin__
+import builtins
 import inspect
 import dis
 import pprint
 import operator
 import collections
-from collections import namedtuple
 
 from flypy.errors import error_context, CompileError, EmptyStackError
 from flypy.runtime.obj import tupleobject, listobject, sliceobject
@@ -91,9 +88,9 @@ class Translate(object):
         self.names = self.bytecode.code.co_names
         self.argnames = list(self.varnames[:self.bytecode.code.co_argcount])
 
-        self.globals = dict(vars(__builtin__))
+        self.globals = dict(vars(builtins))
         self.builtins = set(self.globals.values())
-        self.globals.update(self.func.func_globals)
+        self.globals.update(self.func.__globals__)
 
         self.call_annotations = collections.defaultdict(dict)
 

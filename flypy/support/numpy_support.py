@@ -7,6 +7,8 @@ import struct
 
 import numpy as np
 
+from flypy.types import *
+
 if struct.pack('i', 1)[0] == '\1':
     nbo = '<' # little endian
 else:
@@ -27,7 +29,10 @@ def from_dtype(dtype):
     >>> map_dtype(np.dtype(np.complex128))
     complex128
     """
-    from flypy.types import *
+    from flypy.types import (int8, int16, int32, int64,
+                             uint8, uint16, uint32, uint64,
+                             float32, float64, complex64, complex128,
+                             struct_, object_)
 
     if dtype.byteorder not in ('=', nbo, '|') and dtype.kind in ('iufbc'):
         raise TypeError("Only native byteorder is supported", dtype)
@@ -75,9 +80,8 @@ def from_dtype(dtype):
     #    # Example dtype string: '<m8[D]', where D is timedelta units
     #    return timedelta(units=dtype.str[-2])
 
-def to_dtype(type):
-    from flypy.types import *
 
+def to_dtype(type):
     typemap = {
         int8     : np.int8,
         int16    : np.int16,

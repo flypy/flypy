@@ -54,7 +54,7 @@ def resolve_type(t):
     return ds.tmap(lambda x: _blaze2flypy.get(x, x), t)
 
 def to_blaze(t):
-    replacements = dict((v, k) for k, v in typemap().iteritems())
+    replacements = dict((v, k) for k, v in typemap().items())
     return ds.tmap(lambda x: replacements.get(x, x), t)
 
 def unify(constraints, concrete=True):
@@ -114,12 +114,12 @@ class MetaType(type):
         self.fields = fields = dict(_extract_fields(type, dct))
 
         # Verify signatures
-        #for func in self.fields.itervalues():
+        #for func in self.fields.values():
         #    verify_method_signature(type, func.signature)
 
         # Construct layout
-        for attr, t in layout.iteritems():
-            if isinstance(t, basestring):
+        for attr, t in layout.items():
+            if isinstance(t, str):
                 layout[attr] = parse(t)
 
         # Patch concrete type with fields, layout
@@ -158,7 +158,7 @@ def _extract_fields(type, dct):
     from . import typing
 
     fields = {}
-    for name, value in dct.iteritems():
+    for name, value in dct.items():
         if isinstance(value, FunctionWrapper):
             fields[name] = value
 
@@ -294,7 +294,7 @@ class OverlayRegistry(object):
         self.overlays = {} # builtin -> flypy function
 
     def overlay(self, pyfunc, flypyfunc):
-        assert pyfunc not in self.overlays
+        assert pyfunc not in self.overlays, pyfunc
         self.overlays[pyfunc] = flypyfunc
 
     def lookup_overlay(self, pyfunc):

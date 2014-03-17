@@ -21,35 +21,55 @@ def get_code_object(obj):
 
 def _make_bytecode_table(seq):
     return dict((dis.opmap[opname], opcode_info(argsize=argsize))
-                for opname, argsize in seq)
+                    for opname, argsize in seq)
+
+BYTECODE_PY2 = [
+    ('BINARY_DIVIDE', 0),
+    ('DUP_TOPX', 2),
+    ('INPLACE_DIVIDE', 0),
+    ('SLICE+0', 0),
+    ('SLICE+1', 0),
+    ('SLICE+2', 0),
+    ('SLICE+3', 0),
+    ('STORE_SLICE+0', 0),
+    ('STORE_SLICE+1', 0),
+    ('STORE_SLICE+2', 0),
+    ('STORE_SLICE+3', 0),
+    ('PRINT_ITEM', 0),
+    ('PRINT_NEWLINE', 0),
+    ('STOP_CODE', 0),
+]
+
+PY27_JUMPS = [
+    ('POP_JUMP_IF_FALSE', 2),
+    ('POP_JUMP_IF_TRUE', 2),
+    ('JUMP_IF_TRUE_OR_POP', 2),
+    ('JUMP_IF_FALSE_OR_POP', 2),
+]
 
 if sys.version_info[:2] == (2, 6):  # python 2.6
     BYTECODE_VERSION_SPECIFIC = [
         ('JUMP_IF_FALSE', 2),
         ('JUMP_IF_TRUE', 2),
-    ]
-elif sys.version_info[:2] >= (2, 7):  # python 2.7
+    ] + BYTECODE_PY2
+elif sys.version_info[:2] == (2, 7):  # python 2.7
+    BYTECODE_VERSION_SPECIFIC = BYTECODE_PY2 + PY27_JUMPS
+else:   # python 3.x
     BYTECODE_VERSION_SPECIFIC = [
-        ('POP_JUMP_IF_FALSE', 2),
-        ('POP_JUMP_IF_TRUE', 2),
-        ('JUMP_IF_TRUE_OR_POP', 2),
-        ('JUMP_IF_FALSE_OR_POP', 2),
-    ]
-
-else:
-    BYTECODE_VERSION_SPECIFIC = [
-        # TODO: ...
-    ]
+        ('INPLACE_TRUE_DIVIDE', 0),
+        ('INPLACE_FLOOR_DIVIDE', 0),
+        ('INPLACE_TRUE_DIVIDE', 0),
+        ('INPLACE_FLOOR_DIVIDE', 0),
+        ('BINARY_FLOOR_DIVIDE', 0),
+        ('BINARY_TRUE_DIVIDE', 0),
+    ] + PY27_JUMPS
 
 BYTECODES = [
     # opname, operandlen
     ('BINARY_ADD', 0),
-    ('BINARY_DIVIDE', 0),
-    ('BINARY_TRUE_DIVIDE', 0),
     ('BINARY_MULTIPLY', 0),
     ('BINARY_SUBSCR', 0),
     ('BINARY_SUBTRACT', 0),
-    ('BINARY_FLOOR_DIVIDE', 0),
     ('BINARY_MODULO', 0),
     ('BINARY_POWER', 0),
     ('BINARY_AND', 0),
@@ -68,15 +88,11 @@ BYTECODES = [
     ('CALL_FUNCTION_VAR', 2),
     ('COMPARE_OP', 2),
     ('DUP_TOP',  0),
-    ('DUP_TOPX', 2),
     ('FOR_ITER', 2),
     ('GET_ITER', 0),
     ('INPLACE_ADD', 0),
     ('INPLACE_SUBTRACT', 0),
     ('INPLACE_MULTIPLY', 0),
-    ('INPLACE_DIVIDE', 0),
-    ('INPLACE_TRUE_DIVIDE', 0),
-    ('INPLACE_FLOOR_DIVIDE', 0),
     ('INPLACE_MODULO', 0),
     ('INPLACE_POWER', 0),
     ('INPLACE_AND', 0),
@@ -101,24 +117,13 @@ BYTECODES = [
     ('STORE_ATTR', 2),
     ('STORE_SUBSCR', 0),
     ('UNPACK_SEQUENCE', 2),
-    ('SLICE+0', 0),
-    ('SLICE+1', 0),
-    ('SLICE+2', 0),
-    ('SLICE+3', 0),
-    ('STORE_SLICE+0', 0),
-    ('STORE_SLICE+1', 0),
-    ('STORE_SLICE+2', 0),
-    ('STORE_SLICE+3', 0),
     ('RAISE_VARARGS', 2),
     ('SETUP_EXCEPT', 2),
     ('END_FINALLY', 0),
     ('SETUP_WITH', 2),
     ('WITH_CLEANUP', 0),
     ('BUILD_SLICE', 2),
-    ('PRINT_ITEM', 0),
-    ('PRINT_NEWLINE', 0),
     ('YIELD_VALUE', 0),
-    ('STOP_CODE', 0),
 ] + BYTECODE_VERSION_SPECIFIC
 
 
@@ -156,13 +161,13 @@ class ByteCodeInst(object):
 class ByteCodeIter(object):
     def __init__(self, code):
         self.code = code
-        self.iter = ((i, ord(x)) for i, x in enumerate(self.code.co_code))
+        self.iter = iter(enumerate(self.code.co_code))
 
     def __iter__(self):
         return self
 
-    def next(self):
-        offset, opcode = self.iter.next()
+    def __next__(self):
+        offset, opcode = next(self.iter)
         try:
             info = BYTECODE_TABLE[opcode]
         except KeyError:
@@ -178,14 +183,16 @@ class ByteCodeIter(object):
     def read_arg(self, size):
         buf = 0
         for i in range(size):
-            _offset, byte = self.iter.next()
+            _offset, byte = next(self.iter)
             buf |= byte << (8 * i)
         return buf
+
 
 class ByteCodeOperation(object):
     def __init__(self, inst, args):
         self.inst = inst
         self.args = args
+
 
 class ByteCode(object):
     def __init__(self, func):
@@ -214,7 +221,7 @@ class ByteCode(object):
                 inst.lineno = known
 
     def __iter__(self):
-        return self.table.itervalues()
+        return iter(self.table.values())
 
     def __getitem__(self, offset):
         return self.table[offset]
@@ -223,7 +230,7 @@ class ByteCode(object):
         return offset in self.table
 
     def dump(self):
-        return '\n'.join('%10d\t%s' % i for i in self.table.iteritems())
+        return '\n'.join('%10d\t%s' % i for i in self.table.items())
 
 #===------------------------------------------------------------------===
 # Jump targets
