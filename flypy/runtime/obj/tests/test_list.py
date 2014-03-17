@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 import unittest
+import builtins
 
 from flypy import jit
 
-range = lambda *args: list(xrange(*args))
+range = lambda *args: list(builtins.range(*args))
 
 class TestListCreation(unittest.TestCase):
 

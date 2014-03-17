@@ -226,7 +226,7 @@ class List(object):
     @staticmethod
     def toobject(obj, type):
         [base_type] = type.parameters
-        return [toobject(obj[i], base_type) for i in xrange(len(obj))]
+        return [toobject(obj[i], base_type) for i in range(len(obj))]
 
 #===------------------------------------------------------------------===
 # Empty List

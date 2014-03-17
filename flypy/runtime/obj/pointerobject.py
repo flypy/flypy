@@ -80,6 +80,8 @@ class Pointer(RichComparisonMixin):
     def __nonzero__(self):
         return self != flypy.NULL
 
+    __bool__ = __nonzero__
+
     @jit('a -> int64')
     def ptrtoint(self):
         return flypy.cast(self, flypy.types.int64)
@@ -105,7 +107,7 @@ class Pointer(RichComparisonMixin):
 
     @classmethod
     def fromctypes(cls, val, ty):
-        if isinstance(val, (int, long)):
+        if isinstance(val, int):
             cty = ctype(ty)
             return cty(val)
         return val

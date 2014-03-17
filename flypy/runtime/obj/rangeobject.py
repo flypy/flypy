@@ -35,6 +35,8 @@ class Range(Sequence):
     def __nonzero__(self):
         return bool(len(self))
 
+    __bool__ = __nonzero__
+
     def __str__(self):
         return "range(%d, %d, %d)" % (self.start, self.stop, self.step)
 

@@ -12,6 +12,7 @@ from flypy import cjit
 from flypy.types import Pointer
 from flypy.runtime.ffi import sizeof, cast
 from flypy.extern_support import extern_cffi
+from flypy.runtime.obj.core import Type
 
 __all__ = ['gc_alloc']
 

@@ -54,6 +54,8 @@ class Complex(object):
     def __nonzero__(self):
         return bool(self.real) or bool(self.imag)
 
+    __bool__ = __nonzero__
+
     @jit
     def __str__(self):
         # TODO: __mod__

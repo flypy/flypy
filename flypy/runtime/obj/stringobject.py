@@ -53,6 +53,8 @@ class String(object):
     def __nonzero__(self):
         return bool(len(self))
 
+    __bool__ = __nonzero__
+
     # __________________________________________________________________
 
     @staticmethod

@@ -16,6 +16,8 @@ class NoneType(object):
     def __nonzero__(self):
         return False
 
+    __bool__ = __nonzero__
+
     @jit('a -> a -> bool')
     def __eq__(self, other):
         return True

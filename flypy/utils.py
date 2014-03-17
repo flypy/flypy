@@ -7,11 +7,12 @@ Utilities!
 from __future__ import print_function, division, absolute_import
 
 import types
+import builtins
 import functools
 try:
     from collections import MutableMapping
 except ImportError as e:
-    # Python 3
+    # Python 2
     from UserDict import DictMixin as MutableMapping
 
 #===------------------------------------------------------------------===
@@ -123,3 +124,10 @@ class FrozenDict(MutableMapping):
     @classmethod
     def fromkeys(cls, iterable, value=None):
         return cls(dict.fromkeys(iterable, value))
+
+#===------------------------------------------------------------------===
+# List functions
+#===------------------------------------------------------------------===
+
+def zip(*args):
+    return list(builtins.zip(*args))

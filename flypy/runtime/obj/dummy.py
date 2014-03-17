@@ -28,6 +28,8 @@ class Function(object):
     def __nonzero__(self):
         return True
 
+    __bool__ = __nonzero__
+
     # ----------------------
 
     @classmethod
@@ -51,6 +53,8 @@ class ForeignFunction(object):
     @jit('a -> bool')
     def __nonzero__(self):
         return True
+
+    __bool__ = __nonzero__
 
     # ----------------------
 

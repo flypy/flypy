@@ -82,6 +82,8 @@ def from_dtype(dtype):
 
 
 def to_dtype(type):
+    from flypy.types import object_
+
     typemap = {
         int8     : np.int8,
         int16    : np.int16,

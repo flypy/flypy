@@ -28,7 +28,11 @@ def setup(func, env):
     # Find Python function implementation
 
     argtypes = simplify_argtypes(func, env)
-    py_func, signature, kwds = best_match(func, list(argtypes))
+    try:
+        py_func, signature, kwds = best_match(func, list(argtypes))
+    except TypeError:
+        print("type error", func, list(argtypes))
+        raise
 
     # -------------------------------------------------
     # Update environment

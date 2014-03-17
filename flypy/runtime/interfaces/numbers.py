@@ -153,6 +153,7 @@ class Number(object):
     def __nonzero__(self):
         return self != 0
 
+    __bool__ = __nonzero__
 
 @abstract
 class Real(Number):

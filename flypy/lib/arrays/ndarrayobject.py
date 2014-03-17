@@ -16,6 +16,7 @@ from flypy.runtime.obj.core import (Type, Pointer, StaticTuple, address,
 from flypy.runtime.obj.sliceobject import normalize
 from flypy.runtime.lib import libcpy
 from flypy.runtime.hacks import choose
+from flypy.utils import zip
 
 import numpy as np
 

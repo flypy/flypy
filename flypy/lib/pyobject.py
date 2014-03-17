@@ -164,6 +164,8 @@ class Object(object):
     def __nonzero__(self):
         return lib.istrue(self.ptr)
 
+    __bool__ = __nonzero__
+
     @jit('a -> int64')
     def __len__(self):
         return lib.length(self.ptr)

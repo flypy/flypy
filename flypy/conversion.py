@@ -130,7 +130,7 @@ def fromctypes(value, ty, memo=None):
             cty = ctype(ty)
             value = ctypes.cast(value, cty)
 
-        for name, ty in ty.resolved_layout.iteritems():
+        for name, ty in ty.resolved_layout.items():
             if is_ctypes_pointer_type(type(value)):
                 value = value[0]
             cval = getattr(value, name)

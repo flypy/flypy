@@ -24,6 +24,7 @@ class Tuple(object):
     def __nonzero__(self):
         return bool(len(self))
 
+    __bool__ = __nonzero__
 
 @sjit('GenericTuple[T]')
 class GenericTuple(Tuple):

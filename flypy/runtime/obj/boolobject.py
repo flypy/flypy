@@ -19,6 +19,8 @@ class Bool(object):
     def __nonzero__(self):
         return self
 
+    __bool__ = __nonzero__
+
     @jit
     def __str__(self):
         if self:
