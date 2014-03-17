@@ -11,6 +11,7 @@ inheritance hierarchy.
 
 from __future__ import print_function, division, absolute_import
 import builtins as exceptions
+from functools import partial
 
 from flypy import overlay, typeof, jit, sjit
 
@@ -35,22 +36,41 @@ def ejit(py_cls, exc_cls):
 # Exceptions
 #===------------------------------------------------------------------===
 
-results = {}
+def jit_hierarchy(cls, cache=None):
+    """
+    Jit a class hierarchy given by `cls` using the given jit function.
 
-# Take exceptions from `builtins` and turn them into `@jit` classes
-for name, cls in vars(exceptions).items():
-    if cls in results:
-        # Seen this already, this is an alias: reuse previous result
-        flypy_exc = results[cls]
-    elif isinstance(cls, type) and issubclass(cls, (exceptions.BaseException,
-                                                    exceptions.Warning)):
-        # New exception, turn into @jit class
-        flypy_exc = type(cls.__name__,
-                         cls.__bases__,
-                         {'layout': [], '__doc__': cls.__doc__ })
-        flypy_exc = ejit(cls, flypy_exc)
-        results[cls] = flypy_exc
-    else:
-        continue
+    The resulting classes have an empty layout set.
+    """
+    if cache is None:
+        # Define this for the base case: object does not need to be jitted
+        cache = { object: object }
 
-    globals()[name] = flypy_exc
+    if cls in cache:
+        # Seen this already, reuse result
+        return cache[cls]
+
+    # New exception, turn into @jit class
+    jitted_bases = tuple(jit_hierarchy(base, cache)
+                             for base in cls.__bases__)
+    cls_copy = type(cls.__name__,
+                    jitted_bases,
+                    {'layout': [], '__doc__': cls.__doc__ })
+    jitted_cls = ejit(cls, cls_copy)
+    cache[cls] = jitted_cls
+    return jitted_cls
+
+
+def define_exceptions():
+    """Define all exceptions from the `exceptions` module as jitted classes"""
+    result = {}
+    cache = { object: object }
+    for name, cls in vars(exceptions).items():
+        if isinstance(cls, type) and issubclass(cls, (exceptions.BaseException,
+                                                      exceptions.Warning)):
+            result[name] = jit_hierarchy(cls, cache)
+
+    return result
+
+
+globals().update(define_exceptions())
