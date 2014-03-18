@@ -41,7 +41,7 @@ def rewrite_constants(func, env):
             ty = context[c]
 
             # Python -> flypy (if not already)
-            flypy_obj = fromobject(c.const, ty, keepalive)
+            flypy_obj = fromobject(c.const, ty, _keep_alive)
             # flypy -> ctypes
             ctype_obj = toctypes(flypy_obj, ty, _keep_alive)
             if byref(ty):

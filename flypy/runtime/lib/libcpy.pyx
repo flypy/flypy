@@ -51,10 +51,10 @@ cdef public next(obj):
 # Attributes
 
 cdef public getfield(obj, char *attr):
-    return getattr(obj, attr)
+    return getattr(obj, str(attr, 'ascii'))
 
 cdef public void setfield(obj, char *attr, value):
-    setattr(obj, attr, value)
+    setattr(obj, str(attr, 'ascii'), value)
 
 # ______________________________________________________________________
 # Indexing
@@ -185,11 +185,14 @@ cdef public Py_uintptr_t address(PyObject *x):
 # ______________________________________________________________________
 # Strings
 
+def decode(s):
+    return bytes(s, "ascii")
+
 cdef public tostring(obj):
-    return str(obj)
+    return decode(str(obj))
 
 cdef public torepr(obj):
-    return repr(obj)
+    return decode(repr(obj))
 
 cdef public char * asstring(bytes obj):
     return obj

@@ -73,8 +73,8 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
             types = [layout[name] for name, _ in cty._fields_]
 
         # Dereference pointer to aggregate
-        if hasattr(value, 'contents'):
-            value = value.contents
+        #if hasattr(value, 'contents'):
+        #    value = value.contents
 
         # Resolve values
         values = []

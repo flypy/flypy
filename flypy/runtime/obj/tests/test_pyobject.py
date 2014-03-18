@@ -23,6 +23,8 @@ class C(object):
     def __nonzero__(self):
         return bool(self.value)
 
+    __bool__ = __nonzero__
+
     def __len__(self):
         return 34
 
