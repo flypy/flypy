@@ -27,7 +27,7 @@ class Slice(object):
     # ---------------------- #
 
     @staticmethod
-    def fromobject(s, type):
+    def fromobject(s, type, keepalive):
         args = zip((s.start, s.stop, s.step), type.parameters)
         return Slice(*starmap(conversion.fromobject, args))
 

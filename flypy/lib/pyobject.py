@@ -192,7 +192,7 @@ class Object(object):
     # ---------------------------------------
 
     @classmethod
-    def fromobject(cls, obj, ty):
+    def fromobject(cls, obj, ty, keepalive):
         addr = lib.address(obj)
         p = ctypes.c_void_p(addr)
         return Object(p)

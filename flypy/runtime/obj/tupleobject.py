@@ -129,11 +129,11 @@ class StaticTuple(Tuple):
             return type
 
     @staticmethod
-    def fromobject(tuple, type):
+    def fromobject(tuple, type, keepalive):
         head, tail = type.parameters
-        hd = fromobject(tuple[0], head)
+        hd = fromobject(tuple[0], head, keepalive)
         if tuple[1:]:
-            tl = fromobject(tuple[1:], tail)
+            tl = fromobject(tuple[1:], tail, keepalive)
         else:
             tl = EmptyTuple()
 

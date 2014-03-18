@@ -210,7 +210,7 @@ class List(object):
     # ---- Python <-> flypy ---- #
 
     @staticmethod
-    def fromobject(lst, type):
+    def fromobject(lst, type, keepalive):
         [base_type] = type.parameters
 
         # Allocate and populate buffer
@@ -257,7 +257,7 @@ class EmptyList(List):
         return 0
 
     @staticmethod
-    def fromobject(lst, type):
+    def fromobject(lst, type, keepalive):
         return EmptyList()
 
     @staticmethod

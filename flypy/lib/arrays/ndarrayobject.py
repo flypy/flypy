@@ -94,9 +94,9 @@ class NDArray(object):
     # -- flypy <-> Python -- #
 
     @classmethod
-    def fromobject(cls, ndarray, ty):
+    def fromobject(cls, ndarray, ty, keepalive):
         if isinstance(ndarray, np.ndarray):
-            return fromnumpy(ndarray, ty)
+            return fromnumpy(ndarray, ty, keepalive)
         else:
             raise NotImplementedError("NDArray.fromobject(%s, %s)" % (ndarray, ty))
 
@@ -283,7 +283,7 @@ def fill(array, value):
 # Conversion
 #===------------------------------------------------------------------===
 
-def fromnumpy(ndarray, ty, boundscheck=False):
+def fromnumpy(ndarray, ty, keepalive, boundscheck=False):
     """Build an NDArray from a numpy ndarray"""
     # Compute steps
     itemsize = ndarray.dtype.itemsize
@@ -298,7 +298,7 @@ def fromnumpy(ndarray, ty, boundscheck=False):
                          "(e.g. views in record arrays)")
 
     # Build array object
-    data = fromobject(ndarray.ctypes.data, Pointer[flypy.types.int8])
+    data = fromobject(ndarray.ctypes.data, Pointer[flypy.types.int8], keepalive)
 
     dims = EmptyDim()
     for extent, stride in reversed(zip(ndarray.shape, steps)):

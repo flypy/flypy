@@ -96,7 +96,7 @@ class Pointer(RichComparisonMixin):
     # __________________________________________________________________
 
     @staticmethod
-    def fromobject(ptr, type):
+    def fromobject(ptr, type, keepalive):
         return Pointer(make_ctypes_ptr(ptr, type))
 
     @classmethod

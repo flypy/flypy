@@ -17,14 +17,14 @@ from .representation import stack_allocate, byref, c_primitive
 
 ctypes_type_memo = {}
 
-def fromobject(value, type):
+def fromobject(value, type, keepalive):
     """
     Convert a Python value to a flypy representation according to `type`
     (e.g. list -> List)
     """
     cls = type.impl
     if hasattr(cls, 'fromobject') and not isinstance(value, cls):
-        return cls.fromobject(value, type)
+        return cls.fromobject(value, type, keepalive)
     return value
 
 
@@ -98,6 +98,7 @@ def toctypes(value, type, keepalive, valmemo=None, typememo=None):
     valmemo[id(value), strtype] = result
     return result
 
+
 def fromctypes(value, ty, memo=None):
     """
     Construct a flypy object from a ctypes representation.
@@ -141,6 +142,7 @@ def fromctypes(value, ty, memo=None):
 
     #memo[id(value)] = result
     return result
+
 
 def ctype(type, memo=None):
     """

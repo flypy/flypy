@@ -64,7 +64,8 @@ class FunctionWrapper(object):
 
         # Construct flypy values
         argtypes = [typeof(x) for x in args]
-        arg_objs = list(starmap(fromobject, zip(args, argtypes)))
+        arg_objs = [fromobject(arg, argtype, keepalive)
+                        for arg, argtype in zip(args, argtypes)]
 
         # Map flypy values to a ctypes representation
         args = []

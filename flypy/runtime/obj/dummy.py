@@ -59,7 +59,7 @@ class ForeignFunction(object):
     # ----------------------
 
     @staticmethod
-    def fromobject(value, type):
+    def fromobject(value, type, keepalive):
         from flypy.support.cffi_support import is_cffi, ffi, is_cffi_func
         #if is_cffi(value) and is_cffi_func(value):
         #    value = ffi.addressof(value)

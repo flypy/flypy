@@ -7,14 +7,19 @@ from flypy import jit, typeof
 from flypy.types import int32, float64
 #from flypy.compiler.representation import build_ctypes_representation
 from flypy.runtime.obj.tupleobject import StaticTuple, EmptyTuple, NoneType
-from flypy.conversion import fromobject, toobject, toctypes
+from flypy.conversion import fromobject as _fromobject, toobject, toctypes
 from flypy.support.ctypes_support import CTypesStruct
 
 import numpy as np
 
+keepalive = []
+
+def fromobject(val, ty):
+    return _fromobject(val, ty, keepalive)
+
 none = NoneType()
 
-def tonb(tup):
+def to_flypy(tup):
     return fromobject(tup, typeof(tup))
 
 def topy(tup):
@@ -43,12 +48,12 @@ class TestSmallTuple(unittest.TestCase):
 
     def test_fromobject(self):
         "object -> tuple"
-        obj = tonb((1, 2, 3))
+        obj = to_flypy((1, 2, 3))
         self.assertEqual(StaticTuple(1, StaticTuple(2, StaticTuple(3, EmptyTuple()))), obj)
 
     def test_toobject(self):
         "tuple -> object"
-        self.assertEqual(topy(tonb((1, 2, 3))), (1, 2, 3))
+        self.assertEqual(topy(to_flypy((1, 2, 3))), (1, 2, 3))
 
     def test_representation(self):
         "ctypes"

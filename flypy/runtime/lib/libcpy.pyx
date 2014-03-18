@@ -191,9 +191,7 @@ cdef public tostring(obj):
 cdef public torepr(obj):
     return repr(obj)
 
-cdef public char * asstring(obj):
-    if isinstance(obj, str):
-        obj = bytes(obj, 'ascii')
+cdef public char * asstring(bytes obj):
     return obj
 
 cdef public fromstring(char *s, Py_ssize_t length):

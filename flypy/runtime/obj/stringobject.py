@@ -11,6 +11,9 @@ from flypy import sjit, jit, typeof
 from .bufferobject import Buffer, newbuffer, copyto
 from .pointerobject import Pointer
 
+# TODO: Don't leak this
+keepalive = []
+
 @sjit
 class String(object):
     layout = [('buf', 'Buffer[char]')]
@@ -58,8 +61,13 @@ class String(object):
     # __________________________________________________________________
 
     @staticmethod
-    def fromobject(strobj, type):
-        assert isinstance(strobj, str)
+    def fromobject(strobj, type, keepalive):
+        assert isinstance(strobj, (str, bytes))
+        if isinstance(strobj, str):
+            strobj = bytes(strobj, 'ascii')
+            # Make sure the new buffer stays alive while it's in use
+            keepalive.append(strobj)
+
         p = flypy.runtime.lib.librt.asstring(strobj)
         buf = Buffer(Pointer(p), len(strobj) + 1)
         return String(buf)
@@ -67,7 +75,8 @@ class String(object):
     @staticmethod
     def toobject(obj, type):
         buf = obj.buf
-        return flypy.runtime.lib.librt.fromstring(buf.p, len(obj))
+        result = flypy.runtime.lib.librt.fromstring(buf.p, len(obj))
+        return str(result, 'ascii')
 
     # __________________________________________________________________
 

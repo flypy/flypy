@@ -63,7 +63,7 @@ class Vector(Number):
 
     # --------------------
     @staticmethod
-    def fromobject(items, type):
+    def fromobject(items, type, keepalive):
         return Vector(make_ctypes_vector(items, type))
 
     @classmethod

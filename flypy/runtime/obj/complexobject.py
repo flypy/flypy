@@ -66,7 +66,7 @@ class Complex(object):
     # __________________________________________________________________
 
     @staticmethod
-    def fromobject(c, type):
+    def fromobject(c, type, keepalive):
         return Complex(c.real, c.imag)
 
     @staticmethod
