@@ -62,6 +62,7 @@ else:   # python 3.x
         ('INPLACE_FLOOR_DIVIDE', 0),
         ('BINARY_FLOOR_DIVIDE', 0),
         ('BINARY_TRUE_DIVIDE', 0),
+        ('DUP_TOP_TWO',  0),
     ] + PY27_JUMPS
 
 BYTECODES = [

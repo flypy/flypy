@@ -2,7 +2,11 @@
 from __future__ import print_function, division, absolute_import
 import flypy
 from flypy import jit
-from flypy.lib.extended import decimal
+try:
+    from flypy.lib.extended import decimal
+except ImportError:
+    decimal = None
+
 import cdecimal
 
 
@@ -66,5 +70,6 @@ def test_mandelbrot2():
 #import timeit
 #print(timeit.timeit('test()', 'from __main__ import test', number=3))
 
-print(test_mandelbrot())
+if decimal:
+    print(test_mandelbrot())
 #print(test_mandelbrot2())

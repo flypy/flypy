@@ -333,6 +333,9 @@ class Translate(object):
         count = inst.arg
         self.stack.extend(self.stack[-count:])
 
+    def op_DUP_TOP_TWO(self, inst):
+        self.stack.extend(self.stack[-2:])
+
     def op_ROT_TWO(self, inst):
         one = self.pop()
         two = self.pop()

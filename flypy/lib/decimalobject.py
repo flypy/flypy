@@ -151,4 +151,3 @@ def decimal(value):
     d = _Decimal(new_mpd)
     mpd_set_string_func(d.mpd, value.buf.p, context_ref)
     return d
-    

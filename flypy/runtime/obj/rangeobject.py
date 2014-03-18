@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from flypy import jit, sjit, ijit
+from flypy import jit, sjit, ijit, typeof
 from ..interfaces import Sequence, Iterable, Iterator
 
 # ________________________________________________________________
@@ -63,3 +63,7 @@ class RangeIterator(Iterator):
     __repr__ = __str__
 
 # ________________________________________________________________
+
+@typeof.case(range)
+def typeof(val):
+    return Range[()]

@@ -292,7 +292,9 @@ class CodeCache(object):
         self.cursor.execute("""
             INSERT INTO Code
             VALUES (?, ?, ?, ?, ?)""",
-            (func_id, stage, symname, buffer(code_blob), buffer(env_blob)))
+            (func_id, stage, symname,
+             code_blob,
+             env_blob))
         self.conn.commit()
 
     @property

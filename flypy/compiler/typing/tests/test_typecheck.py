@@ -24,7 +24,7 @@ class TestTypeCheck(unittest.TestCase):
 
         try:
             simple()
-        except Exception, e:
+        except Exception as e:
             self.assertTrue(isinstance(e, (UnificationError, TypeError)))
         else:
             self.fail("Expecting UnificationError")
@@ -37,7 +37,7 @@ class TestTypeCheck(unittest.TestCase):
 
         try:
             simple()
-        except Exception, e:
+        except Exception as e:
             self.assertTrue(isinstance(e, (UnificationError, TypeError)))
         else:
             self.fail("Expecting UnificationError")

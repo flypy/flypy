@@ -13,7 +13,7 @@ import types
 # Errors
 #===------------------------------------------------------------------===
 
-class IncompatibleConstantError(object):
+class IncompatibleConstantError(Exception):
     pass
 
 #===------------------------------------------------------------------===
@@ -42,15 +42,15 @@ def code_tuple(func):
     """Build a tuple for the code object"""
     attributes = ['argcount', 'code', 'filename', 'firstlineno', 'flags',
                   'freevars', 'lnotab', 'name', 'nlocals', 'stacksize']
-    attrs = [getattr(func.func_code, 'co_' + attrib) for attrib in attributes]
-    attrs.append([encode_constant(const) for const in func.func_code.co_consts])
+    attrs = [getattr(func.__code__, 'co_' + attrib) for attrib in attributes]
+    attrs.append([encode_constant(const) for const in func.__code__.co_consts])
     attrs.append([encode_constant(const) for const in find_globals(func)])
     return tuple(attrs)
 
 def find_globals(func):
     """Load any globals references by the function"""
-    global_names = func.func_code.co_names
-    #return [func.func_globals[name] for name in global_names]
+    global_names = func.__code__.co_names
+    #return [func.__globals__[name] for name in global_names]
     return global_names
 
 #===------------------------------------------------------------------===
@@ -61,7 +61,7 @@ def compatible_const(const):
     """See whether we can blobify the constant"""
     if isinstance(const, tuple):
         return all(map(compatible_const, const))
-    return isinstance(const, (types.NoneType, bool, int, float, str, complex))
+    return isinstance(const, (type(None), bool, int, float, str, complex))
 
 def encode_constant(const):
     """Return a string-encodable representation for `const` that is compatible"""

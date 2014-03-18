@@ -201,7 +201,9 @@ def interpret(nb_func, run_phase, args, debug=False, tracer=None):
         else:
             tracer = tracing.DummyTracer()
 
-    newargs = [conversion.fromobject(arg, typeof(arg)) for arg in args]
+    keepalive = []
+    newargs = [conversion.fromobject(arg, typeof(arg), keepalive)
+                   for arg in args]
 
     # Interpret function
     env.setdefault('interp.handlers', handlers(run_phase, env))

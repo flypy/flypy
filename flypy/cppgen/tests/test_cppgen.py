@@ -27,7 +27,7 @@ class C(object):
 class TestCPPGen(unittest.TestCase):
 
     def test_cppgen(self):
-        with tempfile.NamedTemporaryFile(suffix=".cpp") as f:
+        with tempfile.NamedTemporaryFile(mode="w+", suffix=".cpp") as f:
             # TODO: Remove compiled code
             # TODO: Portable compilation
             cppgen.generate(C, f.write)

@@ -49,8 +49,8 @@ class LLVMSerializer(object):
 class LLVMDeSerializer(object):
 
     def deserialize_code(self, bitcode, symname, stage):
-        f = io.BytesIO()
-        f.write(str(bitcode))
+        f = io.StringIO()
+        f.write(bytes(bitcode, "latin-1"))
         f.seek(0)
 
         module = lc.Module.from_bitcode(f)

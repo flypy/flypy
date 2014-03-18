@@ -139,7 +139,7 @@ def slice_dim(dim, p, indices, dtype):
 
     t = normalize(s, extent)
     start = t[0] ; stop = t[1] ; step = t[2] # TODO: tuple unpacking
-    extent = len(xrange(start, stop, step))
+    extent = len(range(start, stop, step))
 
     # Process start
     if s.start is not None:

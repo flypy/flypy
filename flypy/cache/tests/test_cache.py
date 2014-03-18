@@ -15,6 +15,7 @@ class TestCache(unittest.TestCase):
     def setUp(self):
         self.db = codecache.example_db()
 
+    @unittest.skip("Encode bitcode")
     def test_cache_code(self):
         def py_func(x, y):
             return x + y

@@ -104,7 +104,7 @@ class TestBytecodeTranslation(unittest.TestCase):
         #print(translate(f)[0])
         try:
             run(f, 15, [0, 10]) # TODO: exc_throw
-        except UncaughtException, e:
+        except UncaughtException as e:
             exc = e.args[0]
             assert isinstance(exc, ValueError)
             self.assertEqual(exc.args[0], 15)
